@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: planeta-agua-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: planeta_agua
+      POSTGRES_PASSWORD: planeta_agua
+      POSTGRES_DB: planeta_agua
+    ports:
+      - "5433:5432"
+    volumes:
+      - planeta_agua_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U planeta_agua -d planeta_agua"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  planeta_agua_postgres_data:
