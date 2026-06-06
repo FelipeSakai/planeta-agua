@@ -29,6 +29,14 @@ export const users = pgTable("users", {
   ...timestamps,
 });
 
+export const sessions = pgTable("sessions", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id").notNull().references(() => users.id),
+  tokenHash: text("token_hash").notNull().unique(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
 export const customers = pgTable("customers", {
   id: uuid("id").defaultRandom().primaryKey(),
   name: text("name").notNull(),
@@ -93,9 +101,17 @@ export const expenses = pgTable("expenses", {
 });
 
 export const usersRelations = relations(users, ({ many }) => ({
+  sessions: many(sessions),
   sales: many(sales),
   stockMovements: many(stockMovements),
   expenses: many(expenses),
+}));
+
+export const sessionsRelations = relations(sessions, ({ one }) => ({
+  user: one(users, {
+    fields: [sessions.userId],
+    references: [users.id],
+  }),
 }));
 
 export const customersRelations = relations(customers, ({ many }) => ({

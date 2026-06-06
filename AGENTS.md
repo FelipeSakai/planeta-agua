@@ -113,6 +113,9 @@ Governanca aqui deve ser leve, pratica e proporcional ao MVP. O objetivo e prote
 - Estoque baixo deve ficar visivel no dashboard e no modulo de estoque.
 - Erros devem ser claros para operador nao tecnico.
 - Interface deve funcionar em desktop e celular, mas o uso principal esperado e operacional interno.
+- Para design de interface, consultar `intercom/DESIGN.md` antes de criar ou alterar telas.
+- O design instalado e `Intercom` da colecao `awesome-design-md`, instalado via `npx getdesign@latest add intercom`.
+- Usar a referencia apenas como inspiracao, sem copiar marca, logo ou identidade proprietaria.
 
 ## Fora Do MVP
 
@@ -136,6 +139,7 @@ Nao implementar sem decisao explicita:
 - `docs/04-modelo-dados.md`;
 - `docs/05-decisoes-pendentes.md`.
 - `docs/06-ambiente-desenvolvimento.md`.
+- `intercom/DESIGN.md`.
 
 ## Comportamento Esperado Da IA
 
