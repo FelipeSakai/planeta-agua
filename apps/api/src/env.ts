@@ -1,11 +1,6 @@
-import { resolve } from "node:path";
-
-import { config } from "dotenv";
+import "dotenv/config";
 
 import { z } from "zod";
-
-config({ path: resolve(__dirname, "../../../.env") });
-config({ path: resolve(process.cwd(), ".env"), override: true });
 
 const envSchema = z.object({
   DATABASE_URL: z.string().min(1),
