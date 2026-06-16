@@ -43,54 +43,35 @@ Para o MVP, priorizar login simples e seguro em vez de OAuth ou fluxos complexos
 - Ambiente unico de producao no inicio;
 - Backup basico do banco desde o primeiro uso real.
 
-## Por Que Next.js Full-Stack No MVP
+## Arquitetura Atual Recomendada
 
-O briefing sugeriu frontend separado de backend com Fastify. Essa arquitetura e valida, mas para um MVP interno pequeno ela aumenta a quantidade de projetos, deploys e integracoes.
+O projeto passa a usar monorepo Turborepo com:
 
-Neste momento, a recomendacao e usar Next.js full-stack porque:
+- `apps/web`: Next.js App Router para frontend;
+- `apps/api`: NestJS para backend, autenticacao, regras de negocio e banco;
+- `packages/shared`: tipos e schemas compartilhados quando houver uso real nos dois lados.
 
-- reduz setup inicial;
-- facilita desenvolver telas e regras juntas;
-- simplifica deploy;
-- mantem TypeScript de ponta a ponta;
-- permite extrair uma API separada no futuro se o produto crescer.
+O Next nao deve acessar PostgreSQL diretamente. Venda, cancelamento, estoque, financeiro e permissoes criticas ficam no Nest.
 
 ## Estrutura Inicial Sugerida
 
 ```text
-src/
-  app/
-    (auth)/
-      login/
-    (app)/
-      dashboard/
-      vendas/
-      produtos/
-      clientes/
-      estoque/
-      financeiro/
-      usuarios/
-    api/
-  components/
-    ui/
-    layout/
-  db/
-    schema.ts
-    index.ts
-    migrations/
-  features/
-    auth/
-    products/
-    customers/
-    sales/
-    stock/
-    finance/
-    users/
-  lib/
-    auth.ts
-    env.ts
-    money.ts
-    validations.ts
+apps/
+  web/
+    src/
+      app/
+      components/
+      features/
+      lib/
+  api/
+    src/
+      db/
+      features/
+      health/
+    drizzle.config.ts
+packages/
+  shared/
+    src/
 ```
 
 ## Padrao Por Feature
@@ -117,7 +98,7 @@ Diretrizes:
 Fluxo padrao:
 
 ```text
-Page/Form -> Server Action -> Service -> Repository -> Drizzle/PostgreSQL
+Page/Form -> HTTP API -> Nest Service -> Repository -> Drizzle/PostgreSQL
 ```
 
 Nao criar repository generico antes de necessidade real. Cada feature deve ter um repository simples e direto.

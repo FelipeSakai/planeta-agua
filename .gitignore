@@ -1,12 +1,30 @@
 # dependencies
 /node_modules
+apps/*/node_modules
+packages/*/node_modules
 
 # next.js
 /.next/
+apps/*/.next/
 /out/
+apps/*/out/
+
+# turbo
+.turbo/
+apps/*/.turbo/
+packages/*/.turbo/
 
 # production
 /build
+
+# build output
+apps/*/dist/
+packages/*/dist/
+
+# test coverage
+coverage/
+apps/*/coverage/
+packages/*/coverage/
 
 # misc
 .DS_Store
@@ -24,6 +42,7 @@ pnpm-debug.log*
 
 # vercel
 .vercel
+apps/*/.vercel
 
 # typescript
 *.tsbuildinfo

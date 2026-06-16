@@ -38,10 +38,22 @@ Instalar dependencias:
 pnpm install
 ```
 
-Rodar desenvolvimento:
+Rodar frontend e backend juntos:
 
 ```bash
 pnpm dev
+```
+
+Rodar apenas frontend:
+
+```bash
+pnpm dev:web
+```
+
+Rodar apenas backend:
+
+```bash
+pnpm dev:api
 ```
 
 Gerar migration:
@@ -50,7 +62,7 @@ Gerar migration:
 pnpm db:generate
 ```
 
-Aplicar migration:
+Aplicar migrations pelo backend:
 
 ```bash
 pnpm db:migrate

@@ -42,8 +42,16 @@ Stack recomendada para comecar:
 ```bash
 pnpm install
 docker compose up -d
+pnpm db:migrate
+pnpm db:seed
 pnpm dev
 ```
+
+Aplicacoes locais:
+
+- Frontend Next.js: `http://localhost:3000`
+- Backend NestJS: `http://localhost:3333`
+- Healthcheck da API: `http://localhost:3333/health`
 
 ## Regra de Produto
 
