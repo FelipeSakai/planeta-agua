@@ -58,6 +58,13 @@ describe("StockUi", () => {
     expect(html).toContain("Motivo");
   });
 
+  it("requires entry quantity to be positive while allowing zero as final adjustment quantity", () => {
+    const html = renderToStaticMarkup(createElement(StockUi, { userRole: "ADMIN", data: stockPage }));
+
+    expect(html).toMatch(/<input[^>]*min="1"[^>]*name="quantity"/);
+    expect(html).toMatch(/<input[^>]*min="0"[^>]*name="newQuantity"/);
+  });
+
   it("blocks duplicate stock mutations before React rerenders", async () => {
     vi.resetModules();
     vi.doMock("react", async (importOriginal) => {

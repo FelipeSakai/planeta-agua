@@ -85,13 +85,9 @@ describe("stock web helpers", () => {
     });
   });
 
-  it("returns an empty stock page when the API rejects the request", async () => {
+  it("throws an operator-safe error when the API rejects the request", async () => {
     mockedFetch.mockResolvedValue({ ok: false });
 
-    await expect(fetchStockPage("pa_session=expired")).resolves.toEqual({
-      products: [],
-      movements: [],
-      summary: { totalProducts: 0, lowStockProducts: 0, totalUnits: 0 },
-    });
+    await expect(fetchStockPage("pa_session=expired")).rejects.toThrow("Nao foi possivel carregar o estoque.");
   });
 });

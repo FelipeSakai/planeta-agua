@@ -1,4 +1,4 @@
-import { ForbiddenException, NotFoundException } from "@nestjs/common";
+import { ForbiddenException, InternalServerErrorException, NotFoundException } from "@nestjs/common";
 import { describe, expect, it, vi } from "vitest";
 
 import { StockService } from "./stock.service";
@@ -128,5 +128,19 @@ describe("StockService", () => {
         reason: "Compra semanal",
       }),
     ).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it("throws an internal error when created entry movement cannot be reread with user details", async () => {
+    const repository = new FakeStockRepository();
+    repository.findMovementById.mockResolvedValueOnce(null as never);
+    const service = new StockService(repository as never);
+
+    await expect(
+      service.createEntry(adminUser, {
+        productId: "11111111-1111-4111-8111-111111111111",
+        quantity: 5,
+        reason: "Compra semanal",
+      }),
+    ).rejects.toBeInstanceOf(InternalServerErrorException);
   });
 });

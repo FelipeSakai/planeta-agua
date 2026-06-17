@@ -114,6 +114,7 @@ export function StockUi({ userRole, data }: StockUiProps) {
             disabled={isSaving || isPending}
             products={data.products}
             quantityLabel="Quantidade de entrada"
+            quantityMin="1"
             quantityName="quantity"
             submitLabel="Salvar entrada"
             title="Registrar entrada"
@@ -123,6 +124,7 @@ export function StockUi({ userRole, data }: StockUiProps) {
             disabled={isSaving || isPending}
             products={data.products}
             quantityLabel="Quantidade final"
+            quantityMin="0"
             quantityName="newQuantity"
             submitLabel="Salvar ajuste"
             title="Registrar ajuste"
@@ -200,6 +202,7 @@ function StockForm({
   title,
   quantityName,
   quantityLabel,
+  quantityMin,
   submitLabel,
   products,
   action,
@@ -208,6 +211,7 @@ function StockForm({
   title: string;
   quantityName: "quantity" | "newQuantity";
   quantityLabel: string;
+  quantityMin: "0" | "1";
   submitLabel: string;
   products: StockPageResponse["products"];
   action: (formData: FormData) => void | Promise<void>;
@@ -230,7 +234,7 @@ function StockForm({
 
       <label className="space-y-2">
         <span className="text-sm font-medium">{quantityLabel}</span>
-        <input className="h-11 w-full rounded-lg border border-[#d3cec6] px-3" min="0" name={quantityName} required type="number" />
+        <input className="h-11 w-full rounded-lg border border-[#d3cec6] px-3" min={quantityMin} name={quantityName} required type="number" />
       </label>
 
       <label className="space-y-2">

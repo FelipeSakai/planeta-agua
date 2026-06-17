@@ -2,12 +2,6 @@ import { stockAdjustmentSchema, stockEntrySchema, stockPageResponseSchema, type 
 
 import { getServerApiUrl } from "./api";
 
-const emptyStockPageResponse: StockPageResponse = {
-  products: [],
-  movements: [],
-  summary: { totalProducts: 0, lowStockProducts: 0, totalUnits: 0 },
-};
-
 export function stockEntryFormToPayload(formData: FormData) {
   return stockEntrySchema.parse({
     productId: String(formData.get("productId") ?? ""),
@@ -31,7 +25,7 @@ export async function fetchStockPage(cookieHeader: string): Promise<StockPageRes
   });
 
   if (!response.ok) {
-    return emptyStockPageResponse;
+    throw new Error("Nao foi possivel carregar o estoque.");
   }
 
   return stockPageResponseSchema.parse(await response.json());

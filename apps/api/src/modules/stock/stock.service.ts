@@ -1,4 +1,4 @@
-import { ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
+import { ForbiddenException, Injectable, InternalServerErrorException, NotFoundException } from "@nestjs/common";
 import type { SessionUser } from "shared";
 
 import {
@@ -43,11 +43,11 @@ export class StockService {
       throw new NotFoundException("Produto nao encontrado.");
     }
 
-    const movement = await this.stockRepository.findMovementById(result.movement.id);
+    const movement = await this.rereadMovement(result.movement.id);
 
     return {
       product: this.toProductResponse(result.product),
-      movement: this.toMovementResponse(movement ?? result.movement),
+      movement: this.toMovementResponse(movement),
     };
   }
 
@@ -60,12 +60,22 @@ export class StockService {
       throw new NotFoundException("Produto nao encontrado.");
     }
 
-    const movement = await this.stockRepository.findMovementById(result.movement.id);
+    const movement = await this.rereadMovement(result.movement.id);
 
     return {
       product: this.toProductResponse(result.product),
-      movement: this.toMovementResponse(movement ?? result.movement),
+      movement: this.toMovementResponse(movement),
     };
+  }
+
+  private async rereadMovement(movementId: string): Promise<StockMovementRow> {
+    const movement = await this.stockRepository.findMovementById(movementId);
+
+    if (!movement) {
+      throw new InternalServerErrorException("Nao foi possivel confirmar a movimentacao de estoque.");
+    }
+
+    return movement;
   }
 
   private requireAdmin(user: PermissionUser) {
