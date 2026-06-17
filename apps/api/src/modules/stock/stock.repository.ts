@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { asc, desc, eq } from "drizzle-orm";
+import { asc, desc, eq, sql } from "drizzle-orm";
 
 import { db } from "../../db";
 import { products, stockMovements } from "../../db/schema";
@@ -33,17 +33,15 @@ export class StockRepository {
 
   async createEntry(input: StockEntryInput, userId: string): Promise<StockMutationRow | null> {
     return db.transaction(async (tx) => {
-      const product = await tx.query.products.findFirst({ where: eq(products.id, input.productId) });
-
-      if (!product) {
-        return null;
-      }
-
       const [updatedProduct] = await tx
         .update(products)
-        .set({ stockQuantity: product.stockQuantity + input.quantity, updatedAt: new Date() })
+        .set({ stockQuantity: sql`${products.stockQuantity} + ${input.quantity}`, updatedAt: new Date() })
         .where(eq(products.id, input.productId))
         .returning();
+
+      if (!updatedProduct) {
+        return null;
+      }
 
       const [movement] = await tx
         .insert(stockMovements)
@@ -66,7 +64,7 @@ export class StockRepository {
 
   async createAdjustment(input: StockAdjustmentInput, userId: string): Promise<StockMutationRow | null> {
     return db.transaction(async (tx) => {
-      const product = await tx.query.products.findFirst({ where: eq(products.id, input.productId) });
+      const [product] = await tx.select().from(products).where(eq(products.id, input.productId)).for("update");
 
       if (!product) {
         return null;
