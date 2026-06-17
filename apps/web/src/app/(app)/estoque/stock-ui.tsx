@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { getStockMovementTypeLabel, type StockPageResponse, type UserRole } from "shared";
 
@@ -15,6 +15,7 @@ export function StockUi({ userRole, data }: StockUiProps) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const mutationInFlight = useRef(false);
   const [isPending, startTransition] = useTransition();
   const isAdmin = userRole === "ADMIN";
 
@@ -23,10 +24,11 @@ export function StockUi({ userRole, data }: StockUiProps) {
   }
 
   async function submitEntry(formData: FormData) {
-    if (!isAdmin || isSaving) {
+    if (!isAdmin || mutationInFlight.current) {
       return;
     }
 
+    mutationInFlight.current = true;
     setError(null);
     setIsSaving(true);
 
@@ -47,15 +49,17 @@ export function StockUi({ userRole, data }: StockUiProps) {
     } catch {
       setError("Confira produto, quantidade e motivo da entrada.");
     } finally {
+      mutationInFlight.current = false;
       setIsSaving(false);
     }
   }
 
   async function submitAdjustment(formData: FormData) {
-    if (!isAdmin || isSaving) {
+    if (!isAdmin || mutationInFlight.current) {
       return;
     }
 
+    mutationInFlight.current = true;
     setError(null);
     setIsSaving(true);
 
@@ -76,6 +80,7 @@ export function StockUi({ userRole, data }: StockUiProps) {
     } catch {
       setError("Confira produto, quantidade final e motivo do ajuste.");
     } finally {
+      mutationInFlight.current = false;
       setIsSaving(false);
     }
   }

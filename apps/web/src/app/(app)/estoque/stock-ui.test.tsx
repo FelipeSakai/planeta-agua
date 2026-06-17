@@ -1,12 +1,16 @@
-import { createElement } from "react";
+import { createElement, isValidElement, type ReactElement, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { StockUi } from "./stock-ui";
 
 vi.mock("next/navigation", () => ({
   useRouter: vi.fn(() => ({ refresh: vi.fn() })),
 }));
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 const stockPage = {
   products: [
@@ -53,4 +57,91 @@ describe("StockUi", () => {
     expect(html).toContain("Registrar ajuste");
     expect(html).toContain("Motivo");
   });
+
+  it("blocks duplicate stock mutations before React rerenders", async () => {
+    vi.resetModules();
+    vi.doMock("react", async (importOriginal) => {
+      const actual = await importOriginal<typeof import("react")>();
+
+      return {
+        ...actual,
+        useRef: vi.fn((initialValue) => ({ current: initialValue })),
+        useState: vi.fn((initialValue) => [initialValue, vi.fn()]),
+        useTransition: vi.fn(() => [false, (callback: () => void) => callback()]),
+      };
+    });
+    vi.doMock("next/navigation", () => ({
+      useRouter: vi.fn(() => ({ refresh: vi.fn() })),
+    }));
+
+    const { StockUi: HookMockedStockUi } = await import("./stock-ui");
+    const ui = HookMockedStockUi({ userRole: "ADMIN", data: stockPage });
+    const submitEntry = findStockAction(ui, "Salvar entrada");
+    const submitAdjustment = findStockAction(ui, "Salvar ajuste");
+    const fetchMock = vi.fn(async () => ({ ok: true }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const entryPromise = submitEntry(formData({ quantityName: "quantity" }));
+    await submitEntry(formData({ quantityName: "quantity" }));
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    await entryPromise;
+
+    const adjustmentPromise = submitAdjustment(formData({ quantityName: "newQuantity" }));
+    await submitAdjustment(formData({ quantityName: "newQuantity" }));
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+
+    await adjustmentPromise;
+
+    vi.doUnmock("react");
+    vi.doUnmock("next/navigation");
+  });
 });
+
+function findStockAction(element: ReactElement, submitLabel: string): (formData: FormData) => Promise<void> {
+  const action = findActionInNode(element, submitLabel);
+
+  if (!action) {
+    throw new Error(`Action not found for ${submitLabel}`);
+  }
+
+  return action;
+}
+
+function findActionInNode(node: ReactNode, submitLabel: string): ((formData: FormData) => Promise<void>) | null {
+  if (Array.isArray(node)) {
+    for (const child of node) {
+      const action = findActionInNode(child, submitLabel);
+
+      if (action) {
+        return action;
+      }
+    }
+
+    return null;
+  }
+
+  if (!isValidElement(node)) {
+    return null;
+  }
+
+  const props = node.props as { action?: (formData: FormData) => Promise<void>; children?: ReactNode; submitLabel?: string };
+
+  if (props.submitLabel === submitLabel && props.action) {
+    return props.action;
+  }
+
+  return findActionInNode(props.children, submitLabel);
+}
+
+function formData({ quantityName }: { quantityName: "quantity" | "newQuantity" }) {
+  const data = new FormData();
+
+  data.set("productId", "11111111-1111-4111-8111-111111111111");
+  data.set(quantityName, "5");
+  data.set("reason", "Compra semanal");
+
+  return data;
+}
