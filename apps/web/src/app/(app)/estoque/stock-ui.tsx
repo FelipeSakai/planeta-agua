@@ -4,20 +4,40 @@ import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { getStockMovementTypeLabel, type StockPageResponse, type UserRole } from "shared";
 
+import { Alert } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Field, SelectInput, TextArea, TextInput } from "@/components/ui/form-controls";
+import { MetricCard } from "@/components/ui/metric-card";
+import { PageHeader } from "@/components/ui/page-header";
+import { Panel } from "@/components/ui/panel";
+import { Toolbar } from "@/components/ui/toolbar";
 import { stockAdjustmentFormToPayload, stockEntryFormToPayload } from "@/lib/stock";
+
+import { filterAndSortStockProducts, type StockProductRow, type StockSort, type StockStatusFilter } from "./stock-view-model";
 
 type StockUiProps = {
   userRole: UserRole;
   data: StockPageResponse;
 };
 
+type StockActionMode = "ENTRY" | "ADJUSTMENT";
+
 export function StockUi({ userRole, data }: StockUiProps) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState<StockStatusFilter>("ALL");
+  const [sort, setSort] = useState<StockSort>("LOWEST_STOCK");
+  const [actionMode, setActionMode] = useState<StockActionMode>("ENTRY");
   const mutationInFlight = useRef(false);
   const [isPending, startTransition] = useTransition();
   const isAdmin = userRole === "ADMIN";
+  const rows = filterAndSortStockProducts(data.products, data.movements, { search, status, sort });
+  const activeForm = actionMode === "ENTRY" ? entryFormConfig : adjustmentFormConfig;
 
   function refreshStock() {
     startTransition(() => router.refresh());
@@ -85,118 +105,174 @@ export function StockUi({ userRole, data }: StockUiProps) {
     }
   }
 
+  const columns: Array<DataTableColumn<StockProductRow>> = [
+    {
+      key: "product",
+      header: "Produto",
+      cell: (row) => (
+        <div>
+          <p className="font-medium text-[var(--foreground)]">{row.name}</p>
+          <p className="text-xs text-[var(--muted)]">{row.isActive ? "Produto ativo" : "Produto inativo"}</p>
+        </div>
+      ),
+    },
+    {
+      key: "status",
+      header: "Status",
+      cell: (row) => <StockStatusBadges row={row} />,
+    },
+    {
+      key: "current",
+      header: "Atual",
+      className: "whitespace-nowrap font-medium",
+      cell: (row) => row.stockQuantity,
+    },
+    {
+      key: "minimum",
+      header: "Mínimo",
+      className: "whitespace-nowrap text-[var(--muted)]",
+      cell: (row) => row.minimumStock,
+    },
+    {
+      key: "difference",
+      header: "Diferença",
+      className: "whitespace-nowrap font-medium",
+      cell: (row) => <span className={row.difference < 0 ? "text-[var(--danger)]" : "text-[var(--success)]"}>{formatDifference(row.difference)}</span>,
+    },
+    {
+      key: "lastMovement",
+      header: "Última movimentação",
+      cell: (row) => <LastMovement movement={row.lastMovement} />,
+    },
+    {
+      key: "actions",
+      header: "Ações",
+      className: "whitespace-nowrap",
+      cell: () => <StockRowActions isAdmin={isAdmin} setActionMode={setActionMode} />,
+    },
+  ];
+
   return (
     <section className="space-y-6">
-      <div>
-        <p className="text-sm font-medium text-[#626260]">Estoque</p>
-        <h1 className="mt-2 text-4xl font-medium tracking-[-0.8px]">Controle de estoque</h1>
-        <p className="mt-2 max-w-2xl text-sm text-[#626260]">
-          Consulte saldo, acompanhe movimentacoes e registre entradas ou ajustes com rastreabilidade.
-        </p>
-      </div>
+      <PageHeader
+        title="Estoque"
+        eyebrow="Controle"
+        description="Confira saldos, veja alertas e registre entradas ou ajustes com rastreabilidade."
+        actions={
+          isAdmin ? (
+            <>
+              <Button onClick={() => setActionMode("ENTRY")}>Registrar entrada</Button>
+              <Button variant="secondary" onClick={() => setActionMode("ADJUSTMENT")}>Registrar ajuste</Button>
+            </>
+          ) : null
+        }
+      />
 
       <div className="grid gap-4 md:grid-cols-3">
-        <SummaryCard label="Produtos" value={data.summary.totalProducts} />
-        <SummaryCard label="Estoque baixo" value={data.summary.lowStockProducts} />
-        <SummaryCard label="Unidades em estoque" value={data.summary.totalUnits} />
+        <MetricCard label="Produtos" value={data.summary.totalProducts} detail="Itens acompanhados no estoque" />
+        <MetricCard label="Estoque baixo" value={data.summary.lowStockProducts} detail="Abaixo do mínimo configurado" tone={data.summary.lowStockProducts > 0 ? "danger" : "success"} />
+        <MetricCard label="Unidades em estoque" value={data.summary.totalUnits} detail="Soma das quantidades atuais" />
       </div>
 
-      {error ? (
-        <p aria-live="polite" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">
-          {error}
-        </p>
-      ) : null}
+      {error ? <Alert variant="danger">{error}</Alert> : null}
 
       {isAdmin ? (
-        <div className="grid gap-4 lg:grid-cols-2">
+        <Panel className="p-4">
+          <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+            <div>
+              <h2 className="text-base font-semibold text-[var(--foreground)]">{activeForm.title}</h2>
+              <p className="mt-1 text-sm text-[var(--muted)]">{activeForm.description}</p>
+            </div>
+            <Badge variant={actionMode === "ENTRY" ? "info" : "warning"}>{actionMode === "ENTRY" ? "Entrada" : "Ajuste"}</Badge>
+          </div>
+
           <StockForm
-            action={submitEntry}
+            action={actionMode === "ENTRY" ? submitEntry : submitAdjustment}
             disabled={isSaving || isPending}
             products={data.products}
-            quantityLabel="Quantidade de entrada"
-            quantityMin="1"
-            quantityName="quantity"
-            submitLabel="Salvar entrada"
-            title="Registrar entrada"
+            quantityLabel={activeForm.quantityLabel}
+            quantityMin={activeForm.quantityMin}
+            quantityName={activeForm.quantityName}
+            submitLabel={activeForm.submitLabel}
+            title={activeForm.title}
           />
-          <StockForm
-            action={submitAdjustment}
-            disabled={isSaving || isPending}
-            products={data.products}
-            quantityLabel="Quantidade final"
-            quantityMin="0"
-            quantityName="newQuantity"
-            submitLabel="Salvar ajuste"
-            title="Registrar ajuste"
-          />
-        </div>
+        </Panel>
       ) : null}
 
-      <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-        <div className="overflow-hidden rounded-2xl border border-[#d3cec6] bg-white">
-          {data.products.length === 0 ? <p className="p-5 text-sm text-[#626260]">Nenhum produto cadastrado.</p> : null}
+      <Toolbar>
+        <TextInput aria-label="Buscar produto" placeholder="Buscar produto" value={search} onChange={(event) => setSearch(event.target.value)} />
+        <SelectInput aria-label="Status" value={status} onChange={(event) => setStatus(event.target.value as StockStatusFilter)}>
+          <option value="ALL">Todos</option>
+          <option value="LOW">Estoque baixo</option>
+          <option value="OK">OK</option>
+          <option value="INACTIVE">Inativos</option>
+        </SelectInput>
+        <SelectInput aria-label="Ordenar" value={sort} onChange={(event) => setSort(event.target.value as StockSort)}>
+          <option value="LOWEST_STOCK">Menor estoque</option>
+          <option value="HIGHEST_STOCK">Maior estoque</option>
+          <option value="NAME">Nome</option>
+          <option value="RECENT_MOVEMENT">Movimentação recente</option>
+        </SelectInput>
+      </Toolbar>
 
-          {data.products.map((product) => (
-            <article
-              className="grid gap-3 border-b border-[#ebe7e1] p-5 last:border-b-0 md:grid-cols-[1.4fr_0.7fr_0.7fr_0.7fr] md:items-center"
-              key={product.id}
-            >
+      <DataTable
+        rows={rows}
+        rowKey={(row) => row.id}
+        columns={columns}
+        empty={
+          <EmptyState
+            title={data.products.length === 0 ? "Nenhum produto cadastrado" : "Nenhum produto encontrado"}
+            description={data.products.length === 0 ? "Cadastre produtos antes de movimentar o estoque." : "Ajuste a busca ou os filtros de status."}
+          />
+        }
+        renderMobileCard={(row) => (
+          <div className="space-y-3">
+            <div className="flex items-start justify-between gap-3">
               <div>
-                <h2 className="text-lg font-medium">{product.name}</h2>
-                <p className="text-sm text-[#626260]">{product.isActive ? "Ativo" : "Inativo"}</p>
+                <h2 className="font-medium text-[var(--foreground)]">{row.name}</h2>
+                <p className="text-xs text-[var(--muted)]">
+                  Atual {row.stockQuantity} · mínimo {row.minimumStock}
+                </p>
               </div>
-
-              <p className="text-sm">
-                <span className="text-[#626260]">Atual</span>
-                <br />
-                {product.stockQuantity}
-              </p>
-
-              <p className="text-sm">
-                <span className="text-[#626260]">Minimo</span>
-                <br />
-                {product.minimumStock}
-              </p>
-
+              <StockStatusBadges row={row} />
+            </div>
+            <dl className="grid grid-cols-2 gap-3 text-sm">
               <div>
-                {product.isLowStock ? (
-                  <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-medium text-red-700">Estoque baixo</span>
-                ) : (
-                  <span className="rounded-full bg-[#f5f1ec] px-3 py-1 text-xs font-medium">OK</span>
-                )}
+                <dt className="text-xs text-[var(--muted)]">Diferença</dt>
+                <dd className={row.difference < 0 ? "font-medium text-[var(--danger)]" : "font-medium text-[var(--success)]"}>{formatDifference(row.difference)}</dd>
               </div>
-            </article>
-          ))}
-        </div>
-
-        <div className="rounded-2xl border border-[#d3cec6] bg-white p-5">
-          <h2 className="text-lg font-medium">Movimentacoes recentes</h2>
-          <div className="mt-4 space-y-4">
-            {data.movements.length === 0 ? <p className="text-sm text-[#626260]">Nenhuma movimentacao registrada.</p> : null}
-
-            {data.movements.map((movement) => (
-              <article className="border-b border-[#ebe7e1] pb-4 last:border-b-0 last:pb-0" key={movement.id}>
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <h3 className="text-sm font-medium">{movement.productName}</h3>
-                    <p className="text-xs text-[#626260]">
-                      {getStockMovementTypeLabel(movement.type)} por {movement.userName}
-                    </p>
-                  </div>
-                  <strong className={movement.quantity < 0 ? "text-sm text-red-700" : "text-sm text-green-700"}>
-                    {movement.quantity > 0 ? `+${movement.quantity}` : movement.quantity}
-                  </strong>
-                </div>
-                <p className="mt-2 text-sm text-[#626260]">{movement.reason ?? "Sem motivo informado"}</p>
-                <p className="mt-1 text-xs text-[#9c9fa5]">{new Date(movement.createdAt).toLocaleString("pt-BR")}</p>
-              </article>
-            ))}
+              <div>
+                <dt className="text-xs text-[var(--muted)]">Última movimentação</dt>
+                <dd>
+                  <LastMovement movement={row.lastMovement} />
+                </dd>
+              </div>
+            </dl>
+            <StockRowActions isAdmin={isAdmin} setActionMode={setActionMode} />
           </div>
-        </div>
-      </div>
+        )}
+      />
     </section>
   );
 }
+
+const entryFormConfig = {
+  title: "Registrar entrada",
+  description: "Use para compras, reposições ou recebimentos com motivo rastreável.",
+  quantityName: "quantity",
+  quantityLabel: "Quantidade de entrada",
+  quantityMin: "1",
+  submitLabel: "Salvar entrada",
+} as const;
+
+const adjustmentFormConfig = {
+  title: "Registrar ajuste",
+  description: "Use quando a contagem física precisar corrigir o saldo final do produto.",
+  quantityName: "newQuantity",
+  quantityLabel: "Quantidade final",
+  quantityMin: "0",
+  submitLabel: "Salvar ajuste",
+} as const;
 
 function StockForm({
   title,
@@ -218,42 +294,74 @@ function StockForm({
   disabled: boolean;
 }) {
   return (
-    <form action={action} className="grid gap-4 rounded-2xl border border-[#d3cec6] bg-white p-5">
-      <h2 className="text-lg font-medium">{title}</h2>
-
-      <label className="space-y-2">
-        <span className="text-sm font-medium">Produto</span>
-        <select className="h-11 w-full rounded-lg border border-[#d3cec6] px-3" name="productId" required>
+    <form action={action} aria-label={title} className="mt-4 grid gap-3 lg:grid-cols-[minmax(220px,1fr)_160px_minmax(220px,1.2fr)_auto] lg:items-end">
+      <Field label="Produto">
+        <SelectInput disabled={disabled} name="productId" required>
           {products.map((product) => (
             <option key={product.id} value={product.id}>
               {product.name}
             </option>
           ))}
-        </select>
-      </label>
+        </SelectInput>
+      </Field>
 
-      <label className="space-y-2">
-        <span className="text-sm font-medium">{quantityLabel}</span>
-        <input className="h-11 w-full rounded-lg border border-[#d3cec6] px-3" min={quantityMin} name={quantityName} required type="number" />
-      </label>
+      <Field label={quantityLabel}>
+        <TextInput disabled={disabled} min={quantityMin} name={quantityName} required type="number" />
+      </Field>
 
-      <label className="space-y-2">
-        <span className="text-sm font-medium">Motivo</span>
-        <textarea className="min-h-20 w-full rounded-lg border border-[#d3cec6] px-3 py-2" name="reason" required />
-      </label>
+      <Field label="Motivo">
+        <TextArea disabled={disabled} name="reason" required />
+      </Field>
 
-      <button className="rounded-lg bg-[#111111] px-4 py-2 text-sm font-medium text-white disabled:opacity-60" disabled={disabled} type="submit">
+      <Button className="lg:mb-0.5" disabled={disabled} type="submit">
         {disabled ? "Salvando..." : submitLabel}
-      </button>
+      </Button>
     </form>
   );
 }
 
-function SummaryCard({ label, value }: { label: string; value: number }) {
+function StockStatusBadges({ row }: { row: StockProductRow }) {
   return (
-    <article className="rounded-2xl border border-[#d3cec6] bg-white p-5">
-      <p className="text-sm text-[#626260]">{label}</p>
-      <strong className="mt-3 block text-3xl font-medium">{value}</strong>
-    </article>
+    <div className="flex flex-wrap gap-2">
+      {!row.isActive ? <Badge variant="neutral">Inativo</Badge> : null}
+      {row.isLowStock ? <Badge variant="danger">Estoque baixo</Badge> : <Badge variant="success">OK</Badge>}
+    </div>
   );
+}
+
+function LastMovement({ movement }: { movement: StockPageResponse["movements"][number] | null }) {
+  if (!movement) {
+    return <span className="text-xs text-[var(--muted)]">Sem movimentação</span>;
+  }
+
+  return (
+    <div className="text-sm">
+      <p className="font-medium text-[var(--foreground)]">
+        {getStockMovementTypeLabel(movement.type)} {formatMovementQuantity(movement.quantity)}
+      </p>
+      <p className="text-xs text-[var(--muted)]">{movement.reason ?? "Sem motivo informado"}</p>
+      <p className="text-xs text-[var(--subtle)]">{new Date(movement.createdAt).toLocaleString("pt-BR")}</p>
+    </div>
+  );
+}
+
+function StockRowActions({ isAdmin, setActionMode }: { isAdmin: boolean; setActionMode: (mode: StockActionMode) => void }) {
+  if (!isAdmin) {
+    return <span className="text-xs text-[var(--muted)]">Somente consulta</span>;
+  }
+
+  return (
+    <div className="flex flex-wrap gap-2">
+      <Button variant="secondary" onClick={() => setActionMode("ENTRY")}>Entrada</Button>
+      <Button variant="ghost" onClick={() => setActionMode("ADJUSTMENT")}>Ajuste</Button>
+    </div>
+  );
+}
+
+function formatDifference(value: number) {
+  return value > 0 ? `+${value}` : String(value);
+}
+
+function formatMovementQuantity(value: number) {
+  return value > 0 ? `+${value}` : String(value);
 }

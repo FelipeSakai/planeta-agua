@@ -4,6 +4,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { StockUi } from "./stock-ui";
 
+type StockActionMode = "ENTRY" | "ADJUSTMENT";
+
 vi.mock("next/navigation", () => ({
   useRouter: vi.fn(() => ({ refresh: vi.fn() })),
 }));
@@ -58,22 +60,35 @@ describe("StockUi", () => {
     expect(html).toContain("Motivo");
   });
 
-  it("requires entry quantity to be positive while allowing zero as final adjustment quantity", () => {
+  it("renders dense stock controls and table labels", () => {
     const html = renderToStaticMarkup(createElement(StockUi, { userRole: "ADMIN", data: stockPage }));
 
-    expect(html).toMatch(/<input[^>]*min="1"[^>]*name="quantity"/);
-    expect(html).toMatch(/<input[^>]*min="0"[^>]*name="newQuantity"/);
+    expect(html).toContain("Buscar produto");
+    expect(html).toContain("Status");
+    expect(html).toContain("Ordenar");
+    expect(html).toContain("Diferença");
+    expect(html).toContain("Última movimentação");
+  });
+
+  it("requires entry quantity to be positive while allowing zero as final adjustment quantity", async () => {
+    const entryHtml = await renderStockWithActionMode("ENTRY");
+    const adjustmentHtml = await renderStockWithActionMode("ADJUSTMENT");
+
+    expect(entryHtml).toMatch(/<input[^>]*min="1"[^>]*name="quantity"/);
+    expect(adjustmentHtml).toMatch(/<input[^>]*min="0"[^>]*name="newQuantity"/);
   });
 
   it("blocks duplicate stock mutations before React rerenders", async () => {
     vi.resetModules();
+    let actionMode: StockActionMode = "ENTRY";
+
     vi.doMock("react", async (importOriginal) => {
       const actual = await importOriginal<typeof import("react")>();
 
       return {
         ...actual,
         useRef: vi.fn((initialValue) => ({ current: initialValue })),
-        useState: vi.fn((initialValue) => [initialValue, vi.fn()]),
+        useState: vi.fn((initialValue) => [initialValue === "ENTRY" ? actionMode : initialValue, vi.fn()]),
         useTransition: vi.fn(() => [false, (callback: () => void) => callback()]),
       };
     });
@@ -84,7 +99,9 @@ describe("StockUi", () => {
     const { StockUi: HookMockedStockUi } = await import("./stock-ui");
     const ui = HookMockedStockUi({ userRole: "ADMIN", data: stockPage });
     const submitEntry = findStockAction(ui, "Salvar entrada");
-    const submitAdjustment = findStockAction(ui, "Salvar ajuste");
+    actionMode = "ADJUSTMENT";
+    const adjustmentUi = HookMockedStockUi({ userRole: "ADMIN", data: stockPage });
+    const submitAdjustment = findStockAction(adjustmentUi, "Salvar ajuste");
     const fetchMock = vi.fn(async () => ({ ok: true }));
     vi.stubGlobal("fetch", fetchMock);
 
@@ -106,6 +123,29 @@ describe("StockUi", () => {
     vi.doUnmock("next/navigation");
   });
 });
+
+async function renderStockWithActionMode(actionMode: StockActionMode) {
+  vi.resetModules();
+  vi.doMock("react", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("react")>();
+
+    return {
+      ...actual,
+      useState: vi.fn((initialValue) => [initialValue === "ENTRY" ? actionMode : initialValue, vi.fn()]),
+    };
+  });
+  vi.doMock("next/navigation", () => ({
+    useRouter: vi.fn(() => ({ refresh: vi.fn() })),
+  }));
+
+  const { StockUi: ActionModeStockUi } = await import("./stock-ui");
+  const html = renderToStaticMarkup(createElement(ActionModeStockUi, { userRole: "ADMIN", data: stockPage }));
+
+  vi.doUnmock("react");
+  vi.doUnmock("next/navigation");
+
+  return html;
+}
 
 function findStockAction(element: ReactElement, submitLabel: string): (formData: FormData) => Promise<void> {
   const action = findActionInNode(element, submitLabel);
