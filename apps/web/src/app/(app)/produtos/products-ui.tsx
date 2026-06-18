@@ -4,7 +4,19 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { formatCentsToBRL, type ProductResponse, type UserRole } from "shared";
 
+import { Alert } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Field, SelectInput, TextArea, TextInput } from "@/components/ui/form-controls";
+import { MetricCard } from "@/components/ui/metric-card";
+import { PageHeader } from "@/components/ui/page-header";
+import { Panel } from "@/components/ui/panel";
+import { Toolbar } from "@/components/ui/toolbar";
 import { getProductStatusLabel, productFormToPayload } from "@/lib/products";
+
+import { filterProducts, type ProductStatusFilter } from "./product-view-model";
 
 type ProductsUiProps = {
   userRole: UserRole;
@@ -18,8 +30,11 @@ export function ProductsUi({ userRole, products, summary }: ProductsUiProps) {
   const [formOpen, setFormOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState<ProductStatusFilter>("ALL");
   const [isPending, startTransition] = useTransition();
   const isAdmin = userRole === "ADMIN";
+  const rows = filterProducts(products, { search, status });
 
   function closeForm() {
     setFormOpen(false);
@@ -88,172 +103,211 @@ export function ProductsUi({ userRole, products, summary }: ProductsUiProps) {
     refreshProducts();
   }
 
+  function editProduct(product: ProductResponse) {
+    setEditingProduct(product);
+    setFormOpen(true);
+  }
+
+  const columns: Array<DataTableColumn<ProductResponse>> = [
+    {
+      key: "product",
+      header: "Produto",
+      cell: (product) => (
+        <div>
+          <p className="font-medium text-[var(--foreground)]">{product.name}</p>
+          <p className="text-xs text-[var(--muted)]">{product.description ?? "Sem descricao"}</p>
+        </div>
+      ),
+    },
+    {
+      key: "price",
+      header: "Preço",
+      className: "whitespace-nowrap font-medium",
+      cell: (product) => formatCentsToBRL(product.salePriceCents),
+    },
+    {
+      key: "stock",
+      header: "Estoque",
+      className: "whitespace-nowrap",
+      cell: (product) => (
+        <div>
+          <p className={product.isLowStock ? "font-medium text-[var(--danger)]" : "font-medium text-[var(--foreground)]"}>{product.stockQuantity}</p>
+          <p className="text-xs text-[var(--muted)]">Min. {product.minimumStock}</p>
+        </div>
+      ),
+    },
+    {
+      key: "status",
+      header: "Status",
+      cell: (product) => <ProductStatusBadges product={product} />,
+    },
+    {
+      key: "actions",
+      header: "Ações",
+      className: "whitespace-nowrap",
+      cell: (product) => <ProductRowActions isAdmin={isAdmin} product={product} onEdit={editProduct} onToggle={toggleProduct} />,
+    },
+  ];
+
   return (
     <section className="space-y-6">
-      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-        <div>
-          <p className="text-sm font-medium text-[#626260]">Produtos</p>
-          <h1 className="mt-2 text-4xl font-medium tracking-[-0.8px]">Cadastro de produtos</h1>
-          <p className="mt-2 max-w-2xl text-sm text-[#626260]">
-            Consulte produtos, precos e estoque. Alteracoes ficam restritas ao administrador.
-          </p>
-        </div>
-
-        {isAdmin ? (
-          <button
-            className="rounded-lg bg-[#111111] px-4 py-2 text-sm font-medium text-white"
-            onClick={() => {
-              setEditingProduct(null);
-              setFormOpen(true);
-            }}
-            type="button"
-          >
-            Novo produto
-          </button>
-        ) : null}
-      </div>
+      <PageHeader title="Produtos" eyebrow="Cadastro" description="Consulte produtos, precos e estoque. Alteracoes ficam restritas ao administrador." />
 
       <div className="grid gap-4 md:grid-cols-3">
-        <SummaryCard label="Total" value={summary.total} />
-        <SummaryCard label="Ativos" value={summary.active} />
-        <SummaryCard label="Estoque baixo" value={summary.lowStock} />
+        <MetricCard label="Total" value={summary.total} detail="Produtos cadastrados" />
+        <MetricCard label="Ativos" value={summary.active} detail="Disponiveis para venda" />
+        <MetricCard label="Estoque baixo" value={summary.lowStock} detail="Abaixo do minimo" tone={summary.lowStock > 0 ? "danger" : "success"} />
       </div>
 
-      {error ? (
-        <p aria-live="polite" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">
-          {error}
-        </p>
-      ) : null}
+      {error ? <Alert variant="danger">{error}</Alert> : null}
 
       {isAdmin && formOpen ? (
-        <form action={saveProduct} className="grid gap-4 rounded-2xl border border-[#d3cec6] bg-white p-5 md:grid-cols-2">
-          <label className="space-y-2">
-            <span className="text-sm font-medium">Nome</span>
-            <input
-              className="h-11 w-full rounded-lg border border-[#d3cec6] px-3"
-              defaultValue={editingProduct?.name ?? ""}
-              name="name"
-              required
-            />
-          </label>
-
-          <label className="space-y-2">
-            <span className="text-sm font-medium">Preco de venda</span>
-            <input
-              className="h-11 w-full rounded-lg border border-[#d3cec6] px-3"
-              defaultValue={editingProduct ? String(editingProduct.salePriceCents / 100).replace(".", ",") : ""}
-              inputMode="decimal"
-              name="salePrice"
-              placeholder="12,50"
-              required
-            />
-          </label>
-
-          <label className="space-y-2">
-            <span className="text-sm font-medium">Estoque atual</span>
-            <input
-              className="h-11 w-full rounded-lg border border-[#d3cec6] px-3 read-only:bg-[#f5f1ec] read-only:text-[#626260]"
-              defaultValue={editingProduct?.stockQuantity ?? 0}
-              min="0"
-              name="stockQuantity"
-              readOnly={Boolean(editingProduct)}
-              required
-              type="number"
-            />
-            {editingProduct ? <span className="text-xs text-[#626260]">Use o modulo de estoque para ajustar quantidade.</span> : null}
-          </label>
-
-          <label className="space-y-2">
-            <span className="text-sm font-medium">Estoque minimo</span>
-            <input
-              className="h-11 w-full rounded-lg border border-[#d3cec6] px-3"
-              defaultValue={editingProduct?.minimumStock ?? 0}
-              min="0"
-              name="minimumStock"
-              required
-              type="number"
-            />
-          </label>
-
-          <label className="space-y-2 md:col-span-2">
-            <span className="text-sm font-medium">Descricao</span>
-            <textarea
-              className="min-h-24 w-full rounded-lg border border-[#d3cec6] px-3 py-2"
-              defaultValue={editingProduct?.description ?? ""}
-              name="description"
-            />
-          </label>
-
-          <div className="flex gap-2 md:col-span-2">
-            <button className="rounded-lg bg-[#111111] px-4 py-2 text-sm font-medium text-white disabled:opacity-60" disabled={isSaving || isPending} type="submit">
-              {isSaving ? "Salvando..." : "Salvar"}
-            </button>
-            <button className="rounded-lg border border-[#d3cec6] bg-white px-4 py-2 text-sm font-medium" onClick={closeForm} type="button">
-              Cancelar
-            </button>
+        <Panel className="p-4">
+          <div className="mb-4 flex flex-col gap-1 md:flex-row md:items-start md:justify-between">
+            <div>
+              <h2 className="text-base font-semibold text-[var(--foreground)]">{editingProduct ? "Editar produto" : "Novo produto"}</h2>
+              <p className="mt-1 text-sm text-[var(--muted)]">
+                {editingProduct ? "Atualize dados comerciais. Ajustes de quantidade ficam no modulo de estoque." : "Cadastre o produto com preco e estoque inicial."}
+              </p>
+            </div>
+            <Badge variant={editingProduct ? "info" : "success"}>{editingProduct ? "Edicao" : "Cadastro"}</Badge>
           </div>
-        </form>
+
+          <form action={saveProduct} className="grid gap-4 md:grid-cols-2">
+            <Field label="Nome">
+              <TextInput defaultValue={editingProduct?.name ?? ""} name="name" required />
+            </Field>
+
+            <Field label="Preco de venda">
+              <TextInput defaultValue={editingProduct ? String(editingProduct.salePriceCents / 100).replace(".", ",") : ""} inputMode="decimal" name="salePrice" placeholder="12,50" required />
+            </Field>
+
+            <Field help={editingProduct ? "Use o modulo de estoque para ajustar quantidade." : undefined} label="Estoque atual">
+              <TextInput
+                className="read-only:bg-[var(--card-muted)] read-only:text-[var(--muted)]"
+                defaultValue={editingProduct?.stockQuantity ?? 0}
+                min="0"
+                name="stockQuantity"
+                readOnly={Boolean(editingProduct)}
+                required
+                type="number"
+              />
+            </Field>
+
+            <Field label="Estoque minimo">
+              <TextInput defaultValue={editingProduct?.minimumStock ?? 0} min="0" name="minimumStock" required type="number" />
+            </Field>
+
+            <Field className="md:col-span-2" label="Descricao">
+              <TextArea defaultValue={editingProduct?.description ?? ""} name="description" />
+            </Field>
+
+            <div className="flex flex-wrap gap-2 md:col-span-2">
+              <Button disabled={isSaving || isPending} type="submit">
+                {isSaving ? "Salvando..." : "Salvar"}
+              </Button>
+              <Button disabled={isSaving || isPending} variant="secondary" onClick={closeForm}>
+                Cancelar
+              </Button>
+            </div>
+          </form>
+        </Panel>
       ) : null}
 
-      <div className="overflow-hidden rounded-2xl border border-[#d3cec6] bg-white">
-        {products.length === 0 ? <p className="p-5 text-sm text-[#626260]">Nenhum produto cadastrado.</p> : null}
+      <Toolbar
+        actions={
+          isAdmin ? (
+            <Button
+              onClick={() => {
+                setEditingProduct(null);
+                setFormOpen(true);
+              }}
+            >
+              Novo produto
+            </Button>
+          ) : null
+        }
+      >
+        <TextInput aria-label="Buscar produto" placeholder="Buscar produto" value={search} onChange={(event) => setSearch(event.target.value)} />
+        <SelectInput aria-label="Status" value={status} onChange={(event) => setStatus(event.target.value as ProductStatusFilter)}>
+          <option value="ALL">Todos</option>
+          <option value="ACTIVE">Ativos</option>
+          <option value="LOW">Estoque baixo</option>
+          <option value="INACTIVE">Inativos</option>
+        </SelectInput>
+      </Toolbar>
 
-        {products.map((product) => (
-          <article
-            className="grid gap-3 border-b border-[#ebe7e1] p-5 last:border-b-0 lg:grid-cols-[1.4fr_0.8fr_0.8fr_0.8fr_auto] lg:items-center"
-            key={product.id}
-          >
-            <div>
-              <h2 className="text-lg font-medium">{product.name}</h2>
-              <p className="text-sm text-[#626260]">{product.description ?? "Sem descricao"}</p>
-            </div>
-
-            <p className="text-sm">
-              <span className="text-[#626260]">Preco</span>
-              <br />
-              {formatCentsToBRL(product.salePriceCents)}
-            </p>
-
-            <p className="text-sm">
-              <span className="text-[#626260]">Estoque</span>
-              <br />
-              {product.stockQuantity} / min. {product.minimumStock}
-            </p>
-
-            <div className="flex flex-wrap gap-2">
-              <span className="rounded-full bg-[#f5f1ec] px-3 py-1 text-xs font-medium">{getProductStatusLabel(product.isActive)}</span>
-              {product.isLowStock ? <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-medium text-red-700">Estoque baixo</span> : null}
-            </div>
-
-            {isAdmin ? (
-              <div className="flex gap-2">
-                <button
-                  className="rounded-lg border border-[#d3cec6] px-3 py-2 text-sm"
-                  onClick={() => {
-                    setEditingProduct(product);
-                    setFormOpen(true);
-                  }}
-                  type="button"
-                >
-                  Editar
-                </button>
-                <button className="rounded-lg border border-[#d3cec6] px-3 py-2 text-sm" onClick={() => void toggleProduct(product)} type="button">
-                  {product.isActive ? "Inativar" : "Ativar"}
-                </button>
+      <DataTable
+        rows={rows}
+        rowKey={(product) => product.id}
+        columns={columns}
+        empty={
+          <EmptyState
+            title={products.length === 0 ? "Nenhum produto cadastrado" : "Nenhum produto encontrado"}
+            description={products.length === 0 ? "Cadastre produtos antes de registrar vendas." : "Ajuste a busca ou o filtro de status."}
+          />
+        }
+        renderMobileCard={(product) => (
+          <div className="space-y-3">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h2 className="font-medium text-[var(--foreground)]">{product.name}</h2>
+                <p className="text-xs text-[var(--muted)]">{product.description ?? "Sem descricao"}</p>
               </div>
-            ) : null}
-          </article>
-        ))}
-      </div>
+              <ProductStatusBadges product={product} />
+            </div>
+            <dl className="grid grid-cols-2 gap-3 text-sm">
+              <div>
+                <dt className="text-xs text-[var(--muted)]">Preço</dt>
+                <dd className="font-medium text-[var(--foreground)]">{formatCentsToBRL(product.salePriceCents)}</dd>
+              </div>
+              <div>
+                <dt className="text-xs text-[var(--muted)]">Estoque</dt>
+                <dd className={product.isLowStock ? "font-medium text-[var(--danger)]" : "font-medium text-[var(--foreground)]"}>
+                  {product.stockQuantity} / min. {product.minimumStock}
+                </dd>
+              </div>
+            </dl>
+            <ProductRowActions isAdmin={isAdmin} product={product} onEdit={editProduct} onToggle={toggleProduct} />
+          </div>
+        )}
+      />
     </section>
   );
 }
 
-function SummaryCard({ label, value }: { label: string; value: number }) {
+function ProductStatusBadges({ product }: { product: ProductResponse }) {
   return (
-    <article className="rounded-2xl border border-[#d3cec6] bg-white p-5">
-      <p className="text-sm text-[#626260]">{label}</p>
-      <strong className="mt-3 block text-3xl font-medium">{value}</strong>
-    </article>
+    <div className="flex flex-wrap gap-2">
+      <Badge variant={product.isActive ? "success" : "neutral"}>{getProductStatusLabel(product.isActive)}</Badge>
+      {product.isLowStock ? <Badge variant="danger">Estoque baixo</Badge> : null}
+    </div>
+  );
+}
+
+function ProductRowActions({
+  isAdmin,
+  product,
+  onEdit,
+  onToggle,
+}: {
+  isAdmin: boolean;
+  product: ProductResponse;
+  onEdit: (product: ProductResponse) => void;
+  onToggle: (product: ProductResponse) => void | Promise<void>;
+}) {
+  if (!isAdmin) {
+    return <span className="text-xs text-[var(--muted)]">Somente consulta</span>;
+  }
+
+  return (
+    <div className="flex flex-wrap gap-2">
+      <Button variant="secondary" onClick={() => onEdit(product)}>
+        Editar
+      </Button>
+      <Button variant={product.isActive ? "danger" : "secondary"} onClick={() => void onToggle(product)}>
+        {product.isActive ? "Inativar" : "Ativar"}
+      </Button>
+    </div>
   );
 }

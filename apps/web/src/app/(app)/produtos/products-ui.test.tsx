@@ -67,4 +67,21 @@ describe("ProductsUi", () => {
     expect(html).toContain("Inativar");
     expect(html).toContain("Ativar");
   });
+
+  it("renders dense product controls and table labels", () => {
+    const html = renderToStaticMarkup(
+      createElement(ProductsUi, {
+        userRole: "ADMIN",
+        products,
+        summary: { total: 2, active: 1, lowStock: 1 },
+      }),
+    );
+
+    expect(html).toContain("Buscar produto");
+    expect(html).toContain("Status");
+    expect(html).toContain("Produto");
+    expect(html).toContain("Preço");
+    expect(html).toContain("Estoque");
+    expect(html).toContain("Ações");
+  });
 });
