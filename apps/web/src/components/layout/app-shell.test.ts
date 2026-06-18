@@ -2,9 +2,10 @@ import { describe, expect, it, vi } from "vitest";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
-import { AppShell, getVisibleNavigation } from "./app-shell";
+import { AppShell, getNavigationItems, getVisibleNavigation } from "./app-shell";
 
 vi.mock("next/navigation", () => ({
+  usePathname: vi.fn(() => "/vendas"),
   useRouter: vi.fn(() => ({
     push: vi.fn(),
     refresh: vi.fn(),
@@ -21,6 +22,21 @@ vi.mock("react", async (importOriginal) => {
 });
 
 describe("app shell navigation", () => {
+  it("marks the current route active", () => {
+    const items = getNavigationItems("ADMIN", "/estoque");
+
+    expect(items.find((item) => item.href === "/estoque")?.isActive).toBe(true);
+    expect(items.find((item) => item.href === "/produtos")?.isActive).toBe(false);
+  });
+
+  it("keeps admin-only modules hidden from operators", () => {
+    const items = getNavigationItems("OPERATOR", "/financeiro");
+
+    expect(items.map((item) => item.href)).not.toContain("/financeiro");
+    expect(items.map((item) => item.href)).not.toContain("/usuarios");
+    expect(items.map((item) => item.href)).toContain("/produtos");
+  });
+
   it("hides admin-only entries from operators", () => {
     const items = getVisibleNavigation("OPERATOR").map((item) => item.label);
 

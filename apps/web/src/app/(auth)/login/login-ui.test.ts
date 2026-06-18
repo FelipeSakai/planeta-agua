@@ -33,6 +33,8 @@ type TestElement = {
     type?: string;
     action?: unknown;
     disabled?: boolean;
+    isLoading?: boolean;
+    variant?: string;
   };
 };
 
@@ -96,20 +98,28 @@ describe("login UI", () => {
 
   it("renders email and password fields with pending and error states", async () => {
     const { useState, useTransition } = await import("react");
+    const { Alert } = await import("@/components/ui/alert");
+    const { Button } = await import("@/components/ui/button");
+    const { TextInput } = await import("@/components/ui/form-controls");
+    const { Panel } = await import("@/components/ui/panel");
     vi.mocked(useState).mockReturnValue(["E-mail ou senha invalidos.", vi.fn()] as never);
     vi.mocked(useTransition).mockReturnValue([true, vi.fn()] as never);
     const { LoginForm } = await import("./login-form");
 
-    const form = LoginForm() as TestElement;
-    const inputs = findByType(form, "input");
-    const button = findByType(form, "button")[0];
-    const text = flattenText(form);
+    const panel = LoginForm() as TestElement;
+    const form = findByType(panel, "form")[0];
+    const inputs = findByType(panel, TextInput);
+    const alert = findByType(panel, Alert)[0];
+    const button = findByType(panel, Button)[0];
+    const text = flattenText(panel);
 
+    expect(panel.type).toBe(Panel);
     expect(form.type).toBe("form");
     expect(inputs.map((input) => input.props.name)).toEqual(["email", "password"]);
     expect(inputs.map((input) => input.props.type)).toEqual(["email", "password"]);
     expect(text).toContain("E-mail ou senha invalidos.");
-    expect(text).toContain("Entrando...");
-    expect(button.props.disabled).toBe(true);
+    expect(alert.props.variant).toBe("danger");
+    expect(button.props.isLoading).toBe(true);
+    expect(button.props.type).toBe("submit");
   });
 });

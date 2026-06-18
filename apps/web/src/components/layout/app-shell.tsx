@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import { useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 import type { SessionUser, UserRole } from "shared";
 
@@ -15,6 +15,10 @@ type NavigationItem = {
   label: string;
   href: string;
   roles: readonly UserRole[];
+};
+
+type NavigationItemWithState = NavigationItem & {
+  isActive: boolean;
 };
 
 const navigation: readonly NavigationItem[] = [
@@ -31,10 +35,18 @@ export function getVisibleNavigation(role: UserRole) {
   return navigation.filter((item) => item.roles.includes(role));
 }
 
+export function getNavigationItems(role: UserRole, pathname: string): NavigationItemWithState[] {
+  return getVisibleNavigation(role).map((item) => ({
+    ...item,
+    isActive: pathname === item.href || pathname.startsWith(`${item.href}/`),
+  }));
+}
+
 export function AppShell({ user, children }: AppShellProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const [isPending, startTransition] = useTransition();
-  const visibleNavigation = getVisibleNavigation(user.role);
+  const visibleNavigation = getNavigationItems(user.role, pathname);
 
   async function handleLogout() {
     await fetch("/api/auth/logout", {
@@ -49,16 +61,25 @@ export function AppShell({ user, children }: AppShellProps) {
   }
 
   return (
-    <div className="min-h-screen bg-[#f5f1ec] text-[#111111]">
-      <aside className="fixed inset-y-0 left-0 hidden w-64 border-r border-[#d3cec6] bg-[#f5f1ec] p-5 lg:block">
-        <div className="rounded-2xl bg-white p-4 ring-1 ring-[#ebe7e1]">
-          <strong className="block text-lg font-medium">Planeta Agua</strong>
-          <span className="mt-1 block text-xs text-[#626260]">{user.role}</span>
+    <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
+      <aside className="fixed inset-y-0 left-0 hidden w-64 border-r border-[var(--border)] bg-white p-4 lg:block">
+        <div className="rounded-[var(--radius-panel)] bg-[var(--card-muted)] p-4">
+          <strong className="block text-lg font-semibold tracking-[-0.02em]">Planeta Agua</strong>
+          <span className="mt-1 block text-xs font-medium text-[var(--muted)]">{user.role}</span>
         </div>
 
-        <nav className="mt-6 flex flex-col gap-1">
+        <nav className="mt-5 flex flex-col gap-1">
           {visibleNavigation.map((item) => (
-            <a key={item.href} href={item.href} className="rounded-lg px-3 py-2 text-sm font-medium text-[#626260] hover:bg-white hover:text-[#111111]">
+            <a
+              key={item.href}
+              href={item.href}
+              aria-current={item.isActive ? "page" : undefined}
+              className={
+                item.isActive
+                  ? "rounded-xl bg-[var(--brand)] px-3 py-2 text-sm font-medium text-white"
+                  : "rounded-xl px-3 py-2 text-sm font-medium text-[var(--muted)] transition duration-150 hover:bg-[var(--card-muted)] hover:text-[var(--foreground)]"
+              }
+            >
               {item.label}
             </a>
           ))}
@@ -66,24 +87,37 @@ export function AppShell({ user, children }: AppShellProps) {
       </aside>
 
       <div className="lg:pl-64">
-        <header className="sticky top-0 z-10 border-b border-[#d3cec6] bg-[#f5f1ec]/95 px-5 py-4 backdrop-blur">
+        <header className="sticky top-0 z-10 border-b border-[var(--border)] bg-[var(--background)]/95 px-5 py-4 backdrop-blur">
           <div className="flex items-center justify-between gap-4">
             <div>
               <p className="text-sm font-medium">Planeta Agua</p>
-              <p className="text-xs text-[#626260]">{user.name}</p>
+              <p className="text-xs text-[var(--muted)]">{user.name}</p>
             </div>
             <form action={handleLogout}>
-              <button className="rounded-lg border border-[#d3cec6] bg-white px-4 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-60" type="submit" disabled={isPending}>
+              <button
+                className="rounded-[var(--radius-control)] border border-[var(--border)] bg-white px-4 py-2 text-sm font-medium transition duration-150 hover:bg-[var(--card-muted)] disabled:cursor-not-allowed disabled:opacity-60"
+                type="submit"
+                disabled={isPending}
+              >
                 {isPending ? "Saindo..." : "Sair"}
               </button>
             </form>
           </div>
 
-          <details className="mt-4 rounded-xl border border-[#d3cec6] bg-white p-2 lg:hidden">
-            <summary className="cursor-pointer rounded-lg px-3 py-2 text-sm font-medium text-[#111111]">Menu</summary>
-            <nav className="mt-2 flex flex-col gap-1 border-t border-[#ebe7e1] pt-2">
+          <details className="mt-4 rounded-[var(--radius-panel)] border border-[var(--border)] bg-white p-2 lg:hidden">
+            <summary className="cursor-pointer rounded-[var(--radius-control)] px-3 py-2 text-sm font-medium text-[var(--foreground)]">Menu</summary>
+            <nav className="mt-2 flex flex-col gap-1 border-t border-[var(--border-soft)] pt-2">
               {visibleNavigation.map((item) => (
-                <a key={item.href} href={item.href} className="rounded-lg px-3 py-2 text-sm font-medium text-[#626260] hover:bg-[#f5f1ec] hover:text-[#111111]">
+                <a
+                  key={item.href}
+                  href={item.href}
+                  aria-current={item.isActive ? "page" : undefined}
+                  className={
+                    item.isActive
+                      ? "rounded-xl bg-[var(--brand)] px-3 py-2 text-sm font-medium text-white"
+                      : "rounded-xl px-3 py-2 text-sm font-medium text-[var(--muted)] transition duration-150 hover:bg-[var(--card-muted)] hover:text-[var(--foreground)]"
+                  }
+                >
                   {item.label}
                 </a>
               ))}
