@@ -43,7 +43,7 @@ This plan implements stage 1: reusable UI assets and redesign of existing screen
 - `apps/web/src/components/ui/loading-skeleton.tsx`: lightweight skeleton blocks.
 - `apps/web/src/components/ui/ui.test.tsx`: server-render tests for base components.
 - `apps/web/src/components/layout/app-shell.tsx`: redesigned app shell and active nav.
-- `apps/web/src/components/layout/app-shell.test.tsx`: role and active navigation tests.
+- `apps/web/src/components/layout/app-shell.test.ts`: role and active navigation tests.
 - `apps/web/src/app/(app)/estoque/stock-view-model.ts`: stock filtering, sorting, and last movement helpers.
 - `apps/web/src/app/(app)/estoque/stock-view-model.test.ts`: tests for stock filters/sorts.
 - `apps/web/src/app/(app)/estoque/stock-ui.tsx`: redesigned stock screen.
@@ -538,7 +538,7 @@ git commit -m "feat: add reusable ui foundation"
 
 **Files:**
 - Modify: `apps/web/src/components/layout/app-shell.tsx`
-- Create: `apps/web/src/components/layout/app-shell.test.tsx`
+- Modify: `apps/web/src/components/layout/app-shell.test.ts`
 - Modify: `apps/web/src/app/(auth)/login/login-form.tsx`
 
 **Interfaces:**
@@ -547,7 +547,7 @@ git commit -m "feat: add reusable ui foundation"
 
 - [ ] **Step 1: Write failing app shell tests**
 
-Create `apps/web/src/components/layout/app-shell.test.tsx`:
+Modify `apps/web/src/components/layout/app-shell.test.ts`:
 
 ```tsx
 import { describe, expect, it } from "vitest";
@@ -572,7 +572,7 @@ describe("app shell navigation", () => {
 
 - [ ] **Step 2: Run tests to verify failure**
 
-Run: `pnpm --filter web test -- src/components/layout/app-shell.test.tsx`
+Run: `pnpm --filter web test -- src/components/layout/app-shell.test.ts`
 
 Expected: FAIL because `getNavigationItems` does not exist.
 
@@ -634,7 +634,7 @@ Modify `apps/web/src/app/(auth)/login/login-form.tsx` to import `Alert`, `Button
 
 - [ ] **Step 5: Run shell tests**
 
-Run: `pnpm --filter web test -- src/components/layout/app-shell.test.tsx`
+Run: `pnpm --filter web test -- src/components/layout/app-shell.test.ts`
 
 Expected: PASS.
 
@@ -647,7 +647,7 @@ Expected: PASS.
 - [ ] **Step 7: Commit**
 
 ```bash
-git add apps/web/src/components/layout/app-shell.tsx apps/web/src/components/layout/app-shell.test.tsx apps/web/src/app/(auth)/login/login-form.tsx
+git add apps/web/src/components/layout/app-shell.tsx apps/web/src/components/layout/app-shell.test.ts apps/web/src/app/(auth)/login/login-form.tsx
 git commit -m "feat: redesign app shell and login"
 ```
 
