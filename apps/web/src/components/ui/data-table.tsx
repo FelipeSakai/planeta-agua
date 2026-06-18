@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 
+import { cx } from "@/lib/ui";
+
 export type DataTableColumn<T> = {
   key: string;
   header: string;
@@ -31,7 +33,7 @@ export function DataTable<T>({
           <thead className="bg-[var(--card-muted)] text-xs font-medium text-[var(--muted)]">
             <tr>
               {columns.map((column) => (
-                <th className="px-4 py-3" key={column.key}>
+                <th className="px-4 py-3" key={column.key} scope="col">
                   {column.header}
                 </th>
               ))}
@@ -41,7 +43,7 @@ export function DataTable<T>({
             {rows.map((row) => (
               <tr className="transition duration-150 hover:bg-[var(--card-muted)]" key={rowKey(row)}>
                 {columns.map((column) => (
-                  <td className={column.className ?? "px-4 py-3 align-middle"} key={column.key}>
+                  <td className={cx("px-4 py-3 align-middle", column.className)} key={column.key}>
                     {column.cell(row)}
                   </td>
                 ))}

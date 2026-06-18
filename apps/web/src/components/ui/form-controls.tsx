@@ -3,25 +3,47 @@ import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTML
 import { cx } from "@/lib/ui";
 
 export function Field({
+  id,
+  htmlFor,
   label,
   help,
+  helpId,
   error,
+  errorId,
   className,
   children,
 }: {
+  id?: string;
+  htmlFor?: string;
   label: string;
   help?: string;
+  helpId?: string;
   error?: string;
+  errorId?: string;
   className?: string;
   children: ReactNode;
 }) {
+  const controlId = htmlFor ?? id;
+  const resolvedHelpId = help ? (helpId ?? (controlId ? `${controlId}-help` : undefined)) : undefined;
+  const resolvedErrorId = error ? (errorId ?? (controlId ? `${controlId}-error` : undefined)) : undefined;
+
   return (
-    <label className={cx("block space-y-2", className)}>
-      <span className="text-sm font-medium text-[var(--foreground)]">{label}</span>
+    <div className={cx("block space-y-2", className)}>
+      <label className="block text-sm font-medium text-[var(--foreground)]" htmlFor={controlId}>
+        {label}
+      </label>
       {children}
-      {help ? <span className="block text-xs text-[var(--muted)]">{help}</span> : null}
-      {error ? <span className="block text-xs font-medium text-[var(--danger)]">{error}</span> : null}
-    </label>
+      {help ? (
+        <p className="text-xs text-[var(--muted)]" id={resolvedHelpId}>
+          {help}
+        </p>
+      ) : null}
+      {error ? (
+        <p className="text-xs font-medium text-[var(--danger)]" id={resolvedErrorId}>
+          {error}
+        </p>
+      ) : null}
+    </div>
   );
 }
 

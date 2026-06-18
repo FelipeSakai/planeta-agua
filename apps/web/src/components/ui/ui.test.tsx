@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
@@ -11,6 +13,36 @@ import { MetricCard } from "./metric-card";
 import { PageHeader } from "./page-header";
 import { Panel } from "./panel";
 import { Toolbar } from "./toolbar";
+
+function getCustomProperty(css: string, name: string) {
+  const match = new RegExp(`--${name}:\\s*(#[0-9a-fA-F]{6});`).exec(css);
+
+  if (!match?.[1]) {
+    throw new Error(`Missing --${name} color token`);
+  }
+
+  return match[1];
+}
+
+function relativeLuminance(hex: string) {
+  const value = Number.parseInt(hex.replace("#", ""), 16);
+  const channels = [(value >> 16) & 255, (value >> 8) & 255, value & 255].map((channel) => {
+    const normalized = channel / 255;
+
+    return normalized <= 0.03928 ? normalized / 12.92 : ((normalized + 0.055) / 1.055) ** 2.4;
+  });
+
+  const [red, green, blue] = channels as [number, number, number];
+
+  return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
+}
+
+function contrastRatio(foreground: string, background: string) {
+  const foregroundLuminance = relativeLuminance(foreground);
+  const backgroundLuminance = relativeLuminance(background);
+
+  return (Math.max(foregroundLuminance, backgroundLuminance) + 0.05) / (Math.min(foregroundLuminance, backgroundLuminance) + 0.05);
+}
 
 describe("ui foundation", () => {
   it("renders reusable status and feedback assets", () => {
@@ -43,6 +75,41 @@ describe("ui foundation", () => {
     expect(html).toContain("name=\"product\"");
   });
 
+  it("keeps field help and error text out of the label name", () => {
+    const html = renderToStaticMarkup(
+      <Field
+        error="Obrigatorio"
+        errorId="product-field-error"
+        help="Escolha um item"
+        helpId="product-field-help"
+        htmlFor="product-field"
+        label="Produto"
+      >
+        <TextInput
+          aria-describedby="product-field-help product-field-error"
+          aria-invalid
+          id="product-field"
+          name="product"
+        />
+      </Field>,
+    );
+
+    expect(html).toContain("<label");
+    expect(html).toContain("for=\"product-field\"");
+    expect(html).toContain("id=\"product-field-help\"");
+    expect(html).toContain("id=\"product-field-error\"");
+    expect(html).toContain("aria-describedby=\"product-field-help product-field-error\"");
+    expect(html).toContain("aria-invalid=\"true\"");
+    expect(html).not.toContain("<label class=\"block space-y-2\"");
+  });
+
+  it("keeps subtle text color accessible on white surfaces", () => {
+    const css = readFileSync("src/app/globals.css", "utf8");
+    const subtle = getCustomProperty(css, "subtle");
+
+    expect(contrastRatio(subtle, "#ffffff")).toBeGreaterThanOrEqual(4.5);
+  });
+
   it("renders toolbar and responsive data table", () => {
     const html = renderToStaticMarkup(
       <>
@@ -69,5 +136,41 @@ describe("ui foundation", () => {
     expect(html).toContain("Produto");
     expect(html).toContain("Galao");
     expect(html).toContain("Estoque");
+  });
+
+  it("renders variable toolbars without fixed desktop grid tracks", () => {
+    const html = renderToStaticMarkup(
+      <Toolbar>
+        <TextInput name="search" placeholder="Buscar" />
+        <SelectInput name="status" defaultValue="ALL">
+          <option value="ALL">Todos</option>
+        </SelectInput>
+        <SelectInput name="stock" defaultValue="LOW">
+          <option value="LOW">Estoque baixo</option>
+        </SelectInput>
+        <TextInput name="seller" placeholder="Vendedor" />
+      </Toolbar>,
+    );
+
+    expect(html).toContain("flex-wrap");
+    expect(html).not.toContain("md:grid-cols-[minmax(220px,1fr)_auto_auto]");
+  });
+
+  it("marks table headers as columns and preserves default cell spacing with custom classes", () => {
+    const html = renderToStaticMarkup(
+      <DataTable
+        rows={[{ id: "1", name: "Galao", stock: 2 }]}
+        rowKey={(row) => row.id}
+        columns={[
+          { key: "name", header: "Produto", cell: (row) => row.name },
+          { key: "stock", header: "Estoque", cell: (row) => row.stock, className: "text-right" },
+        ]}
+        renderMobileCard={(row) => <strong>{row.name}</strong>}
+        empty={<EmptyState title="Nada encontrado" description="Ajuste os filtros." />}
+      />,
+    );
+
+    expect(html).toContain("scope=\"col\"");
+    expect(html).toContain("class=\"px-4 py-3 align-middle text-right\"");
   });
 });
