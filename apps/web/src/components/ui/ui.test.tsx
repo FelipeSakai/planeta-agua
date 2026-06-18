@@ -68,11 +68,18 @@ describe("ui foundation", () => {
         <TextInput name="product" />
       </Field>,
     );
+    const labelFor = /<label[^>]*for="([^"]+)"/.exec(html)?.[1];
 
     expect(html).toContain("Produto");
     expect(html).toContain("Escolha um item");
     expect(html).toContain("Obrigatorio");
     expect(html).toContain("name=\"product\"");
+    expect(labelFor).toBeTruthy();
+    expect(html).toContain(`id="${labelFor}"`);
+    expect(html).toContain(`id="${labelFor}-help"`);
+    expect(html).toContain(`id="${labelFor}-error"`);
+    expect(html).toContain(`aria-describedby="${labelFor}-help ${labelFor}-error"`);
+    expect(html).toContain("aria-invalid=\"true\"");
   });
 
   it("keeps field help and error text out of the label name", () => {
@@ -108,6 +115,13 @@ describe("ui foundation", () => {
     const subtle = getCustomProperty(css, "subtle");
 
     expect(contrastRatio(subtle, "#ffffff")).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it("uses tone-specific metric badge labels", () => {
+    const html = renderToStaticMarkup(<MetricCard label="Estoque baixo" value={3} tone="danger" />);
+
+    expect(html).toContain("Crítico");
+    expect(html).not.toContain(">OK<");
   });
 
   it("renders toolbar and responsive data table", () => {

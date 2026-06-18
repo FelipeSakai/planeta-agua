@@ -1,6 +1,13 @@
-import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from "react";
+import { cloneElement, isValidElement, useId } from "react";
+import type { AriaAttributes, InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from "react";
 
 import { cx } from "@/lib/ui";
+
+type FieldControlProps = {
+  id?: string;
+  "aria-describedby"?: string;
+  "aria-invalid"?: AriaAttributes["aria-invalid"];
+};
 
 export function Field({
   id,
@@ -23,16 +30,34 @@ export function Field({
   className?: string;
   children: ReactNode;
 }) {
-  const controlId = htmlFor ?? id;
+  const generatedId = useId();
+  const child = isValidElement<FieldControlProps>(children) ? children : null;
+  const controlId = htmlFor ?? id ?? child?.props.id ?? generatedId;
   const resolvedHelpId = help ? (helpId ?? (controlId ? `${controlId}-help` : undefined)) : undefined;
   const resolvedErrorId = error ? (errorId ?? (controlId ? `${controlId}-error` : undefined)) : undefined;
+  const describedBy = [resolvedHelpId, resolvedErrorId].filter(Boolean).join(" ") || undefined;
+  const childProps: FieldControlProps = {};
+
+  if (child?.props.id == null) {
+    childProps.id = controlId;
+  }
+
+  if (child?.props["aria-describedby"] == null && describedBy) {
+    childProps["aria-describedby"] = describedBy;
+  }
+
+  if (child?.props["aria-invalid"] == null && error) {
+    childProps["aria-invalid"] = true;
+  }
+
+  const renderedChildren = child ? cloneElement(child, childProps) : children;
 
   return (
     <div className={cx("block space-y-2", className)}>
       <label className="block text-sm font-medium text-[var(--foreground)]" htmlFor={controlId}>
         {label}
       </label>
-      {children}
+      {renderedChildren}
       {help ? (
         <p className="text-xs text-[var(--muted)]" id={resolvedHelpId}>
           {help}
