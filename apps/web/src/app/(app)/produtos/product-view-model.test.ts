@@ -13,6 +13,12 @@ describe("product view model", () => {
     expect(filterProducts(products, { search: "galao", status: "ALL" }).map((product) => product.name)).toEqual(["Galao 20L"]);
   });
 
+  it("matches search terms without requiring accents", () => {
+    expect(filterProducts([{ ...products[1], name: "Água 500ml" }], { search: "agua", status: "ALL" }).map((product) => product.name)).toEqual([
+      "Água 500ml",
+    ]);
+  });
+
   it("filters by status", () => {
     expect(filterProducts(products, { search: "", status: "ACTIVE" }).map((product) => product.name)).toEqual(["Agua 500ml", "Galao 20L"]);
     expect(filterProducts(products, { search: "", status: "LOW" }).map((product) => product.name)).toEqual(["Copo 200ml", "Galao 20L"]);

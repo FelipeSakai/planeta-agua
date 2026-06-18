@@ -16,7 +16,7 @@ import { Panel } from "@/components/ui/panel";
 import { Toolbar } from "@/components/ui/toolbar";
 import { stockAdjustmentFormToPayload, stockEntryFormToPayload } from "@/lib/stock";
 
-import { filterAndSortStockProducts, type StockProductRow, type StockSort, type StockStatusFilter } from "./stock-view-model";
+import { filterAndSortStockProducts, getRecentStockMovements, type StockProductRow, type StockSort, type StockStatusFilter } from "./stock-view-model";
 
 type StockUiProps = {
   userRole: UserRole;
@@ -39,6 +39,7 @@ export function StockUi({ userRole, data }: StockUiProps) {
   const [isPending, startTransition] = useTransition();
   const isAdmin = userRole === "ADMIN";
   const rows = filterAndSortStockProducts(data.products, data.movements, { search, status, sort });
+  const recentMovements = getRecentStockMovements(data.movements);
   const activeForm = actionMode === "ENTRY" ? entryFormConfig : adjustmentFormConfig;
   const activeProductId = data.products.some((product) => product.id === selectedProductId) ? selectedProductId : firstProductId;
 
@@ -151,7 +152,7 @@ export function StockUi({ userRole, data }: StockUiProps) {
       key: "actions",
       header: "Ações",
       className: "whitespace-nowrap",
-      cell: (row) => <StockRowActions isAdmin={isAdmin} productId={row.id} setActionMode={setActionMode} setSelectedProductId={setSelectedProductId} />,
+      cell: (row) => <StockRowActions isAdmin={isAdmin} productId={row.id} productName={row.name} setActionMode={setActionMode} setSelectedProductId={setSelectedProductId} />,
     },
   ];
 
@@ -253,10 +254,41 @@ export function StockUi({ userRole, data }: StockUiProps) {
                 </dd>
               </div>
             </dl>
-            <StockRowActions isAdmin={isAdmin} productId={row.id} setActionMode={setActionMode} setSelectedProductId={setSelectedProductId} />
+            <StockRowActions isAdmin={isAdmin} productId={row.id} productName={row.name} setActionMode={setActionMode} setSelectedProductId={setSelectedProductId} />
           </div>
         )}
       />
+
+      <Panel className="p-4">
+        <div className="flex flex-col gap-1 md:flex-row md:items-start md:justify-between">
+          <div>
+            <h2 className="text-base font-semibold text-[var(--foreground)]">Movimentações recentes</h2>
+            <p className="mt-1 text-sm text-[var(--muted)]">Histórico compacto das últimas entradas, ajustes e saídas registradas.</p>
+          </div>
+          <Badge variant="neutral">{recentMovements.length} registros</Badge>
+        </div>
+
+        {recentMovements.length > 0 ? (
+          <ol className="mt-4 divide-y divide-[var(--border-soft)]">
+            {recentMovements.map((movement) => (
+              <li className="flex flex-col gap-2 py-3 first:pt-0 last:pb-0 md:flex-row md:items-start md:justify-between" key={movement.id}>
+                <div>
+                  <p className="font-medium text-[var(--foreground)]">{movement.productName}</p>
+                  <p className="text-sm text-[var(--muted)]">
+                    {getStockMovementTypeLabel(movement.type)} {formatMovementQuantity(movement.quantity)} · {movement.reason ?? "Sem motivo informado"}
+                  </p>
+                  <p className="text-xs text-[var(--subtle)]">Registrado por {movement.userName}</p>
+                </div>
+                <time className="text-xs text-[var(--subtle)]" dateTime={movement.createdAt}>
+                  {new Date(movement.createdAt).toLocaleString("pt-BR")}
+                </time>
+              </li>
+            ))}
+          </ol>
+        ) : (
+          <p className="mt-4 rounded-[var(--radius-control)] border border-dashed border-[var(--border)] p-4 text-sm text-[var(--muted)]">Nenhuma movimentação registrada ainda.</p>
+        )}
+      </Panel>
     </section>
   );
 }
@@ -357,11 +389,13 @@ function LastMovement({ movement }: { movement: StockPageResponse["movements"][n
 function StockRowActions({
   isAdmin,
   productId,
+  productName,
   setActionMode,
   setSelectedProductId,
 }: {
   isAdmin: boolean;
   productId: string;
+  productName: string;
   setActionMode: (mode: StockActionMode) => void;
   setSelectedProductId: (productId: string) => void;
 }) {
@@ -376,8 +410,8 @@ function StockRowActions({
 
   return (
     <div className="flex flex-wrap gap-2">
-      <Button variant="secondary" onClick={() => openAction("ENTRY")}>Entrada</Button>
-      <Button variant="ghost" onClick={() => openAction("ADJUSTMENT")}>Ajuste</Button>
+      <Button aria-label={`Registrar entrada para ${productName}`} variant="secondary" onClick={() => openAction("ENTRY")}>Entrada</Button>
+      <Button aria-label={`Registrar ajuste para ${productName}`} variant="ghost" onClick={() => openAction("ADJUSTMENT")}>Ajuste</Button>
     </div>
   );
 }

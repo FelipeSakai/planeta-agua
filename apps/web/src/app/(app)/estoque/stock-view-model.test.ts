@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { filterAndSortStockProducts, getStockDifference } from "./stock-view-model";
+import { filterAndSortStockProducts, getRecentStockMovements, getStockDifference } from "./stock-view-model";
 
 const products = [
   { id: "1", name: "Galao 20L", stockQuantity: 2, minimumStock: 3, isActive: true, isLowStock: true },
@@ -50,6 +50,10 @@ describe("stock view model", () => {
     const rows = filterAndSortStockProducts([{ ...products[1], name: "Água 500ml" }], [], { search: "agua", status: "ALL", sort: "NAME" });
 
     expect(rows.map((row) => row.name)).toEqual(["Água 500ml"]);
+  });
+
+  it("keeps the complete recent movement history in chronological order", () => {
+    expect(getRecentStockMovements([...movements].reverse()).map((movement) => movement.reason)).toEqual(["Compra", "Conferencia"]);
   });
 
   it("sorts by lowest stock and movement recency", () => {

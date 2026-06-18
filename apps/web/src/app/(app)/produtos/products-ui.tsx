@@ -302,10 +302,10 @@ function ProductRowActions({
 
   return (
     <div className="flex flex-wrap gap-2">
-      <Button variant="secondary" onClick={() => onEdit(product)}>
+      <Button aria-label={`Editar ${product.name}`} variant="secondary" onClick={() => onEdit(product)}>
         Editar
       </Button>
-      <Button variant={product.isActive ? "danger" : "secondary"} onClick={() => void onToggle(product)}>
+      <Button aria-label={`${product.isActive ? "Inativar" : "Ativar"} ${product.name}`} variant={product.isActive ? "danger" : "secondary"} onClick={() => void onToggle(product)}>
         {product.isActive ? "Inativar" : "Ativar"}
       </Button>
     </div>

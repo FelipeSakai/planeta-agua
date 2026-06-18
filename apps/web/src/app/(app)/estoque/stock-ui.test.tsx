@@ -87,6 +87,43 @@ describe("StockUi", () => {
     expect(html).toContain("Última movimentação");
   });
 
+  it("renders the complete recent stock movement history", () => {
+    const html = renderToStaticMarkup(
+      createElement(StockUi, {
+        userRole: "ADMIN",
+        data: {
+          ...stockPage,
+          movements: [
+            stockPage.movements[0],
+            {
+              ...stockPage.movements[0],
+              id: "55555555-5555-4555-8555-555555555555",
+              quantity: -1,
+              reason: "Ajuste anterior",
+              type: "ADJUSTMENT",
+              createdAt: "2026-06-16T00:00:00.000Z",
+            },
+          ],
+        },
+      }),
+    );
+
+    expect(html).toContain("Movimentações recentes");
+    expect(html).toContain("Compra semanal");
+    expect(html).toContain("Ajuste anterior");
+
+    const historyHtml = html.slice(html.indexOf("Movimentações recentes"));
+
+    expect(historyHtml.indexOf("Compra semanal")).toBeLessThan(historyHtml.indexOf("Ajuste anterior"));
+  });
+
+  it("includes product names in stock row action accessible names", () => {
+    const html = renderToStaticMarkup(createElement(StockUi, { userRole: "ADMIN", data: stockPage }));
+
+    expect(html).toContain('aria-label="Registrar entrada para Galao 20L"');
+    expect(html).toContain('aria-label="Registrar ajuste para Galao 20L"');
+  });
+
   it("preselects the first product before a row action is clicked", () => {
     const html = renderToStaticMarkup(createElement(StockUi, { userRole: "ADMIN", data: stockPageWithMultipleProducts }));
 

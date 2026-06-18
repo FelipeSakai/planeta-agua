@@ -84,4 +84,18 @@ describe("ProductsUi", () => {
     expect(html).toContain("Estoque");
     expect(html).toContain("Ações");
   });
+
+  it("includes product names in product row action accessible names", () => {
+    const html = renderToStaticMarkup(
+      createElement(ProductsUi, {
+        userRole: "ADMIN",
+        products,
+        summary: { total: 2, active: 1, lowStock: 1 },
+      }),
+    );
+
+    expect(html).toContain('aria-label="Editar Galao 20L"');
+    expect(html).toContain('aria-label="Inativar Galao 20L"');
+    expect(html).toContain('aria-label="Ativar Fardo 12x500ml"');
+  });
 });
