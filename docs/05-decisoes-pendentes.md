@@ -10,7 +10,7 @@ Estas respostas devem ser confirmadas antes de fechar completamente o escopo.
 4. Galao cheio e galao vazio precisam ser estoques separados?
 5. Quem pode cancelar venda?
 6. Quem pode alterar estoque?
-7. O financeiro precisa de fechamento de caixa ou apenas resumo diario?
+7. [Decidido] O financeiro precisa de relatorio simples diario e mensal para conferencia e fechamento de caixa operacional, sem fechamento contabil formal no primeiro ciclo.
 8. O sistema precisa funcionar bem no celular desde o primeiro release?
 
 ## Prioridade Media
@@ -35,5 +35,5 @@ Estas respostas devem ser confirmadas antes de fechar completamente o escopo.
 - Entrega registrada apenas como observacao no MVP.
 - Troca de galao fora da primeira entrega funcional, salvo se for dor central.
 - Apenas `ADMIN` cancela venda e altera estoque manualmente.
-- Financeiro com resumo diario, sem fechamento de caixa formal no primeiro ciclo.
+- Financeiro com relatorio simples diario e mensal para conferencia de caixa, sem fechamento contabil formal no primeiro ciclo.
 - Interface responsiva, mas otimizada primeiro para computador e tablet.

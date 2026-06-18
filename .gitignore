@@ -17,6 +17,9 @@ packages/*/.turbo/
 # git worktrees
 .worktrees/
 
+# local brainstorming sessions
+.superpowers/
+
 # production
 /build
 
