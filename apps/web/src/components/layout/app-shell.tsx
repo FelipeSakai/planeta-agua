@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { useTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
+import { Button } from "@/components/ui/button";
 import type { SessionUser, UserRole } from "shared";
 
 type AppShellProps = {
@@ -31,6 +32,10 @@ const navigation: readonly NavigationItem[] = [
   { label: "Usuarios", href: "/usuarios", roles: ["ADMIN"] },
 ] as const;
 
+const navLinkBaseClassName = "rounded-xl px-3 py-2 text-sm font-medium";
+const navLinkActiveClassName = `${navLinkBaseClassName} bg-[var(--brand)] text-white`;
+const navLinkInactiveClassName = `${navLinkBaseClassName} text-[var(--muted)] transition duration-150 hover:bg-[var(--card-muted)] hover:text-[var(--foreground)] motion-reduce:transition-none`;
+
 export function getVisibleNavigation(role: UserRole) {
   return navigation.filter((item) => item.roles.includes(role));
 }
@@ -40,6 +45,18 @@ export function getNavigationItems(role: UserRole, pathname: string): Navigation
     ...item,
     isActive: pathname === item.href || pathname.startsWith(`${item.href}/`),
   }));
+}
+
+function getNavLinkClassName(isActive: boolean) {
+  return isActive ? navLinkActiveClassName : navLinkInactiveClassName;
+}
+
+function AppShellNavLink({ item }: { item: NavigationItemWithState }) {
+  return (
+    <a href={item.href} aria-current={item.isActive ? "page" : undefined} className={getNavLinkClassName(item.isActive)}>
+      {item.label}
+    </a>
+  );
 }
 
 export function AppShell({ user, children }: AppShellProps) {
@@ -70,18 +87,7 @@ export function AppShell({ user, children }: AppShellProps) {
 
         <nav className="mt-5 flex flex-col gap-1">
           {visibleNavigation.map((item) => (
-            <a
-              key={item.href}
-              href={item.href}
-              aria-current={item.isActive ? "page" : undefined}
-              className={
-                item.isActive
-                  ? "rounded-xl bg-[var(--brand)] px-3 py-2 text-sm font-medium text-white"
-                  : "rounded-xl px-3 py-2 text-sm font-medium text-[var(--muted)] transition duration-150 hover:bg-[var(--card-muted)] hover:text-[var(--foreground)]"
-              }
-            >
-              {item.label}
-            </a>
+            <AppShellNavLink key={item.href} item={item} />
           ))}
         </nav>
       </aside>
@@ -94,13 +100,14 @@ export function AppShell({ user, children }: AppShellProps) {
               <p className="text-xs text-[var(--muted)]">{user.name}</p>
             </div>
             <form action={handleLogout}>
-              <button
-                className="rounded-[var(--radius-control)] border border-[var(--border)] bg-white px-4 py-2 text-sm font-medium transition duration-150 hover:bg-[var(--card-muted)] disabled:cursor-not-allowed disabled:opacity-60"
+              <Button
+                className="motion-reduce:transition-none"
+                variant="secondary"
                 type="submit"
                 disabled={isPending}
               >
                 {isPending ? "Saindo..." : "Sair"}
-              </button>
+              </Button>
             </form>
           </div>
 
@@ -108,18 +115,7 @@ export function AppShell({ user, children }: AppShellProps) {
             <summary className="cursor-pointer rounded-[var(--radius-control)] px-3 py-2 text-sm font-medium text-[var(--foreground)]">Menu</summary>
             <nav className="mt-2 flex flex-col gap-1 border-t border-[var(--border-soft)] pt-2">
               {visibleNavigation.map((item) => (
-                <a
-                  key={item.href}
-                  href={item.href}
-                  aria-current={item.isActive ? "page" : undefined}
-                  className={
-                    item.isActive
-                      ? "rounded-xl bg-[var(--brand)] px-3 py-2 text-sm font-medium text-white"
-                      : "rounded-xl px-3 py-2 text-sm font-medium text-[var(--muted)] transition duration-150 hover:bg-[var(--card-muted)] hover:text-[var(--foreground)]"
-                  }
-                >
-                  {item.label}
-                </a>
+                <AppShellNavLink key={item.href} item={item} />
               ))}
             </nav>
           </details>

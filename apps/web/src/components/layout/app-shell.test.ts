@@ -68,4 +68,36 @@ describe("app shell navigation", () => {
     expect(html).not.toContain('href="/financeiro"');
     expect(html).toContain("Sair");
   });
+
+  it("respects reduced motion for shell transitions", () => {
+    const html = renderToStaticMarkup(
+      AppShell({
+        user: {
+          id: "user-1",
+          name: "Operador",
+          email: "operador@planetaagua.local",
+          role: "OPERATOR",
+        },
+        children: createElement("p", null, "Conteudo"),
+      }),
+    );
+
+    expect(html).toContain("motion-reduce:transition-none");
+  });
+
+  it("renders logout with the shared button structure", () => {
+    const html = renderToStaticMarkup(
+      AppShell({
+        user: {
+          id: "user-1",
+          name: "Operador",
+          email: "operador@planetaagua.local",
+          role: "OPERATOR",
+        },
+        children: createElement("p", null, "Conteudo"),
+      }),
+    );
+
+    expect(html).toContain("inline-flex min-h-10 items-center justify-center");
+  });
 });
