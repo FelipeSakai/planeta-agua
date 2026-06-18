@@ -32,12 +32,15 @@ export function StockUi({ userRole, data }: StockUiProps) {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<StockStatusFilter>("ALL");
   const [sort, setSort] = useState<StockSort>("LOWEST_STOCK");
+  const firstProductId = data.products[0]?.id ?? "";
+  const [selectedProductId, setSelectedProductId] = useState(firstProductId);
   const [actionMode, setActionMode] = useState<StockActionMode>("ENTRY");
   const mutationInFlight = useRef(false);
   const [isPending, startTransition] = useTransition();
   const isAdmin = userRole === "ADMIN";
   const rows = filterAndSortStockProducts(data.products, data.movements, { search, status, sort });
   const activeForm = actionMode === "ENTRY" ? entryFormConfig : adjustmentFormConfig;
+  const activeProductId = data.products.some((product) => product.id === selectedProductId) ? selectedProductId : firstProductId;
 
   function refreshStock() {
     startTransition(() => router.refresh());
@@ -148,7 +151,7 @@ export function StockUi({ userRole, data }: StockUiProps) {
       key: "actions",
       header: "Ações",
       className: "whitespace-nowrap",
-      cell: () => <StockRowActions isAdmin={isAdmin} setActionMode={setActionMode} />,
+      cell: (row) => <StockRowActions isAdmin={isAdmin} productId={row.id} setActionMode={setActionMode} setSelectedProductId={setSelectedProductId} />,
     },
   ];
 
@@ -193,6 +196,8 @@ export function StockUi({ userRole, data }: StockUiProps) {
             quantityLabel={activeForm.quantityLabel}
             quantityMin={activeForm.quantityMin}
             quantityName={activeForm.quantityName}
+            selectedProductId={activeProductId}
+            setSelectedProductId={setSelectedProductId}
             submitLabel={activeForm.submitLabel}
             title={activeForm.title}
           />
@@ -248,7 +253,7 @@ export function StockUi({ userRole, data }: StockUiProps) {
                 </dd>
               </div>
             </dl>
-            <StockRowActions isAdmin={isAdmin} setActionMode={setActionMode} />
+            <StockRowActions isAdmin={isAdmin} productId={row.id} setActionMode={setActionMode} setSelectedProductId={setSelectedProductId} />
           </div>
         )}
       />
@@ -280,6 +285,8 @@ function StockForm({
   quantityLabel,
   quantityMin,
   submitLabel,
+  selectedProductId,
+  setSelectedProductId,
   products,
   action,
   disabled,
@@ -289,6 +296,8 @@ function StockForm({
   quantityLabel: string;
   quantityMin: "0" | "1";
   submitLabel: string;
+  selectedProductId: string;
+  setSelectedProductId: (productId: string) => void;
   products: StockPageResponse["products"];
   action: (formData: FormData) => void | Promise<void>;
   disabled: boolean;
@@ -296,7 +305,7 @@ function StockForm({
   return (
     <form action={action} aria-label={title} className="mt-4 grid gap-3 lg:grid-cols-[minmax(220px,1fr)_160px_minmax(220px,1.2fr)_auto] lg:items-end">
       <Field label="Produto">
-        <SelectInput disabled={disabled} name="productId" required>
+        <SelectInput disabled={disabled} name="productId" onChange={(event) => setSelectedProductId(event.target.value)} required value={selectedProductId}>
           {products.map((product) => (
             <option key={product.id} value={product.id}>
               {product.name}
@@ -345,15 +354,30 @@ function LastMovement({ movement }: { movement: StockPageResponse["movements"][n
   );
 }
 
-function StockRowActions({ isAdmin, setActionMode }: { isAdmin: boolean; setActionMode: (mode: StockActionMode) => void }) {
+function StockRowActions({
+  isAdmin,
+  productId,
+  setActionMode,
+  setSelectedProductId,
+}: {
+  isAdmin: boolean;
+  productId: string;
+  setActionMode: (mode: StockActionMode) => void;
+  setSelectedProductId: (productId: string) => void;
+}) {
   if (!isAdmin) {
     return <span className="text-xs text-[var(--muted)]">Somente consulta</span>;
   }
 
+  function openAction(mode: StockActionMode) {
+    setSelectedProductId(productId);
+    setActionMode(mode);
+  }
+
   return (
     <div className="flex flex-wrap gap-2">
-      <Button variant="secondary" onClick={() => setActionMode("ENTRY")}>Entrada</Button>
-      <Button variant="ghost" onClick={() => setActionMode("ADJUSTMENT")}>Ajuste</Button>
+      <Button variant="secondary" onClick={() => openAction("ENTRY")}>Entrada</Button>
+      <Button variant="ghost" onClick={() => openAction("ADJUSTMENT")}>Ajuste</Button>
     </div>
   );
 }

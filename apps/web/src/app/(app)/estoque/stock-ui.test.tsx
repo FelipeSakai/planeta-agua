@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { StockUi } from "./stock-ui";
 
 type StockActionMode = "ENTRY" | "ADJUSTMENT";
+type CapturedStockTable = { rows: Array<{ id: string }>; columns: Array<{ key: string; cell: (row: { id: string }) => ReactNode }> };
 
 vi.mock("next/navigation", () => ({
   useRouter: vi.fn(() => ({ refresh: vi.fn() })),
@@ -41,6 +42,22 @@ const stockPage = {
   summary: { totalProducts: 1, lowStockProducts: 1, totalUnits: 2 },
 };
 
+const stockPageWithMultipleProducts = {
+  ...stockPage,
+  products: [
+    ...stockPage.products,
+    {
+      id: "44444444-4444-4444-8444-444444444444",
+      name: "Água 500ml",
+      stockQuantity: 30,
+      minimumStock: 10,
+      isActive: true,
+      isLowStock: false,
+    },
+  ],
+  summary: { totalProducts: 2, lowStockProducts: 1, totalUnits: 32 },
+};
+
 describe("StockUi", () => {
   it("hides mutation controls from operators", () => {
     const html = renderToStaticMarkup(createElement(StockUi, { userRole: "OPERATOR", data: stockPage }));
@@ -68,6 +85,66 @@ describe("StockUi", () => {
     expect(html).toContain("Ordenar");
     expect(html).toContain("Diferença");
     expect(html).toContain("Última movimentação");
+  });
+
+  it("preselects the first product before a row action is clicked", () => {
+    const html = renderToStaticMarkup(createElement(StockUi, { userRole: "ADMIN", data: stockPageWithMultipleProducts }));
+
+    expect(html).toMatch(/<option(?=[^>]*selected="")(?=[^>]*value="11111111-1111-4111-8111-111111111111")/);
+  });
+
+  it("preselects the clicked row product when opening row stock actions", async () => {
+    vi.resetModules();
+
+    let capturedTable: CapturedStockTable | null = null;
+    const setActionMode = vi.fn();
+    const setSelectedProductId = vi.fn();
+
+    vi.doMock("react", async (importOriginal) => {
+      const actual = await importOriginal<typeof import("react")>();
+
+      return {
+        ...actual,
+        useState: vi.fn((initialValue) => {
+          if (initialValue === "ENTRY") {
+            return [initialValue, setActionMode];
+          }
+
+          if (initialValue === stockPageWithMultipleProducts.products[0].id) {
+            return [initialValue, setSelectedProductId];
+          }
+
+          return [initialValue, vi.fn()];
+        }),
+      };
+    });
+    vi.doMock("next/navigation", () => ({
+      useRouter: vi.fn(() => ({ refresh: vi.fn() })),
+    }));
+    vi.doMock("@/components/ui/data-table", () => ({
+      DataTable: (props: CapturedStockTable) => {
+        capturedTable = props;
+        return createElement("div", null, "Tabela de estoque");
+      },
+    }));
+
+    const { StockUi: HookMockedStockUi } = await import("./stock-ui");
+    renderToStaticMarkup(createElement(HookMockedStockUi, { userRole: "ADMIN", data: stockPageWithMultipleProducts }));
+    const table = requireCapturedTable(capturedTable);
+    const clickedRow = table.rows.find((row) => row.id === stockPageWithMultipleProducts.products[1].id);
+    const actionsColumn = table.columns.find((column) => column.key === "actions");
+    const openAdjustment = actionsColumn && clickedRow ? findButtonOnClick(actionsColumn.cell(clickedRow), "Ajuste") : null;
+
+    expect(openAdjustment).toBeTruthy();
+
+    openAdjustment?.();
+
+    expect(setActionMode).toHaveBeenCalledWith("ADJUSTMENT");
+    expect(setSelectedProductId).toHaveBeenCalledWith(stockPageWithMultipleProducts.products[1].id);
+
+    vi.doUnmock("react");
+    vi.doUnmock("next/navigation");
+    vi.doUnmock("@/components/ui/data-table");
   });
 
   it("requires entry quantity to be positive while allowing zero as final adjustment quantity", async () => {
@@ -181,6 +258,46 @@ function findActionInNode(node: ReactNode, submitLabel: string): ((formData: For
   }
 
   return findActionInNode(props.children, submitLabel);
+}
+
+function findButtonOnClick(node: ReactNode, label: string): (() => void) | null {
+  if (Array.isArray(node)) {
+    for (const child of node) {
+      const onClick = findButtonOnClick(child, label);
+
+      if (onClick) {
+        return onClick;
+      }
+    }
+
+    return null;
+  }
+
+  if (!isValidElement(node)) {
+    return null;
+  }
+
+  const props = node.props as { children?: ReactNode; onClick?: () => void };
+
+  if (node.type === "button" && props.children === label) {
+    return props.onClick ?? null;
+  }
+
+  if (typeof node.type === "function") {
+    const Component = node.type as (componentProps: typeof props) => ReactNode;
+
+    return findButtonOnClick(Component(props), label);
+  }
+
+  return findButtonOnClick(props.children, label);
+}
+
+function requireCapturedTable(table: CapturedStockTable | null) {
+  if (!table) {
+    throw new Error("Stock table was not rendered");
+  }
+
+  return table;
 }
 
 function formData({ quantityName }: { quantityName: "quantity" | "newQuantity" }) {

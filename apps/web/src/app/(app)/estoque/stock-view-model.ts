@@ -25,7 +25,7 @@ export function filterAndSortStockProducts(
     }
   }
 
-  const normalizedSearch = options.search.trim().toLowerCase();
+  const normalizedSearch = normalizeSearchText(options.search);
 
   return products
     .map((product) => ({
@@ -33,7 +33,7 @@ export function filterAndSortStockProducts(
       difference: getStockDifference(product),
       lastMovement: lastMovementByProduct.get(product.id) ?? null,
     }))
-    .filter((product) => product.name.toLowerCase().includes(normalizedSearch))
+    .filter((product) => normalizeSearchText(product.name).includes(normalizedSearch))
     .filter((product) => {
       if (options.status === "LOW") return product.isLowStock;
       if (options.status === "OK") return product.isActive && !product.isLowStock;
@@ -49,4 +49,12 @@ export function filterAndSortStockProducts(
 
       return a.name.localeCompare(b.name, "pt-BR");
     });
+}
+
+function normalizeSearchText(value: string) {
+  return value
+    .trim()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
 }

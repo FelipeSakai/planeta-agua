@@ -46,6 +46,12 @@ describe("stock view model", () => {
     expect(rows[0].lastMovement?.reason).toBe("Conferencia");
   });
 
+  it("matches search terms without requiring accents", () => {
+    const rows = filterAndSortStockProducts([{ ...products[1], name: "Água 500ml" }], [], { search: "agua", status: "ALL", sort: "NAME" });
+
+    expect(rows.map((row) => row.name)).toEqual(["Água 500ml"]);
+  });
+
   it("sorts by lowest stock and movement recency", () => {
     expect(
       filterAndSortStockProducts(products, movements, { search: "", status: "ALL", sort: "LOWEST_STOCK" }).map((row) => row.name),
