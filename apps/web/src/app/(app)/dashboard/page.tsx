@@ -3,8 +3,18 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { MetricCard } from "@/components/ui/metric-card";
 import { PageHeader } from "@/components/ui/page-header";
 import { Panel } from "@/components/ui/panel";
+import { requireUser } from "@/lib/auth";
+import type { UserRole } from "shared";
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const user = await requireUser();
+
+  return <DashboardView userRole={user.role} />;
+}
+
+export function DashboardView({ userRole }: Readonly<{ userRole: UserRole }>) {
+  const canOpenStock = userRole === "ADMIN";
+
   return (
     <section className="space-y-6">
       <PageHeader
@@ -37,11 +47,13 @@ export default function DashboardPage() {
                 Produtos
               </Button>
             </form>
-            <form action="/estoque" method="get">
-              <Button className="w-full" type="submit" variant="secondary">
-                Estoque
-              </Button>
-            </form>
+            {canOpenStock ? (
+              <form action="/estoque" method="get">
+                <Button className="w-full" type="submit" variant="secondary">
+                  Estoque
+                </Button>
+              </form>
+            ) : null}
           </div>
         </Panel>
 
