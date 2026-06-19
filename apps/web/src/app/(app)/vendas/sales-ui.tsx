@@ -77,8 +77,8 @@ const paymentMethodLabels: Record<PaymentMethod, string> = {
 export function SalesUi({ userRole, history, products, customers }: SalesUiProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const [knownCustomers, setKnownCustomers] = useState(customers);
-  const [customerDirectory, setCustomerDirectory] = useState(customers);
+  const [knownCustomersOverride, setKnownCustomersOverride] = useState<SalesCustomerOption[] | null>(null);
+  const [customerDirectory, setCustomerDirectory] = useState<SalesCustomerOption[]>([]);
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
   const [customerQuery, setCustomerQuery] = useState("");
   const [productQuery, setProductQuery] = useState("");
@@ -87,6 +87,7 @@ export function SalesUi({ userRole, history, products, customers }: SalesUiProps
   const [bottleMonth, setBottleMonth] = useState("");
   const [bottleYear, setBottleYear] = useState("");
   const [bottleNotes, setBottleNotes] = useState("");
+  const [bottleSourceKey, setBottleSourceKey] = useState("");
   const [isCustomerDrawerOpen, setIsCustomerDrawerOpen] = useState(false);
   const [quickCustomerName, setQuickCustomerName] = useState("");
   const [quickCustomerPhone, setQuickCustomerPhone] = useState("");
@@ -96,16 +97,31 @@ export function SalesUi({ userRole, history, products, customers }: SalesUiProps
   const [cancelingSaleId, setCancelingSaleId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const selectedCustomer = customerDirectory.find((customer) => customer.id === selectedCustomerId) ?? null;
+  const syncedCustomers = syncCustomersFromProps({
+    customers,
+    customerDirectory,
+    selectedCustomerId,
+  });
+  const knownCustomers = knownCustomersOverride ?? syncedCustomers.knownCustomers;
+  const selectedCustomer = syncedCustomers.selectedCustomer;
   const customerOptions = sortSaleCustomers(
     mergeSaleCustomers(knownCustomers, selectedCustomer ? [selectedCustomer] : []),
   );
   const filteredProducts = products.filter((product) => product.name.toLowerCase().includes(productQuery.trim().toLowerCase()));
-  const currentBottle = selectedCustomerId && bottleMonth.trim() && bottleYear.trim()
+  const selectedBottleSourceKey = getBottleSourceKey(selectedCustomer);
+  const isCurrentBottleSource = bottleSourceKey === selectedBottleSourceKey;
+  const resolvedBottleMonth = selectedCustomer && !isCurrentBottleSource
+    ? formatBottleFieldValue(selectedCustomer.previousBottle?.month)
+    : bottleMonth;
+  const resolvedBottleYear = selectedCustomer && !isCurrentBottleSource
+    ? formatBottleFieldValue(selectedCustomer.previousBottle?.year)
+    : bottleYear;
+  const resolvedBottleNotes = selectedCustomer && !isCurrentBottleSource ? "" : bottleNotes;
+  const currentBottle = selectedCustomer && resolvedBottleMonth.trim() && resolvedBottleYear.trim()
     ? {
-        month: Number(bottleMonth),
-        year: Number(bottleYear),
-        notes: bottleNotes.trim() || null,
+        month: Number(resolvedBottleMonth),
+        year: Number(resolvedBottleYear),
+        notes: resolvedBottleNotes.trim() || null,
       }
     : null;
   const bottleAlerts = selectedCustomer
@@ -166,6 +182,7 @@ export function SalesUi({ userRole, history, products, customers }: SalesUiProps
   ];
 
   function refreshPage() {
+    setKnownCustomersOverride(null);
     startTransition(() => router.refresh());
   }
 
@@ -173,10 +190,11 @@ export function SalesUi({ userRole, history, products, customers }: SalesUiProps
     setBottleMonth(customer?.previousBottle?.month ? String(customer.previousBottle.month) : "");
     setBottleYear(customer?.previousBottle?.year ? String(customer.previousBottle.year) : "");
     setBottleNotes("");
+    setBottleSourceKey(getBottleSourceKey(customer));
   }
 
   function replaceKnownCustomers(nextCustomers: SalesCustomerOption[]) {
-    setKnownCustomers(nextCustomers);
+    setKnownCustomersOverride(nextCustomers);
     setCustomerDirectory((currentCustomers) => mergeSaleCustomers(currentCustomers, nextCustomers));
   }
 
@@ -189,6 +207,7 @@ export function SalesUi({ userRole, history, products, customers }: SalesUiProps
     }
 
     const customer = customerDirectory.find((item) => item.id === customerId)
+      ?? syncedCustomers.customerDirectory.find((item) => item.id === customerId)
       ?? knownCustomers.find((item) => item.id === customerId)
       ?? null;
 
@@ -239,7 +258,7 @@ export function SalesUi({ userRole, history, products, customers }: SalesUiProps
     const query = customerQuery.trim();
 
     if (!query) {
-      replaceKnownCustomers(customers);
+      setKnownCustomersOverride(null);
       return;
     }
 
@@ -271,7 +290,7 @@ export function SalesUi({ userRole, history, products, customers }: SalesUiProps
         name: quickCustomerName,
         phone: quickCustomerPhone.trim() || null,
       });
-      setKnownCustomers((currentCustomers) => sortSaleCustomers(mergeSaleCustomers(currentCustomers, [createdCustomer])));
+      setKnownCustomersOverride(null);
       setCustomerDirectory((currentCustomers) => mergeSaleCustomers(currentCustomers, [createdCustomer]));
       setSelectedCustomerId(createdCustomer.id);
       syncBottleFields(createdCustomer);
@@ -299,9 +318,9 @@ export function SalesUi({ userRole, history, products, customers }: SalesUiProps
         customerId: selectedCustomerId || null,
         paymentMethod,
         items: cartItems.map((item) => ({ productId: item.productId, quantity: item.quantity })),
-        bottleMonth: selectedCustomerId ? bottleMonth : "",
-        bottleYear: selectedCustomerId ? bottleYear : "",
-        bottleNotes: selectedCustomerId ? bottleNotes : "",
+        bottleMonth: selectedCustomerId ? resolvedBottleMonth : "",
+        bottleYear: selectedCustomerId ? resolvedBottleYear : "",
+        bottleNotes: selectedCustomerId ? resolvedBottleNotes : "",
       });
       const response = await fetch("/api/sales", {
         method: "POST",
@@ -420,13 +439,40 @@ export function SalesUi({ userRole, history, products, customers }: SalesUiProps
               <div className="mt-4 space-y-4 border-t border-[var(--border-soft)] pt-4">
                 <div className="grid gap-4 md:grid-cols-3">
                   <Field label="Mês do galão">
-                    <TextInput inputMode="numeric" max="12" min="1" placeholder="6" value={bottleMonth} onChange={(event) => setBottleMonth(event.target.value)} />
+                    <TextInput
+                      inputMode="numeric"
+                      max="12"
+                      min="1"
+                      placeholder="6"
+                      value={resolvedBottleMonth}
+                      onChange={(event) => {
+                        setBottleMonth(event.target.value);
+                        setBottleSourceKey(selectedBottleSourceKey);
+                      }}
+                    />
                   </Field>
                   <Field label="Ano do galão">
-                    <TextInput inputMode="numeric" max="2100" min="2000" placeholder="2026" value={bottleYear} onChange={(event) => setBottleYear(event.target.value)} />
+                    <TextInput
+                      inputMode="numeric"
+                      max="2100"
+                      min="2000"
+                      placeholder="2026"
+                      value={resolvedBottleYear}
+                      onChange={(event) => {
+                        setBottleYear(event.target.value);
+                        setBottleSourceKey(selectedBottleSourceKey);
+                      }}
+                    />
                   </Field>
                   <Field label="Observação">
-                    <TextInput placeholder="Cor ou detalhe curto" value={bottleNotes} onChange={(event) => setBottleNotes(event.target.value)} />
+                    <TextInput
+                      placeholder="Cor ou detalhe curto"
+                      value={resolvedBottleNotes}
+                      onChange={(event) => {
+                        setBottleNotes(event.target.value);
+                        setBottleSourceKey(selectedBottleSourceKey);
+                      }}
+                    />
                   </Field>
                 </div>
 
@@ -683,6 +729,23 @@ function formatBottleRecord(bottle: BottleRecord | null | undefined) {
   return notes ? `${month}/${bottle.year} · ${notes}` : `${month}/${bottle.year}`;
 }
 
+function formatBottleFieldValue(value: number | null | undefined) {
+  return value ? String(value) : "";
+}
+
+function getBottleSourceKey(customer: SalesCustomerOption | null) {
+  if (!customer) {
+    return "";
+  }
+
+  return [
+    customer.id,
+    customer.previousBottle?.month ?? "",
+    customer.previousBottle?.year ?? "",
+    customer.previousBottle?.notes?.trim() ?? "",
+  ].join(":");
+}
+
 async function getResponseMessage(response: Response, fallback: string) {
   const payload = await response.json().catch(() => null) as { message?: string } | null;
 
@@ -700,6 +763,25 @@ function mergeSaleCustomers(
   }
 
   return Array.from(customerMap.values());
+}
+
+export function syncCustomersFromProps({
+  customers,
+  customerDirectory,
+  selectedCustomerId,
+}: {
+  customers: SalesCustomerOption[];
+  customerDirectory: SalesCustomerOption[];
+  selectedCustomerId: string;
+}) {
+  const nextCustomerDirectory = mergeSaleCustomers(customerDirectory, customers);
+
+  return {
+    knownCustomers: customers,
+    customerDirectory: nextCustomerDirectory,
+    selectedCustomerId,
+    selectedCustomer: nextCustomerDirectory.find((customer) => customer.id === selectedCustomerId) ?? null,
+  };
 }
 
 function sortSaleCustomers(customersToSort: SalesCustomerOption[]) {

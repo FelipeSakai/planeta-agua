@@ -2,7 +2,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { SalesUi } from "./sales-ui";
+import { SalesUi, syncCustomersFromProps } from "./sales-ui";
 
 vi.mock("next/navigation", () => ({
   useRouter: vi.fn(() => ({ refresh: vi.fn() })),
@@ -16,6 +16,28 @@ afterEach(() => {
 });
 
 describe("SalesUi", () => {
+  it("replaces stale previous bottle data on refresh without clearing the selected customer id", () => {
+    const refreshedCustomer = {
+      id: "c1",
+      name: "Maria",
+      phone: "11999999999",
+      previousBottle: { month: 7, year: 2026, notes: "verde" },
+    };
+
+    const syncedCustomers = syncCustomersFromProps({
+      customers: [refreshedCustomer],
+      customerDirectory: [
+        { id: "c1", name: "Maria", phone: "11999999999", previousBottle: { month: 6, year: 2024, notes: "azul" } },
+      ],
+      selectedCustomerId: "c1",
+    });
+
+    expect(syncedCustomers.knownCustomers).toEqual([refreshedCustomer]);
+    expect(syncedCustomers.selectedCustomerId).toBe("c1");
+    expect(syncedCustomers.selectedCustomer).toEqual(refreshedCustomer);
+    expect(syncedCustomers.customerDirectory).toEqual([refreshedCustomer]);
+  });
+
   it("keeps customer optional even when customers are preloaded", () => {
     const html = renderToStaticMarkup(
       createElement(SalesUi, {
