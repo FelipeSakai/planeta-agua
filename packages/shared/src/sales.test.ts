@@ -6,6 +6,7 @@ import {
   isBottleExpired,
   paymentMethodValues,
   quickCustomerInputSchema,
+  saleCustomerResponseSchema,
   saleDetailResponseSchema,
   saleHistoryResponseSchema,
 } from "./sales";
@@ -80,6 +81,17 @@ describe("sales contracts", () => {
 
     expect(parsed.name).toBe("Maria");
     expect(parsed.phone).toBe("11999999999");
+  });
+
+  it("accepts the minimized sales customer payload with previous bottle history", () => {
+    const parsed = saleCustomerResponseSchema.parse({
+      id: "55555555-5555-4555-8555-555555555555",
+      name: "Maria",
+      phone: "11999999999",
+      previousBottle: { month: 6, year: 2024, notes: "Azul" },
+    });
+
+    expect(parsed.previousBottle).toEqual({ month: 6, year: 2024, notes: "Azul" });
   });
 
   it("exports payment methods in the expected operational order", () => {

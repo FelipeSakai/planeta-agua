@@ -134,6 +134,7 @@ describe("SalesService", () => {
   it("returns minimized customer data for sales customer search", async () => {
     const repository = createRepository();
     const service = new SalesService(repository as never);
+    const previousBottle = { month: 6, year: 2024, notes: "Azul" };
 
     repository.searchCustomers.mockResolvedValueOnce([
       {
@@ -146,12 +147,14 @@ describe("SalesService", () => {
         updatedAt: new Date("2026-06-18T09:30:00.000Z"),
       },
     ]);
+    repository.getLatestBottleForCustomer.mockResolvedValueOnce(previousBottle);
 
     await expect(service.searchCustomers("mar")).resolves.toEqual([
       {
         id: "99999999-9999-4999-8999-999999999999",
         name: "Maria",
         phone: "11999999999",
+        previousBottle,
       },
     ]);
   });
@@ -174,6 +177,7 @@ describe("SalesService", () => {
       id: "12121212-1212-4212-8212-121212121212",
       name: "Joao",
       phone: "11888888888",
+      previousBottle: null,
     });
   });
 

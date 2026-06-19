@@ -177,6 +177,25 @@ describe("SalesRepository", () => {
     expect(latestBottle).toEqual({ month: 3, year: 2025, notes: "Atual" });
   });
 
+  it("searches customers by phone and returns an initial ordered list for blank queries", async () => {
+    const [ana] = await db
+      .insert(customers)
+      .values({ name: "Ana", phone: "11911112222" })
+      .returning();
+    const [bruno] = await db
+      .insert(customers)
+      .values({ name: "Bruno", phone: "11888887777" })
+      .returning();
+
+    await expect(repository.searchCustomers("")).resolves.toMatchObject([
+      { id: ana.id, name: "Ana", phone: "11911112222" },
+      { id: bruno.id, name: "Bruno", phone: "11888887777" },
+    ]);
+    await expect(repository.searchCustomers("8888")).resolves.toMatchObject([
+      { id: bruno.id, name: "Bruno", phone: "11888887777" },
+    ]);
+  });
+
   it("lists sales with creator, customer, and canceler relations", async () => {
     const [operator] = await db
       .insert(users)

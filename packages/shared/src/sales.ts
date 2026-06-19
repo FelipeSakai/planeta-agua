@@ -37,6 +37,14 @@ export const quickCustomerInputSchema = z.object({
   phone: z.string().trim().min(8).max(20).nullable().optional(),
 });
 
+export const saleCustomerResponseSchema = quickCustomerInputSchema.extend({
+  id: z.string().uuid(),
+  phone: z.string().trim().min(8).max(20).nullable(),
+  previousBottle: customerBottleRecordSchema,
+});
+
+export const saleCustomersResponseSchema = z.array(saleCustomerResponseSchema);
+
 function validateCancellationState(
   value: { status: (typeof saleStatusValues)[number]; canceledAt: string | null; cancellationReason: string | null },
   ctx: z.core.$RefinementCtx,
@@ -111,6 +119,9 @@ export const saleDetailResponseSchema = z.object({
 });
 
 type BottleRecord = z.infer<typeof bottleFieldsSchema>;
+
+export type SaleCustomerResponse = z.infer<typeof saleCustomerResponseSchema>;
+export type SaleCustomersResponse = z.infer<typeof saleCustomersResponseSchema>;
 
 export function getBottleAgeInMonths(bottle: Pick<BottleRecord, "month" | "year">, now: Date) {
   return (now.getUTCFullYear() - bottle.year) * 12 + (now.getUTCMonth() + 1 - bottle.month);

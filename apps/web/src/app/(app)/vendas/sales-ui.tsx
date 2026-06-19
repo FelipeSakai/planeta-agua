@@ -21,7 +21,14 @@ import { Field, SelectInput, TextInput } from "@/components/ui/form-controls";
 import { PageHeader } from "@/components/ui/page-header";
 import { Panel } from "@/components/ui/panel";
 import { Toolbar } from "@/components/ui/toolbar";
-import { buildBottleAlerts, cancelSalePayload, saleFormToPayload } from "@/lib/sales";
+import {
+  buildBottleAlerts,
+  cancelSalePayload,
+  createSaleCustomer,
+  saleFormToPayload,
+  searchSaleCustomers,
+  type SaleCustomerResponse,
+} from "@/lib/sales";
 
 type PaymentMethod = (typeof paymentMethodValues)[number];
 
@@ -31,12 +38,7 @@ type BottleRecord = {
   notes?: string | null;
 };
 
-type SalesCustomerOption = {
-  id: string;
-  name: string;
-  phone?: string | null;
-  previousBottle?: BottleRecord | null;
-};
+type SalesCustomerOption = SaleCustomerResponse;
 
 type SalesHistoryEntry = {
   id: string;
@@ -230,16 +232,7 @@ export function SalesUi({ userRole, history, products, customers }: SalesUiProps
     setIsSearchingCustomers(true);
 
     try {
-      const response = await fetch(`/api/sales/customers?query=${encodeURIComponent(query)}`, {
-        cache: "no-store",
-      });
-
-      if (!response.ok) {
-        setError(await getResponseMessage(response, "Não foi possível buscar os clientes."));
-        return;
-      }
-
-      const result = (await response.json()) as Array<{ id: string; name: string; phone: string | null }>;
+      const result = await searchSaleCustomers(query);
       setKnownCustomers(result);
 
       if (result.length > 0) {
@@ -264,21 +257,10 @@ export function SalesUi({ userRole, history, products, customers }: SalesUiProps
     setIsSavingCustomer(true);
 
     try {
-      const response = await fetch("/api/sales/customers", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          name: quickCustomerName,
-          phone: quickCustomerPhone.trim() || null,
-        }),
+      const createdCustomer = await createSaleCustomer({
+        name: quickCustomerName,
+        phone: quickCustomerPhone.trim() || null,
       });
-
-      if (!response.ok) {
-        setError(await getResponseMessage(response, "Confira os dados do cliente."));
-        return;
-      }
-
-      const createdCustomer = (await response.json()) as { id: string; name: string; phone: string | null };
       setKnownCustomers((currentCustomers) => {
         const nextCustomers = [...currentCustomers.filter((customer) => customer.id !== createdCustomer.id), createdCustomer];
         return nextCustomers.sort((left, right) => left.name.localeCompare(right.name, "pt-BR"));

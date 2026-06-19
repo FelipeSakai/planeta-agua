@@ -2,6 +2,8 @@ import {
   cancelSaleInputSchema,
   createSaleInputSchema,
   quickCustomerInputSchema,
+  saleCustomerResponseSchema,
+  saleCustomersResponseSchema,
   saleDetailResponseSchema,
   saleHistoryResponseSchema,
 } from "shared";
@@ -9,12 +11,19 @@ import { z } from "zod";
 
 import { getServerApiUrl } from "./api";
 
-const saleCustomerResponseSchema = quickCustomerInputSchema.extend({
-  id: z.string().uuid(),
-  phone: z.string().trim().min(8).max(20).nullable(),
-});
+type SalesRequestOptions = {
+  cookieHeader?: string;
+};
 
-const saleCustomersResponseSchema = z.array(saleCustomerResponseSchema);
+export type SaleCustomerResponse = z.infer<typeof saleCustomerResponseSchema>;
+
+function buildSalesUrl(path: string, cookieHeader?: string) {
+  return cookieHeader ? `${getServerApiUrl()}${path}` : `/api${path}`;
+}
+
+function buildHeaders(headers: Record<string, string>, cookieHeader?: string) {
+  return cookieHeader ? { ...headers, cookie: cookieHeader } : headers;
+}
 
 function ensureResponseOk(response: Response, message: string) {
   if (!response.ok) {
@@ -54,7 +63,13 @@ export function saleFormToPayload(input: {
 }
 
 export function cancelSalePayload(reason: string) {
-  return cancelSaleInputSchema.parse({ reason });
+  const parsedInput = cancelSaleInputSchema.safeParse({ reason });
+
+  if (!parsedInput.success) {
+    throw new Error("Informe o motivo do cancelamento com pelo menos 3 caracteres.");
+  }
+
+  return parsedInput.data;
 }
 
 export function buildBottleAlerts(alerts: { expired: boolean; mismatch: boolean }) {
@@ -94,10 +109,10 @@ export async function fetchSaleDetail(cookieHeader: string, id: string) {
   return saleDetailResponseSchema.parse(await response.json());
 }
 
-export async function searchSaleCustomers(cookieHeader: string, query: string) {
+export async function searchSaleCustomers(query: string, options?: SalesRequestOptions) {
   const params = new URLSearchParams({ query });
-  const response = await fetch(`${getServerApiUrl()}/sales/customers?${params.toString()}`, {
-    headers: { cookie: cookieHeader },
+  const response = await fetch(buildSalesUrl(`/sales/customers?${params.toString()}`, options?.cookieHeader), {
+    headers: buildHeaders({}, options?.cookieHeader),
     cache: "no-store",
   });
 
@@ -107,16 +122,16 @@ export async function searchSaleCustomers(cookieHeader: string, query: string) {
 }
 
 export async function createSaleCustomer(
-  cookieHeader: string,
   input: {
     name: string;
     phone?: string | null;
   },
+  options?: SalesRequestOptions,
 ) {
   const payload = quickCustomerInputSchema.parse(input);
-  const response = await fetch(`${getServerApiUrl()}/sales/customers`, {
+  const response = await fetch(buildSalesUrl("/sales/customers", options?.cookieHeader), {
     method: "POST",
-    headers: { "content-type": "application/json", cookie: cookieHeader },
+    headers: buildHeaders({ "content-type": "application/json" }, options?.cookieHeader),
     body: JSON.stringify(payload),
     cache: "no-store",
   });

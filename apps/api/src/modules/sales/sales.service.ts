@@ -8,6 +8,7 @@ import {
   quickCustomerInputSchema,
   type CreateSaleInput,
   type QuickCustomerInput,
+  type SaleCustomerResponse,
   type SaleDetailResponse,
   type SalesListResponse,
 } from "./sales.schemas";
@@ -16,7 +17,7 @@ type PermissionUser = Pick<SessionUser, "id" | "role">;
 type SaleListRow = Awaited<ReturnType<SalesRepository["listSales"]>>[number];
 type SaleDetailRow = NonNullable<Awaited<ReturnType<SalesRepository["getSaleDetail"]>>>;
 type SalesCustomerRow = Awaited<ReturnType<SalesRepository["searchCustomers"]>>[number];
-type SalesCustomerSummary = Pick<SalesCustomerRow, "id" | "name" | "phone">;
+type SalesCustomerSummary = SaleCustomerResponse;
 
 @Injectable()
 export class SalesService {
@@ -69,7 +70,7 @@ export class SalesService {
   async searchCustomers(query: string): Promise<SalesCustomerSummary[]> {
     const customers = await this.salesRepository.searchCustomers(query);
 
-    return customers.map((customer) => this.toCustomerSummary(customer));
+    return Promise.all(customers.map((customer) => this.toCustomerSummary(customer)));
   }
 
   async createQuickCustomer(input: QuickCustomerInput): Promise<SalesCustomerSummary> {
@@ -81,7 +82,12 @@ export class SalesService {
 
     const customer = await this.salesRepository.createQuickCustomer(parsedInput.data);
 
-    return this.toCustomerSummary(customer);
+    return {
+      id: customer.id,
+      name: customer.name,
+      phone: customer.phone,
+      previousBottle: null,
+    };
   }
 
   private mapCreateSaleError(error: unknown) {
@@ -178,11 +184,12 @@ export class SalesService {
     };
   }
 
-  private toCustomerSummary(customer: SalesCustomerRow): SalesCustomerSummary {
+  private async toCustomerSummary(customer: SalesCustomerRow): Promise<SalesCustomerSummary> {
     return {
       id: customer.id,
       name: customer.name,
       phone: customer.phone,
+      previousBottle: await this.salesRepository.getLatestBottleForCustomer(customer.id),
     };
   }
 }

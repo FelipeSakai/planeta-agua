@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { and, asc, desc, eq, ilike, inArray, isNotNull, lt, sql } from "drizzle-orm";
+import { and, asc, desc, eq, ilike, inArray, isNotNull, lt, or, sql } from "drizzle-orm";
 
 import { db } from "../../db";
 import { customers, products, saleItems, sales, stockMovements } from "../../db/schema";
@@ -14,11 +14,14 @@ export class SalesRepository {
     const normalizedQuery = query.trim();
 
     if (!normalizedQuery) {
-      return [];
+      return db.query.customers.findMany({
+        orderBy: [asc(customers.name)],
+        limit: 10,
+      });
     }
 
     return db.query.customers.findMany({
-      where: ilike(customers.name, `%${normalizedQuery}%`),
+      where: or(ilike(customers.name, `%${normalizedQuery}%`), ilike(customers.phone, `%${normalizedQuery}%`)),
       orderBy: [asc(customers.name)],
       limit: 10,
     });

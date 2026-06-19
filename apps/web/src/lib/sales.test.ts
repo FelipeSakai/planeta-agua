@@ -69,6 +69,7 @@ const customerPayload = {
   id: "55555555-5555-4555-8555-555555555555",
   name: "Maria",
   phone: "11999999999",
+  previousBottle: { month: 6, year: 2024, notes: "Azul" },
 };
 
 describe("sales web helpers", () => {
@@ -135,6 +136,10 @@ describe("sales web helpers", () => {
     expect(cancelSalePayload("  Cliente desistiu.  ")).toEqual({ reason: "Cliente desistiu." });
   });
 
+  it("returns a clear operator message when the cancel reason is blank", () => {
+    expect(() => cancelSalePayload("   ")).toThrow("Informe o motivo do cancelamento com pelo menos 3 caracteres.");
+  });
+
   it("builds expired and mismatch alert labels", () => {
     expect(buildBottleAlerts({ expired: true, mismatch: true })).toEqual([
       "Galão acima da validade de 3 anos.",
@@ -180,11 +185,31 @@ describe("sales web helpers", () => {
     );
   });
 
-  it("searches sale customers with the minimal response payload", async () => {
+  it("searches sale customers with the sales customer response payload", async () => {
     mockedFetch.mockResolvedValue({ ok: true, json: vi.fn().mockResolvedValue([customerPayload]) });
 
-    await expect(searchSaleCustomers("pa_session=token", "mar")).resolves.toEqual([customerPayload]);
+    await expect(searchSaleCustomers("mar", { cookieHeader: "pa_session=token" })).resolves.toEqual([customerPayload]);
     expect(mockedFetch).toHaveBeenCalledWith("http://api.local/sales/customers?query=mar", {
+      headers: { cookie: "pa_session=token" },
+      cache: "no-store",
+    });
+  });
+
+  it("searches sale customers through the app route when no server cookie header is provided", async () => {
+    mockedFetch.mockResolvedValue({ ok: true, json: vi.fn().mockResolvedValue([customerPayload]) });
+
+    await expect(searchSaleCustomers("mar")).resolves.toEqual([customerPayload]);
+    expect(mockedFetch).toHaveBeenCalledWith("/api/sales/customers?query=mar", {
+      headers: {},
+      cache: "no-store",
+    });
+  });
+
+  it("hydrates the initial sales customer list from an empty query", async () => {
+    mockedFetch.mockResolvedValue({ ok: true, json: vi.fn().mockResolvedValue([customerPayload]) });
+
+    await expect(searchSaleCustomers("", { cookieHeader: "pa_session=token" })).resolves.toEqual([customerPayload]);
+    expect(mockedFetch).toHaveBeenCalledWith("http://api.local/sales/customers?query=", {
       headers: { cookie: "pa_session=token" },
       cache: "no-store",
     });
@@ -193,15 +218,15 @@ describe("sales web helpers", () => {
   it("throws a clear error when customer search fails", async () => {
     mockedFetch.mockResolvedValue({ ok: false, json: vi.fn() });
 
-    await expect(searchSaleCustomers("pa_session=expired", "mar")).rejects.toThrow(
+    await expect(searchSaleCustomers("mar", { cookieHeader: "pa_session=expired" })).rejects.toThrow(
       "Nao foi possivel buscar os clientes.",
     );
   });
 
-  it("creates a quick customer with the minimal payload", async () => {
+  it("creates a quick customer with the sales customer response payload", async () => {
     mockedFetch.mockResolvedValue({ ok: true, json: vi.fn().mockResolvedValue(customerPayload) });
 
-    await expect(createSaleCustomer("pa_session=token", { name: "Maria", phone: "11999999999" })).resolves.toEqual(
+    await expect(createSaleCustomer({ name: "Maria", phone: "11999999999" }, { cookieHeader: "pa_session=token" })).resolves.toEqual(
       customerPayload,
     );
     expect(mockedFetch).toHaveBeenCalledWith("http://api.local/sales/customers", {
@@ -212,11 +237,26 @@ describe("sales web helpers", () => {
     });
   });
 
+  it("creates a quick customer through the app route when running in the sales UI", async () => {
+    mockedFetch.mockResolvedValue({ ok: true, json: vi.fn().mockResolvedValue({ ...customerPayload, previousBottle: null }) });
+
+    await expect(createSaleCustomer({ name: "Maria", phone: "11999999999" })).resolves.toEqual({
+      ...customerPayload,
+      previousBottle: null,
+    });
+    expect(mockedFetch).toHaveBeenCalledWith("/api/sales/customers", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ name: "Maria", phone: "11999999999" }),
+      cache: "no-store",
+    });
+  });
+
   it("throws a clear error when customer creation fails", async () => {
     mockedFetch.mockResolvedValue({ ok: false, json: vi.fn() });
 
-    await expect(createSaleCustomer("pa_session=expired", { name: "Maria", phone: "11999999999" })).rejects.toThrow(
-      "Nao foi possivel cadastrar o cliente.",
-    );
+    await expect(
+      createSaleCustomer({ name: "Maria", phone: "11999999999" }, { cookieHeader: "pa_session=expired" }),
+    ).rejects.toThrow("Nao foi possivel cadastrar o cliente.");
   });
 });

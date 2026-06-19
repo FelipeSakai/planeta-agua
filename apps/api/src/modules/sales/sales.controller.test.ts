@@ -105,7 +105,14 @@ describe("SalesController", () => {
 
   it("searches customers for authenticated requests", async () => {
     const { controller, salesService } = createController();
-    const customers = [{ id: "66666666-6666-4666-8666-666666666666", name: "Maria", phone: "11999999999" }];
+    const customers = [
+      {
+        id: "66666666-6666-4666-8666-666666666666",
+        name: "Maria",
+        phone: "11999999999",
+        previousBottle: { month: 6, year: 2024, notes: "Azul" },
+      },
+    ];
     salesService.searchCustomers.mockResolvedValueOnce(customers);
 
     await expect(controller.searchCustomers(request as never, "mar")).resolves.toEqual(customers);
@@ -114,7 +121,12 @@ describe("SalesController", () => {
 
   it("creates a quick customer for authenticated sales flow", async () => {
     const { controller, salesService } = createController();
-    const customer = { id: "66666666-6666-4666-8666-666666666666", name: "Maria", phone: "11999999999" };
+    const customer = {
+      id: "66666666-6666-4666-8666-666666666666",
+      name: "Maria",
+      phone: "11999999999",
+      previousBottle: null,
+    };
     salesService.createQuickCustomer.mockResolvedValueOnce(customer);
 
     await expect(controller.createCustomer(request as never, { name: "Maria", phone: "11999999999" })).resolves.toEqual(customer);

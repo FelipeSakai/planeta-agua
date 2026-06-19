@@ -24,7 +24,7 @@ describe("SalesUi", () => {
         userRole: "ADMIN",
         history: [],
         products: [],
-        customers: [{ id: "c1", name: "Maria", previousBottle: { month: 6, year: 2022, notes: "azul" } }],
+        customers: [{ id: "c1", name: "Maria", phone: null, previousBottle: { month: 6, year: 2022, notes: "azul" } }],
       }),
     );
 
