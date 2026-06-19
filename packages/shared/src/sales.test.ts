@@ -4,8 +4,57 @@ import {
   createSaleInputSchema,
   hasBottleMismatch,
   isBottleExpired,
+  paymentMethodValues,
   quickCustomerInputSchema,
+  saleDetailResponseSchema,
+  saleHistoryResponseSchema,
 } from "./sales";
+
+const validSaleHistoryEntry = {
+  id: "11111111-1111-4111-8111-111111111111",
+  customerId: null,
+  customerName: null,
+  userId: "22222222-2222-4222-8222-222222222222",
+  userName: "Operador",
+  totalAmountCents: 2400,
+  paymentMethod: "PIX" as const,
+  status: "COMPLETED" as const,
+  createdAt: "2026-06-15T10:00:00.000Z",
+  canceledAt: null,
+  cancellationReason: null,
+};
+
+const validSaleDetailResponse = {
+  sale: {
+    id: "11111111-1111-4111-8111-111111111111",
+    customerId: null,
+    customerName: null,
+    userId: "22222222-2222-4222-8222-222222222222",
+    userName: "Operador",
+    totalAmountCents: 2400,
+    paymentMethod: "PIX" as const,
+    status: "COMPLETED" as const,
+    createdAt: "2026-06-15T10:00:00.000Z",
+    canceledAt: null,
+    cancellationReason: null,
+    bottle: null,
+    previousBottle: null,
+  },
+  items: [
+    {
+      id: "33333333-3333-4333-8333-333333333333",
+      productId: "44444444-4444-4444-8444-444444444444",
+      productNameSnapshot: "Galao 20L",
+      quantity: 2,
+      unitPriceCents: 1200,
+      totalPriceCents: 2400,
+    },
+  ],
+  bottleAlerts: {
+    expired: false,
+    mismatch: false,
+  },
+};
 
 describe("sales contracts", () => {
   it("accepts a sale with optional customer and bottle data", () => {
@@ -31,6 +80,71 @@ describe("sales contracts", () => {
 
     expect(parsed.name).toBe("Maria");
     expect(parsed.phone).toBe("11999999999");
+  });
+
+  it("exports payment methods in the expected operational order", () => {
+    expect(paymentMethodValues).toEqual(["CASH", "PIX", "DEBIT_CARD", "CREDIT_CARD", "OTHER"]);
+  });
+
+  it("rejects negative totals in sale history responses", () => {
+    expect(() =>
+      saleHistoryResponseSchema.parse([
+        {
+          ...validSaleHistoryEntry,
+          totalAmountCents: -1,
+        },
+      ]),
+    ).toThrow();
+  });
+
+  it("rejects completed sale details with cancellation metadata", () => {
+    expect(() =>
+      saleDetailResponseSchema.parse({
+        ...validSaleDetailResponse,
+        sale: {
+          ...validSaleDetailResponse.sale,
+          canceledAt: "2026-06-15T12:00:00.000Z",
+          cancellationReason: "Cancelada por engano",
+        },
+      }),
+    ).toThrow();
+  });
+
+  it("rejects detail items with impossible quantities or negative amounts", () => {
+    expect(() =>
+      saleDetailResponseSchema.parse({
+        ...validSaleDetailResponse,
+        items: [
+          {
+            ...validSaleDetailResponse.items[0],
+            quantity: 0,
+            unitPriceCents: -1,
+            totalPriceCents: -1,
+          },
+        ],
+      }),
+    ).toThrow();
+  });
+
+  it("rejects malformed sale timestamps", () => {
+    expect(() =>
+      saleHistoryResponseSchema.parse([
+        {
+          ...validSaleHistoryEntry,
+          createdAt: "not-a-date",
+        },
+      ]),
+    ).toThrow();
+
+    expect(() =>
+      saleDetailResponseSchema.parse({
+        ...validSaleDetailResponse,
+        sale: {
+          ...validSaleDetailResponse.sale,
+          createdAt: "2026-99-99",
+        },
+      }),
+    ).toThrow();
   });
 
   it("flags expired bottles after 3 years", () => {

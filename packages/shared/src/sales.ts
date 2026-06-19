@@ -1,11 +1,16 @@
 import { z } from "zod";
 
-export const paymentMethodValues = ["CASH", "PIX", "CREDIT_CARD", "DEBIT_CARD", "OTHER"] as const;
+export const paymentMethodValues = ["CASH", "PIX", "DEBIT_CARD", "CREDIT_CARD", "OTHER"] as const;
 export const saleStatusValues = ["COMPLETED", "CANCELED"] as const;
+
+const isoDatetimeStringSchema = z.string().datetime({ offset: true });
+const nonNegativeAmountCentsSchema = z.number().int().min(0);
+const positiveQuantitySchema = z.number().int().min(1);
+const cancellationReasonSchema = z.string().trim().min(3).max(160);
 
 const saleItemInputSchema = z.object({
   productId: z.string().uuid(),
-  quantity: z.number().int().min(1),
+  quantity: positiveQuantitySchema,
 });
 
 const bottleFieldsSchema = z.object({
@@ -24,7 +29,7 @@ export const createSaleInputSchema = z.object({
 });
 
 export const cancelSaleInputSchema = z.object({
-  reason: z.string().trim().min(3).max(160),
+  reason: cancellationReasonSchema,
 });
 
 export const quickCustomerInputSchema = z.object({
@@ -32,48 +37,73 @@ export const quickCustomerInputSchema = z.object({
   phone: z.string().trim().min(8).max(20).nullable().optional(),
 });
 
-export const saleHistoryResponseSchema = z.array(
-  z.object({
+function validateCancellationState(
+  value: { status: (typeof saleStatusValues)[number]; canceledAt: string | null; cancellationReason: string | null },
+  ctx: z.core.$RefinementCtx,
+) {
+  if (value.status === "COMPLETED" && (value.canceledAt !== null || value.cancellationReason !== null)) {
+    ctx.addIssue({
+      code: "custom",
+      message: "Completed sales cannot include cancellation data.",
+      path: ["status"],
+    });
+  }
+
+  if (value.status === "CANCELED" && (value.canceledAt === null || value.cancellationReason === null)) {
+    ctx.addIssue({
+      code: "custom",
+      message: "Canceled sales must include cancellation data.",
+      path: ["status"],
+    });
+  }
+}
+
+const saleHistoryEntrySchema = z
+  .object({
     id: z.string().uuid(),
     customerId: z.string().uuid().nullable(),
     customerName: z.string().nullable(),
     userId: z.string().uuid(),
     userName: z.string(),
-    totalAmountCents: z.number().int(),
+    totalAmountCents: nonNegativeAmountCentsSchema,
     paymentMethod: z.enum(paymentMethodValues),
     status: z.enum(saleStatusValues),
-    createdAt: z.string(),
-    canceledAt: z.string().nullable(),
-    cancellationReason: z.string().nullable(),
-  }),
-);
+    createdAt: isoDatetimeStringSchema,
+    canceledAt: isoDatetimeStringSchema.nullable(),
+    cancellationReason: cancellationReasonSchema.nullable(),
+  })
+  .superRefine(validateCancellationState);
+
+export const saleHistoryResponseSchema = z.array(saleHistoryEntrySchema);
+
+const saleDetailItemSchema = z.object({
+  id: z.string().uuid(),
+  productId: z.string().uuid(),
+  productNameSnapshot: z.string(),
+  quantity: positiveQuantitySchema,
+  unitPriceCents: nonNegativeAmountCentsSchema,
+  totalPriceCents: nonNegativeAmountCentsSchema,
+});
 
 export const saleDetailResponseSchema = z.object({
-  sale: z.object({
-    id: z.string().uuid(),
-    customerId: z.string().uuid().nullable(),
-    customerName: z.string().nullable(),
-    userId: z.string().uuid(),
-    userName: z.string(),
-    totalAmountCents: z.number().int(),
-    paymentMethod: z.enum(paymentMethodValues),
-    status: z.enum(saleStatusValues),
-    createdAt: z.string(),
-    canceledAt: z.string().nullable(),
-    cancellationReason: z.string().nullable(),
-    bottle: customerBottleRecordSchema,
-    previousBottle: customerBottleRecordSchema,
-  }),
-  items: z.array(
-    z.object({
+  sale: z
+    .object({
       id: z.string().uuid(),
-      productId: z.string().uuid(),
-      productNameSnapshot: z.string(),
-      quantity: z.number().int(),
-      unitPriceCents: z.number().int(),
-      totalPriceCents: z.number().int(),
-    }),
-  ),
+      customerId: z.string().uuid().nullable(),
+      customerName: z.string().nullable(),
+      userId: z.string().uuid(),
+      userName: z.string(),
+      totalAmountCents: nonNegativeAmountCentsSchema,
+      paymentMethod: z.enum(paymentMethodValues),
+      status: z.enum(saleStatusValues),
+      createdAt: isoDatetimeStringSchema,
+      canceledAt: isoDatetimeStringSchema.nullable(),
+      cancellationReason: cancellationReasonSchema.nullable(),
+      bottle: customerBottleRecordSchema,
+      previousBottle: customerBottleRecordSchema,
+    })
+    .superRefine(validateCancellationState),
+  items: z.array(saleDetailItemSchema).min(1),
   bottleAlerts: z.object({
     expired: z.boolean(),
     mismatch: z.boolean(),
