@@ -77,15 +77,14 @@ const paymentMethodLabels: Record<PaymentMethod, string> = {
 export function SalesUi({ userRole, history, products, customers }: SalesUiProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const initialCustomer = customers[0] ?? null;
   const [knownCustomers, setKnownCustomers] = useState(customers);
-  const [selectedCustomerId, setSelectedCustomerId] = useState(initialCustomer?.id ?? "");
+  const [selectedCustomerId, setSelectedCustomerId] = useState("");
   const [customerQuery, setCustomerQuery] = useState("");
   const [productQuery, setProductQuery] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | "">("PIX");
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [bottleMonth, setBottleMonth] = useState(initialCustomer?.previousBottle?.month ? String(initialCustomer.previousBottle.month) : "");
-  const [bottleYear, setBottleYear] = useState(initialCustomer?.previousBottle?.year ? String(initialCustomer.previousBottle.year) : "");
+  const [bottleMonth, setBottleMonth] = useState("");
+  const [bottleYear, setBottleYear] = useState("");
   const [bottleNotes, setBottleNotes] = useState("");
   const [isCustomerDrawerOpen, setIsCustomerDrawerOpen] = useState(false);
   const [quickCustomerName, setQuickCustomerName] = useState("");
@@ -108,9 +107,7 @@ export function SalesUi({ userRole, history, products, customers }: SalesUiProps
   const bottleAlerts = selectedCustomer
     ? buildBottleAlerts({
         expired: isBottleExpired(currentBottle ?? selectedCustomer.previousBottle ?? null, new Date()),
-        mismatch:
-          hasBottleMismatch(selectedCustomer.previousBottle ?? null, currentBottle) ||
-          hasBottleNotesMismatch(selectedCustomer.previousBottle?.notes ?? null, currentBottle?.notes ?? null),
+        mismatch: hasBottleMismatch(selectedCustomer.previousBottle ?? null, currentBottle),
       })
     : [];
   const totalAmountCents = cartItems.reduce((total, item) => total + item.unitPriceCents * item.quantity, 0);
@@ -174,6 +171,21 @@ export function SalesUi({ userRole, history, products, customers }: SalesUiProps
     setBottleNotes("");
   }
 
+  function replaceKnownCustomers(nextCustomers: SalesCustomerOption[]) {
+    setKnownCustomers(nextCustomers);
+
+    if (!selectedCustomerId) {
+      return;
+    }
+
+    const selectedCustomerStillAvailable = nextCustomers.some((customer) => customer.id === selectedCustomerId);
+
+    if (!selectedCustomerStillAvailable) {
+      setSelectedCustomerId("");
+      syncBottleFields(null);
+    }
+  }
+
   function selectCustomer(customerId: string) {
     setSelectedCustomerId(customerId);
     const customer = knownCustomers.find((item) => item.id === customerId) ?? null;
@@ -224,7 +236,7 @@ export function SalesUi({ userRole, history, products, customers }: SalesUiProps
     const query = customerQuery.trim();
 
     if (!query) {
-      setKnownCustomers(customers);
+      replaceKnownCustomers(customers);
       return;
     }
 
@@ -233,12 +245,7 @@ export function SalesUi({ userRole, history, products, customers }: SalesUiProps
 
     try {
       const result = await searchSaleCustomers(query);
-      setKnownCustomers(result);
-
-      if (result.length > 0) {
-        setSelectedCustomerId(result[0].id);
-        syncBottleFields(result[0]);
-      }
+      replaceKnownCustomers(result);
     } catch {
       setError("Não foi possível buscar os clientes.");
     } finally {
@@ -673,13 +680,6 @@ function formatBottleRecord(bottle: BottleRecord | null | undefined) {
   const notes = bottle.notes?.trim();
 
   return notes ? `${month}/${bottle.year} · ${notes}` : `${month}/${bottle.year}`;
-}
-
-function hasBottleNotesMismatch(previousNotes: string | null, currentNotes: string | null) {
-  const normalizedPrevious = previousNotes?.trim() ?? "";
-  const normalizedCurrent = currentNotes?.trim() ?? "";
-
-  return normalizedPrevious !== normalizedCurrent;
 }
 
 async function getResponseMessage(response: Response, fallback: string) {
