@@ -8,11 +8,11 @@ import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
+import { Drawer } from "@/components/ui/drawer";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Field, SelectInput, TextArea, TextInput } from "@/components/ui/form-controls";
 import { MetricCard } from "@/components/ui/metric-card";
 import { PageHeader } from "@/components/ui/page-header";
-import { Panel } from "@/components/ui/panel";
 import { Toolbar } from "@/components/ui/toolbar";
 import { getProductStatusLabel, productFormToPayload } from "@/lib/products";
 
@@ -39,6 +39,11 @@ export function ProductsUi({ userRole, products, summary }: ProductsUiProps) {
   function closeForm() {
     setFormOpen(false);
     setEditingProduct(null);
+  }
+
+  function openCreateDrawer() {
+    setEditingProduct(null);
+    setFormOpen(true);
   }
 
   function refreshProducts() {
@@ -161,19 +166,15 @@ export function ProductsUi({ userRole, products, summary }: ProductsUiProps) {
 
       {error ? <Alert variant="danger">{error}</Alert> : null}
 
-      {isAdmin && formOpen ? (
-        <Panel className="p-4">
-          <div className="mb-4 flex flex-col gap-1 md:flex-row md:items-start md:justify-between">
-            <div>
-              <h2 className="text-base font-semibold text-[var(--foreground)]">{editingProduct ? "Editar produto" : "Novo produto"}</h2>
-              <p className="mt-1 text-sm text-[var(--muted)]">
-                {editingProduct ? "Atualize dados comerciais. Ajustes de quantidade ficam no modulo de estoque." : "Cadastre o produto com preco e estoque inicial."}
-              </p>
-            </div>
-            <Badge variant={editingProduct ? "info" : "success"}>{editingProduct ? "Edicao" : "Cadastro"}</Badge>
-          </div>
-
-          <form action={saveProduct} className="grid gap-4 md:grid-cols-2">
+      {isAdmin ? (
+        <Drawer
+          badge={<Badge variant={editingProduct ? "info" : "success"}>{editingProduct ? "Edicao" : "Cadastro"}</Badge>}
+          description={editingProduct ? "Atualize dados comerciais. Ajustes de quantidade ficam no modulo de estoque." : "Cadastre o produto com preco e estoque inicial."}
+          onClose={closeForm}
+          open={formOpen}
+          title={editingProduct ? "Editar produto" : "Novo produto"}
+        >
+          <form action={saveProduct} className="grid gap-4">
             <Field label="Nome">
               <TextInput defaultValue={editingProduct?.name ?? ""} name="name" required />
             </Field>
@@ -198,11 +199,11 @@ export function ProductsUi({ userRole, products, summary }: ProductsUiProps) {
               <TextInput defaultValue={editingProduct?.minimumStock ?? 0} min="0" name="minimumStock" required type="number" />
             </Field>
 
-            <Field className="md:col-span-2" label="Descricao">
-              <TextArea defaultValue={editingProduct?.description ?? ""} name="description" />
+            <Field label="Descricao">
+              <TextArea className="min-h-16" defaultValue={editingProduct?.description ?? ""} name="description" />
             </Field>
 
-            <div className="flex flex-wrap gap-2 md:col-span-2">
+            <div className="flex flex-wrap gap-2">
               <Button disabled={isSaving || isPending} type="submit">
                 {isSaving ? "Salvando..." : "Salvar"}
               </Button>
@@ -211,18 +212,13 @@ export function ProductsUi({ userRole, products, summary }: ProductsUiProps) {
               </Button>
             </div>
           </form>
-        </Panel>
+        </Drawer>
       ) : null}
 
       <Toolbar
         actions={
           isAdmin ? (
-            <Button
-              onClick={() => {
-                setEditingProduct(null);
-                setFormOpen(true);
-              }}
-            >
+            <Button onClick={openCreateDrawer}>
               Novo produto
             </Button>
           ) : null

@@ -66,6 +66,17 @@ describe("ProductsUi", () => {
     expect(html).toContain("Editar");
     expect(html).toContain("Inativar");
     expect(html).toContain("Ativar");
+    expect(html).not.toContain('role="dialog"');
+  });
+
+  it("renders product form inside a practical lateral drawer when opened", async () => {
+    const html = await renderProductsWithDrawerOpen();
+
+    expect(html).toContain('role="dialog"');
+    expect(html).toContain("Novo produto");
+    expect(html).toContain("Fechar painel");
+    expect(html).toContain("Cadastre o produto com preco e estoque inicial.");
+    expect(html).toContain("Descricao");
   });
 
   it("renders dense product controls and table labels", () => {
@@ -99,3 +110,36 @@ describe("ProductsUi", () => {
     expect(html).toContain('aria-label="Ativar Fardo 12x500ml"');
   });
 });
+
+async function renderProductsWithDrawerOpen() {
+  vi.resetModules();
+  vi.doMock("react", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("react")>();
+    let stateIndex = 0;
+
+    return {
+      ...actual,
+      useState: vi.fn((initialValue) => {
+        const currentIndex = stateIndex;
+        stateIndex += 1;
+
+        if (currentIndex === 1) {
+          return [true, vi.fn()];
+        }
+
+        return [initialValue, vi.fn()];
+      }),
+    };
+  });
+  vi.doMock("next/navigation", () => ({
+    useRouter: vi.fn(() => ({ refresh: vi.fn() })),
+  }));
+
+  const { ProductsUi: DrawerProductsUi } = await import("./products-ui");
+  const html = renderToStaticMarkup(createElement(DrawerProductsUi, { userRole: "ADMIN", products, summary: { total: 2, active: 1, lowStock: 1 } }));
+
+  vi.doUnmock("react");
+  vi.doUnmock("next/navigation");
+
+  return html;
+}

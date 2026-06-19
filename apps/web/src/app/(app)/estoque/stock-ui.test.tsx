@@ -74,7 +74,19 @@ describe("StockUi", () => {
 
     expect(html).toContain("Registrar entrada");
     expect(html).toContain("Registrar ajuste");
+    expect(html).not.toContain('role="dialog"');
+  });
+
+  it("renders stock actions inside a lateral drawer when opened", async () => {
+    const html = await renderStockWithDrawer({ actionMode: "ENTRY", drawerOpen: true });
+
+    expect(html).toContain('role="dialog"');
+    expect(html).toContain("Registrar entrada");
+    expect(html).toContain("Fechar painel");
     expect(html).toContain("Motivo");
+    expect(html).toContain('placeholder="Ex.: compra semanal"');
+    expect(html).toMatch(/<input[^>]*name="reason"/);
+    expect(html).not.toContain("<textarea");
   });
 
   it("renders dense stock controls and table labels", () => {
@@ -127,7 +139,7 @@ describe("StockUi", () => {
   it("preselects the first product before a row action is clicked", () => {
     const html = renderToStaticMarkup(createElement(StockUi, { userRole: "ADMIN", data: stockPageWithMultipleProducts }));
 
-    expect(html).toMatch(/<option(?=[^>]*selected="")(?=[^>]*value="11111111-1111-4111-8111-111111111111")/);
+    expect(html).not.toContain('role="dialog"');
   });
 
   it("preselects the clicked row product when opening row stock actions", async () => {
@@ -185,8 +197,8 @@ describe("StockUi", () => {
   });
 
   it("requires entry quantity to be positive while allowing zero as final adjustment quantity", async () => {
-    const entryHtml = await renderStockWithActionMode("ENTRY");
-    const adjustmentHtml = await renderStockWithActionMode("ADJUSTMENT");
+    const entryHtml = await renderStockWithDrawer({ actionMode: "ENTRY", drawerOpen: true });
+    const adjustmentHtml = await renderStockWithDrawer({ actionMode: "ADJUSTMENT", drawerOpen: true });
 
     expect(entryHtml).toMatch(/<input[^>]*min="1"[^>]*name="quantity"/);
     expect(adjustmentHtml).toMatch(/<input[^>]*min="0"[^>]*name="newQuantity"/);
@@ -238,22 +250,36 @@ describe("StockUi", () => {
   });
 });
 
-async function renderStockWithActionMode(actionMode: StockActionMode) {
+async function renderStockWithDrawer({ actionMode, drawerOpen }: { actionMode: StockActionMode; drawerOpen: boolean }) {
   vi.resetModules();
   vi.doMock("react", async (importOriginal) => {
     const actual = await importOriginal<typeof import("react")>();
+    let stateIndex = 0;
 
     return {
       ...actual,
-      useState: vi.fn((initialValue) => [initialValue === "ENTRY" ? actionMode : initialValue, vi.fn()]),
+      useState: vi.fn((initialValue) => {
+        const currentIndex = stateIndex;
+        stateIndex += 1;
+
+        if (currentIndex === 6) {
+          return [actionMode, vi.fn()];
+        }
+
+        if (currentIndex === 7) {
+          return [drawerOpen, vi.fn()];
+        }
+
+        return [initialValue, vi.fn()];
+      }),
     };
   });
   vi.doMock("next/navigation", () => ({
     useRouter: vi.fn(() => ({ refresh: vi.fn() })),
   }));
 
-  const { StockUi: ActionModeStockUi } = await import("./stock-ui");
-  const html = renderToStaticMarkup(createElement(ActionModeStockUi, { userRole: "ADMIN", data: stockPage }));
+  const { StockUi: DrawerStockUi } = await import("./stock-ui");
+  const html = renderToStaticMarkup(createElement(DrawerStockUi, { userRole: "ADMIN", data: stockPage }));
 
   vi.doUnmock("react");
   vi.doUnmock("next/navigation");

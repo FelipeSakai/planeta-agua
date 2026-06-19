@@ -7,6 +7,7 @@ import { Alert } from "./alert";
 import { Badge } from "./badge";
 import { Button } from "./button";
 import { DataTable } from "./data-table";
+import { Drawer } from "./drawer";
 import { EmptyState } from "./empty-state";
 import { Field, SelectInput, TextInput } from "./form-controls";
 import { MetricCard } from "./metric-card";
@@ -150,6 +151,21 @@ describe("ui foundation", () => {
     expect(html).toContain("Produto");
     expect(html).toContain("Galao");
     expect(html).toContain("Estoque");
+  });
+
+  it("renders a reusable lateral drawer with dialog semantics", () => {
+    const html = renderToStaticMarkup(
+      <Drawer open title="Registrar entrada" description="Atualize o estoque sem perder a tabela de vista." onClose={() => undefined}>
+        <p>Conteudo</p>
+      </Drawer>,
+    );
+
+    expect(html).toContain('role="dialog"');
+    expect(html).toContain('aria-modal="true"');
+    expect(html).toContain("Registrar entrada");
+    expect(html).toContain("Atualize o estoque sem perder a tabela de vista.");
+    expect(html).toContain("Fechar painel");
+    expect(html).toContain("Conteudo");
   });
 
   it("renders variable toolbars without fixed desktop grid tracks", () => {

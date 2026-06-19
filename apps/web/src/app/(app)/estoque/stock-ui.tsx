@@ -8,8 +8,9 @@ import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
+import { Drawer } from "@/components/ui/drawer";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Field, SelectInput, TextArea, TextInput } from "@/components/ui/form-controls";
+import { Field, SelectInput, TextInput } from "@/components/ui/form-controls";
 import { MetricCard } from "@/components/ui/metric-card";
 import { PageHeader } from "@/components/ui/page-header";
 import { Panel } from "@/components/ui/panel";
@@ -35,6 +36,7 @@ export function StockUi({ userRole, data }: StockUiProps) {
   const firstProductId = data.products[0]?.id ?? "";
   const [selectedProductId, setSelectedProductId] = useState(firstProductId);
   const [actionMode, setActionMode] = useState<StockActionMode>("ENTRY");
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const mutationInFlight = useRef(false);
   const [isPending, startTransition] = useTransition();
   const isAdmin = userRole === "ADMIN";
@@ -45,6 +47,16 @@ export function StockUi({ userRole, data }: StockUiProps) {
 
   function refreshStock() {
     startTransition(() => router.refresh());
+  }
+
+  function closeDrawer() {
+    setIsDrawerOpen(false);
+  }
+
+  function openDrawer(mode: StockActionMode, productId = firstProductId) {
+    setActionMode(mode);
+    setSelectedProductId(productId);
+    setIsDrawerOpen(true);
   }
 
   async function submitEntry(formData: FormData) {
@@ -69,6 +81,7 @@ export function StockUi({ userRole, data }: StockUiProps) {
         return;
       }
 
+      closeDrawer();
       refreshStock();
     } catch {
       setError("Confira produto, quantidade e motivo da entrada.");
@@ -100,6 +113,7 @@ export function StockUi({ userRole, data }: StockUiProps) {
         return;
       }
 
+      closeDrawer();
       refreshStock();
     } catch {
       setError("Confira produto, quantidade final e motivo do ajuste.");
@@ -152,7 +166,7 @@ export function StockUi({ userRole, data }: StockUiProps) {
       key: "actions",
       header: "Ações",
       className: "whitespace-nowrap",
-      cell: (row) => <StockRowActions isAdmin={isAdmin} productId={row.id} productName={row.name} setActionMode={setActionMode} setSelectedProductId={setSelectedProductId} />,
+      cell: (row) => <StockRowActions isAdmin={isAdmin} productId={row.id} productName={row.name} openDrawer={openDrawer} />,
     },
   ];
 
@@ -165,8 +179,8 @@ export function StockUi({ userRole, data }: StockUiProps) {
         actions={
           isAdmin ? (
             <>
-              <Button onClick={() => setActionMode("ENTRY")}>Registrar entrada</Button>
-              <Button variant="secondary" onClick={() => setActionMode("ADJUSTMENT")}>Registrar ajuste</Button>
+              <Button onClick={() => openDrawer("ENTRY")}>Registrar entrada</Button>
+              <Button variant="secondary" onClick={() => openDrawer("ADJUSTMENT")}>Registrar ajuste</Button>
             </>
           ) : null
         }
@@ -181,15 +195,13 @@ export function StockUi({ userRole, data }: StockUiProps) {
       {error ? <Alert variant="danger">{error}</Alert> : null}
 
       {isAdmin ? (
-        <Panel className="p-4">
-          <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
-            <div>
-              <h2 className="text-base font-semibold text-[var(--foreground)]">{activeForm.title}</h2>
-              <p className="mt-1 text-sm text-[var(--muted)]">{activeForm.description}</p>
-            </div>
-            <Badge variant={actionMode === "ENTRY" ? "info" : "warning"}>{actionMode === "ENTRY" ? "Entrada" : "Ajuste"}</Badge>
-          </div>
-
+        <Drawer
+          badge={<Badge variant={actionMode === "ENTRY" ? "info" : "warning"}>{actionMode === "ENTRY" ? "Entrada" : "Ajuste"}</Badge>}
+          description={activeForm.description}
+          onClose={closeDrawer}
+          open={isDrawerOpen}
+          title={activeForm.title}
+        >
           <StockForm
             action={actionMode === "ENTRY" ? submitEntry : submitAdjustment}
             disabled={isSaving || isPending}
@@ -202,7 +214,7 @@ export function StockUi({ userRole, data }: StockUiProps) {
             submitLabel={activeForm.submitLabel}
             title={activeForm.title}
           />
-        </Panel>
+        </Drawer>
       ) : null}
 
       <Toolbar>
@@ -254,7 +266,7 @@ export function StockUi({ userRole, data }: StockUiProps) {
                 </dd>
               </div>
             </dl>
-            <StockRowActions isAdmin={isAdmin} productId={row.id} productName={row.name} setActionMode={setActionMode} setSelectedProductId={setSelectedProductId} />
+            <StockRowActions isAdmin={isAdmin} productId={row.id} productName={row.name} openDrawer={openDrawer} />
           </div>
         )}
       />
@@ -335,7 +347,7 @@ function StockForm({
   disabled: boolean;
 }) {
   return (
-    <form action={action} aria-label={title} className="mt-4 grid gap-3 lg:grid-cols-[minmax(220px,1fr)_160px_minmax(220px,1.2fr)_auto] lg:items-end">
+    <form action={action} aria-label={title} className="grid gap-4">
       <Field label="Produto">
         <SelectInput disabled={disabled} name="productId" onChange={(event) => setSelectedProductId(event.target.value)} required value={selectedProductId}>
           {products.map((product) => (
@@ -351,10 +363,10 @@ function StockForm({
       </Field>
 
       <Field label="Motivo">
-        <TextArea disabled={disabled} name="reason" required />
+        <TextInput disabled={disabled} name="reason" placeholder="Ex.: compra semanal" required />
       </Field>
 
-      <Button className="lg:mb-0.5" disabled={disabled} type="submit">
+      <Button disabled={disabled} type="submit">
         {disabled ? "Salvando..." : submitLabel}
       </Button>
     </form>
@@ -390,28 +402,21 @@ function StockRowActions({
   isAdmin,
   productId,
   productName,
-  setActionMode,
-  setSelectedProductId,
+  openDrawer,
 }: {
   isAdmin: boolean;
   productId: string;
   productName: string;
-  setActionMode: (mode: StockActionMode) => void;
-  setSelectedProductId: (productId: string) => void;
+  openDrawer: (mode: StockActionMode, productId: string) => void;
 }) {
   if (!isAdmin) {
     return <span className="text-xs text-[var(--muted)]">Somente consulta</span>;
   }
 
-  function openAction(mode: StockActionMode) {
-    setSelectedProductId(productId);
-    setActionMode(mode);
-  }
-
   return (
     <div className="flex flex-wrap gap-2">
-      <Button aria-label={`Registrar entrada para ${productName}`} variant="secondary" onClick={() => openAction("ENTRY")}>Entrada</Button>
-      <Button aria-label={`Registrar ajuste para ${productName}`} variant="ghost" onClick={() => openAction("ADJUSTMENT")}>Ajuste</Button>
+      <Button aria-label={`Registrar entrada para ${productName}`} variant="secondary" onClick={() => openDrawer("ENTRY", productId)}>Entrada</Button>
+      <Button aria-label={`Registrar ajuste para ${productName}`} variant="ghost" onClick={() => openDrawer("ADJUSTMENT", productId)}>Ajuste</Button>
     </div>
   );
 }
