@@ -131,6 +131,52 @@ describe("SalesService", () => {
     ).rejects.toMatchObject({ message: "Venda ja cancelada." });
   });
 
+  it("returns minimized customer data for sales customer search", async () => {
+    const repository = createRepository();
+    const service = new SalesService(repository as never);
+
+    repository.searchCustomers.mockResolvedValueOnce([
+      {
+        id: "99999999-9999-4999-8999-999999999999",
+        name: "Maria",
+        phone: "11999999999",
+        address: "Rua A, 10",
+        notes: "Cliente recorrente",
+        createdAt: new Date("2026-06-18T09:00:00.000Z"),
+        updatedAt: new Date("2026-06-18T09:30:00.000Z"),
+      },
+    ]);
+
+    await expect(service.searchCustomers("mar")).resolves.toEqual([
+      {
+        id: "99999999-9999-4999-8999-999999999999",
+        name: "Maria",
+        phone: "11999999999",
+      },
+    ]);
+  });
+
+  it("returns minimized customer data for quick customer creation", async () => {
+    const repository = createRepository();
+    const service = new SalesService(repository as never);
+
+    repository.createQuickCustomer.mockResolvedValueOnce({
+      id: "12121212-1212-4212-8212-121212121212",
+      name: "Joao",
+      phone: "11888888888",
+      address: null,
+      notes: null,
+      createdAt: new Date("2026-06-18T11:00:00.000Z"),
+      updatedAt: new Date("2026-06-18T11:00:00.000Z"),
+    });
+
+    await expect(service.createQuickCustomer({ name: "Joao", phone: "11888888888" })).resolves.toEqual({
+      id: "12121212-1212-4212-8212-121212121212",
+      name: "Joao",
+      phone: "11888888888",
+    });
+  });
+
   it("allows operators and admins to cancel sales", async () => {
     const repository = createRepository();
     const service = new SalesService(repository as never);

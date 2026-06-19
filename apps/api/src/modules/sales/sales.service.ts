@@ -15,6 +15,8 @@ import {
 type PermissionUser = Pick<SessionUser, "id" | "role">;
 type SaleListRow = Awaited<ReturnType<SalesRepository["listSales"]>>[number];
 type SaleDetailRow = NonNullable<Awaited<ReturnType<SalesRepository["getSaleDetail"]>>>;
+type SalesCustomerRow = Awaited<ReturnType<SalesRepository["searchCustomers"]>>[number];
+type SalesCustomerSummary = Pick<SalesCustomerRow, "id" | "name" | "phone">;
 
 @Injectable()
 export class SalesService {
@@ -64,18 +66,22 @@ export class SalesService {
     }
   }
 
-  async searchCustomers(query: string) {
-    return this.salesRepository.searchCustomers(query);
+  async searchCustomers(query: string): Promise<SalesCustomerSummary[]> {
+    const customers = await this.salesRepository.searchCustomers(query);
+
+    return customers.map((customer) => this.toCustomerSummary(customer));
   }
 
-  async createQuickCustomer(input: QuickCustomerInput) {
+  async createQuickCustomer(input: QuickCustomerInput): Promise<SalesCustomerSummary> {
     const parsedInput = quickCustomerInputSchema.safeParse(input);
 
     if (!parsedInput.success) {
       throw new BadRequestException("Dados do cliente invalidos.");
     }
 
-    return this.salesRepository.createQuickCustomer(parsedInput.data);
+    const customer = await this.salesRepository.createQuickCustomer(parsedInput.data);
+
+    return this.toCustomerSummary(customer);
   }
 
   private mapCreateSaleError(error: unknown) {
@@ -169,6 +175,14 @@ export class SalesService {
       month,
       year,
       notes,
+    };
+  }
+
+  private toCustomerSummary(customer: SalesCustomerRow): SalesCustomerSummary {
+    return {
+      id: customer.id,
+      name: customer.name,
+      phone: customer.phone,
     };
   }
 }

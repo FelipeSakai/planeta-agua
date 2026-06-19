@@ -105,7 +105,7 @@ describe("SalesController", () => {
 
   it("searches customers for authenticated requests", async () => {
     const { controller, salesService } = createController();
-    const customers = [{ id: "66666666-6666-4666-8666-666666666666", name: "Maria" }];
+    const customers = [{ id: "66666666-6666-4666-8666-666666666666", name: "Maria", phone: "11999999999" }];
     salesService.searchCustomers.mockResolvedValueOnce(customers);
 
     await expect(controller.searchCustomers(request as never, "mar")).resolves.toEqual(customers);
