@@ -64,6 +64,12 @@ export const sales = pgTable("sales", {
   totalAmountCents: integer("total_amount_cents").notNull(),
   paymentMethod: paymentMethodEnum("payment_method").notNull(),
   status: saleStatusEnum("status").notNull().default("COMPLETED"),
+  bottleMonth: integer("bottle_month"),
+  bottleYear: integer("bottle_year"),
+  bottleNotes: text("bottle_notes"),
+  canceledAt: timestamp("canceled_at", { withTimezone: true }),
+  canceledByUserId: uuid("canceled_by_user_id").references(() => users.id),
+  cancellationReason: text("cancellation_reason"),
   ...timestamps,
 });
 
@@ -130,6 +136,10 @@ export const salesRelations = relations(sales, ({ one, many }) => ({
   }),
   user: one(users, {
     fields: [sales.userId],
+    references: [users.id],
+  }),
+  canceledByUser: one(users, {
+    fields: [sales.canceledByUserId],
     references: [users.id],
   }),
   items: many(saleItems),

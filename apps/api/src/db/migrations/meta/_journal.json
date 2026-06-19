@@ -15,6 +15,13 @@
       "when": 1780727806316,
       "tag": "0001_clammy_true_believers",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1781837872456,
+      "tag": "0002_sales_flow_columns",
+      "breakpoints": true
     }
   ]
 }
