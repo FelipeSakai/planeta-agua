@@ -61,11 +61,11 @@ export function buildBottleAlerts(alerts: { expired: boolean; mismatch: boolean 
   const messages: string[] = [];
 
   if (alerts.expired) {
-    messages.push("Galao acima da validade de 3 anos.");
+    messages.push("Galão acima da validade de 3 anos.");
   }
 
   if (alerts.mismatch) {
-    messages.push("Galao informado difere do ultimo registro do cliente.");
+    messages.push("Galão informado difere do último registro do cliente.");
   }
 
   return messages;

@@ -137,8 +137,8 @@ describe("sales web helpers", () => {
 
   it("builds expired and mismatch alert labels", () => {
     expect(buildBottleAlerts({ expired: true, mismatch: true })).toEqual([
-      "Galao acima da validade de 3 anos.",
-      "Galao informado difere do ultimo registro do cliente.",
+      "Galão acima da validade de 3 anos.",
+      "Galão informado difere do último registro do cliente.",
     ]);
   });
 
