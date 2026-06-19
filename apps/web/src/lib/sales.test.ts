@@ -107,6 +107,30 @@ describe("sales web helpers", () => {
     ).toMatchObject({ bottle: null });
   });
 
+  it("fails fast when bottle month or year is missing", () => {
+    expect(() =>
+      saleFormToPayload({
+        customerId: null,
+        paymentMethod: "PIX",
+        items: [{ productId: "11111111-1111-4111-8111-111111111111", quantity: 1 }],
+        bottleMonth: "6",
+        bottleYear: "",
+        bottleNotes: "azul",
+      }),
+    ).toThrow("Informe mes e ano do galao.");
+
+    expect(() =>
+      saleFormToPayload({
+        customerId: null,
+        paymentMethod: "PIX",
+        items: [{ productId: "11111111-1111-4111-8111-111111111111", quantity: 1 }],
+        bottleMonth: "",
+        bottleYear: "2024",
+        bottleNotes: "azul",
+      }),
+    ).toThrow("Informe mes e ano do galao.");
+  });
+
   it("builds the cancel sale payload", () => {
     expect(cancelSalePayload("  Cliente desistiu.  ")).toEqual({ reason: "Cliente desistiu." });
   });
@@ -128,6 +152,14 @@ describe("sales web helpers", () => {
     });
   });
 
+  it("throws a clear error when sales history cannot be loaded", async () => {
+    mockedFetch.mockResolvedValue({ ok: false, json: vi.fn() });
+
+    await expect(fetchSalesHistory("pa_session=expired")).rejects.toThrow(
+      "Nao foi possivel carregar o historico de vendas.",
+    );
+  });
+
   it("fetches and parses a sale detail", async () => {
     mockedFetch.mockResolvedValue({ ok: true, json: vi.fn().mockResolvedValue(saleDetailPayload) });
 
@@ -140,6 +172,14 @@ describe("sales web helpers", () => {
     });
   });
 
+  it("throws a clear error when a sale detail cannot be loaded", async () => {
+    mockedFetch.mockResolvedValue({ ok: false, json: vi.fn() });
+
+    await expect(fetchSaleDetail("pa_session=expired", "11111111-1111-4111-8111-111111111111")).rejects.toThrow(
+      "Nao foi possivel carregar os detalhes da venda.",
+    );
+  });
+
   it("searches sale customers with the minimal response payload", async () => {
     mockedFetch.mockResolvedValue({ ok: true, json: vi.fn().mockResolvedValue([customerPayload]) });
 
@@ -148,6 +188,14 @@ describe("sales web helpers", () => {
       headers: { cookie: "pa_session=token" },
       cache: "no-store",
     });
+  });
+
+  it("throws a clear error when customer search fails", async () => {
+    mockedFetch.mockResolvedValue({ ok: false, json: vi.fn() });
+
+    await expect(searchSaleCustomers("pa_session=expired", "mar")).rejects.toThrow(
+      "Nao foi possivel buscar os clientes.",
+    );
   });
 
   it("creates a quick customer with the minimal payload", async () => {
@@ -162,5 +210,13 @@ describe("sales web helpers", () => {
       body: JSON.stringify({ name: "Maria", phone: "11999999999" }),
       cache: "no-store",
     });
+  });
+
+  it("throws a clear error when customer creation fails", async () => {
+    mockedFetch.mockResolvedValue({ ok: false, json: vi.fn() });
+
+    await expect(createSaleCustomer("pa_session=expired", { name: "Maria", phone: "11999999999" })).rejects.toThrow(
+      "Nao foi possivel cadastrar o cliente.",
+    );
   });
 });

@@ -16,6 +16,12 @@ const saleCustomerResponseSchema = quickCustomerInputSchema.extend({
 
 const saleCustomersResponseSchema = z.array(saleCustomerResponseSchema);
 
+function ensureResponseOk(response: Response, message: string) {
+  if (!response.ok) {
+    throw new Error(message);
+  }
+}
+
 export function saleFormToPayload(input: {
   customerId: string | null;
   paymentMethod: "CASH" | "PIX" | "CREDIT_CARD" | "DEBIT_CARD" | "OTHER";
@@ -24,7 +30,14 @@ export function saleFormToPayload(input: {
   bottleYear: string;
   bottleNotes: string;
 }) {
-  const bottle = input.bottleMonth && input.bottleYear
+  const hasBottleMonth = input.bottleMonth.trim() !== "";
+  const hasBottleYear = input.bottleYear.trim() !== "";
+
+  if (hasBottleMonth !== hasBottleYear) {
+    throw new Error("Informe mes e ano do galao.");
+  }
+
+  const bottle = hasBottleMonth && hasBottleYear
     ? {
         month: Number(input.bottleMonth),
         year: Number(input.bottleYear),
@@ -64,6 +77,8 @@ export async function fetchSalesHistory(cookieHeader: string) {
     cache: "no-store",
   });
 
+  ensureResponseOk(response, "Nao foi possivel carregar o historico de vendas.");
+
   return saleHistoryResponseSchema.parse(await response.json());
 }
 
@@ -74,6 +89,8 @@ export async function fetchSaleDetail(cookieHeader: string, id: string) {
     cache: "no-store",
   });
 
+  ensureResponseOk(response, "Nao foi possivel carregar os detalhes da venda.");
+
   return saleDetailResponseSchema.parse(await response.json());
 }
 
@@ -83,6 +100,8 @@ export async function searchSaleCustomers(cookieHeader: string, query: string) {
     headers: { cookie: cookieHeader },
     cache: "no-store",
   });
+
+  ensureResponseOk(response, "Nao foi possivel buscar os clientes.");
 
   return saleCustomersResponseSchema.parse(await response.json());
 }
@@ -101,6 +120,8 @@ export async function createSaleCustomer(
     body: JSON.stringify(payload),
     cache: "no-store",
   });
+
+  ensureResponseOk(response, "Nao foi possivel cadastrar o cliente.");
 
   return saleCustomerResponseSchema.parse(await response.json());
 }
