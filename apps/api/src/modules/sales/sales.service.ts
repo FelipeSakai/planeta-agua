@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { hasBottleMismatch, isBottleExpired, type SessionUser } from "shared";
 
 import { SalesRepository } from "./sales.repository";
@@ -51,8 +51,6 @@ export class SalesService {
   }
 
   async cancelSale(user: PermissionUser, saleId: string, reason: string) {
-    this.requireAdmin(user);
-
     const parsedInput = cancelSaleInputSchema.safeParse({ reason });
 
     if (!parsedInput.success) {
@@ -78,12 +76,6 @@ export class SalesService {
     }
 
     return this.salesRepository.createQuickCustomer(parsedInput.data);
-  }
-
-  private requireAdmin(user: PermissionUser) {
-    if (user.role !== "ADMIN") {
-      throw new ForbiddenException("Voce nao tem permissao para cancelar vendas.");
-    }
   }
 
   private mapCreateSaleError(error: unknown) {

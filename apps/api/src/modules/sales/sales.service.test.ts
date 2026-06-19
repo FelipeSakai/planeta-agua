@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException } from "@nestjs/common";
+import { BadRequestException } from "@nestjs/common";
 import { describe, expect, it, vi } from "vitest";
 
 import { SalesService } from "./sales.service";
@@ -131,11 +131,30 @@ describe("SalesService", () => {
     ).rejects.toMatchObject({ message: "Venda ja cancelada." });
   });
 
-  it("blocks operators from canceling sales", async () => {
-    const service = new SalesService(createRepository() as never);
+  it("allows operators and admins to cancel sales", async () => {
+    const repository = createRepository();
+    const service = new SalesService(repository as never);
+    const canceledSale = { id: "88888888-8888-4888-8888-888888888888", status: "CANCELED" as const };
 
+    repository.cancelSale.mockResolvedValueOnce(canceledSale);
     await expect(
       service.cancelSale(operatorUser, "88888888-8888-4888-8888-888888888888", "Cliente desistiu."),
-    ).rejects.toBeInstanceOf(ForbiddenException);
+    ).resolves.toEqual(canceledSale);
+
+    repository.cancelSale.mockResolvedValueOnce(canceledSale);
+    await expect(
+      service.cancelSale(adminUser, "88888888-8888-4888-8888-888888888888", "Cliente desistiu."),
+    ).resolves.toEqual(canceledSale);
+
+    expect(repository.cancelSale).toHaveBeenNthCalledWith(1, {
+      saleId: "88888888-8888-4888-8888-888888888888",
+      userId: operatorUser.id,
+      reason: "Cliente desistiu.",
+    });
+    expect(repository.cancelSale).toHaveBeenNthCalledWith(2, {
+      saleId: "88888888-8888-4888-8888-888888888888",
+      userId: adminUser.id,
+      reason: "Cliente desistiu.",
+    });
   });
 });

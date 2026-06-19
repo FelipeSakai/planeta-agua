@@ -54,13 +54,32 @@ describe("SalesController", () => {
 
   it("cancels a sale with the authenticated user", async () => {
     const { controller, authService, salesService } = createController();
-    const admin = {
+    const operator = {
       id: "44444444-4444-4444-8444-444444444444",
+      name: "Operador 2",
+      email: "operador2@planetaagua.local",
+      role: "OPERATOR" as const,
+    };
+    const admin = {
+      id: "66666666-6666-4666-8666-666666666666",
       name: "Admin",
       email: "admin@planetaagua.local",
       role: "ADMIN" as const,
     };
     const sale = { id: "55555555-5555-4555-8555-555555555555", status: "CANCELED" as const };
+    authService.getUserByToken.mockResolvedValueOnce(operator);
+    salesService.cancelSale.mockResolvedValueOnce(sale);
+
+    await expect(
+      controller.cancel(
+        "55555555-5555-4555-8555-555555555555",
+        request as never,
+        { reason: "Cliente desistiu." },
+      ),
+    ).resolves.toEqual(sale);
+
+    expect(salesService.cancelSale).toHaveBeenCalledWith(operator, "55555555-5555-4555-8555-555555555555", "Cliente desistiu.");
+
     authService.getUserByToken.mockResolvedValueOnce(admin);
     salesService.cancelSale.mockResolvedValueOnce(sale);
 
@@ -72,7 +91,25 @@ describe("SalesController", () => {
       ),
     ).resolves.toEqual(sale);
 
-    expect(salesService.cancelSale).toHaveBeenCalledWith(admin, "55555555-5555-4555-8555-555555555555", "Cliente desistiu.");
+    expect(salesService.cancelSale).toHaveBeenLastCalledWith(admin, "55555555-5555-4555-8555-555555555555", "Cliente desistiu.");
+  });
+
+  it("returns sale detail for authenticated requests", async () => {
+    const { controller, salesService } = createController();
+    const detail = { sale: { id: "55555555-5555-4555-8555-555555555555" }, items: [], bottleAlerts: { expired: false, mismatch: false } };
+    salesService.getSaleDetail.mockResolvedValueOnce(detail);
+
+    await expect(controller.detail(request as never, "55555555-5555-4555-8555-555555555555")).resolves.toEqual(detail);
+    expect(salesService.getSaleDetail).toHaveBeenCalledWith("55555555-5555-4555-8555-555555555555");
+  });
+
+  it("searches customers for authenticated requests", async () => {
+    const { controller, salesService } = createController();
+    const customers = [{ id: "66666666-6666-4666-8666-666666666666", name: "Maria" }];
+    salesService.searchCustomers.mockResolvedValueOnce(customers);
+
+    await expect(controller.searchCustomers(request as never, "mar")).resolves.toEqual(customers);
+    expect(salesService.searchCustomers).toHaveBeenCalledWith("mar");
   });
 
   it("creates a quick customer for authenticated sales flow", async () => {
