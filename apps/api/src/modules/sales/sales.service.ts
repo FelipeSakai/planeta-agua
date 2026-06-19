@@ -2,6 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from "@nestjs/comm
 import { hasBottleMismatch, isBottleExpired, type SessionUser } from "shared";
 
 import { SalesRepository } from "./sales.repository";
+import { SalesRepositoryError } from "./sales.errors";
 import {
   cancelSaleInputSchema,
   createSaleInputSchema,
@@ -91,35 +92,27 @@ export class SalesService {
   }
 
   private mapCreateSaleError(error: unknown) {
-    const message = this.getErrorMessage(error);
-
-    if (
-      message?.includes("nao encontrado") ||
-      message?.includes("esta inativo") ||
-      message?.includes("Estoque insuficiente")
-    ) {
-      return new BadRequestException(message);
+    if (error instanceof SalesRepositoryError) {
+      return new BadRequestException(error.message);
     }
 
     return new BadRequestException("Nao foi possivel finalizar a venda.");
   }
 
   private mapCancelSaleError(error: unknown) {
-    const message = this.getErrorMessage(error);
+    if (error instanceof SalesRepositoryError) {
+      if (error.code === "SALE_NOT_FOUND") {
+        return new NotFoundException("Venda nao encontrada.");
+      }
 
-    if (message?.includes("nao encontrada")) {
-      return new NotFoundException("Venda nao encontrada.");
-    }
+      if (error.code === "SALE_ALREADY_CANCELED") {
+        return new BadRequestException("Venda ja cancelada.");
+      }
 
-    if (message?.includes("ja cancelada")) {
-      return new BadRequestException("Venda ja cancelada.");
+      return new BadRequestException(error.message);
     }
 
     return new BadRequestException("Nao foi possivel cancelar a venda.");
-  }
-
-  private getErrorMessage(error: unknown) {
-    return error instanceof Error ? error.message : null;
   }
 
   private toHistoryResponse(sale: SaleListRow): SalesListResponse[number] {

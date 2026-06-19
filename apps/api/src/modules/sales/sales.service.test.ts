@@ -1,6 +1,7 @@
-import { BadRequestException } from "@nestjs/common";
+import { BadRequestException, NotFoundException } from "@nestjs/common";
 import { describe, expect, it, vi } from "vitest";
 
+import { SalesRepositoryError } from "./sales.errors";
 import { SalesService } from "./sales.service";
 
 const operatorUser = {
@@ -26,7 +27,7 @@ function createRepository() {
 }
 
 describe("SalesService", () => {
-  it("rejects a sale when repository reports inactive product or insufficient stock", async () => {
+  it("rejects a sale when repository reports inactive product, missing product, or insufficient stock", async () => {
     const repository = createRepository();
     const service = new SalesService(repository as never);
     const input = {
@@ -36,16 +37,45 @@ describe("SalesService", () => {
       bottle: null,
     };
 
-    repository.createSale.mockRejectedValueOnce(new Error("Produto Galao 20L esta inativo."));
+    repository.createSale.mockRejectedValueOnce(
+      new SalesRepositoryError("PRODUCT_INACTIVE", "Produto Galao 20L esta inativo."),
+    );
 
     await expect(service.createSale(operatorUser, input)).rejects.toMatchObject({
       message: "Produto Galao 20L esta inativo.",
     });
 
-    repository.createSale.mockRejectedValueOnce(new Error("Estoque insuficiente para Galao 20L."));
+    repository.createSale.mockRejectedValueOnce(
+      new SalesRepositoryError("INSUFFICIENT_STOCK", "Estoque insuficiente para Galao 20L."),
+    );
 
     await expect(service.createSale(operatorUser, input)).rejects.toMatchObject({
       message: "Estoque insuficiente para Galao 20L.",
+    });
+
+    repository.createSale.mockRejectedValueOnce(
+      new SalesRepositoryError("PRODUCT_NOT_FOUND", "Produto 33333333-3333-4333-8333-333333333333 nao encontrado."),
+    );
+
+    await expect(service.createSale(operatorUser, input)).rejects.toMatchObject({
+      message: "Produto 33333333-3333-4333-8333-333333333333 nao encontrado.",
+    });
+  });
+
+  it("falls back to a generic message when the repository throws a non-typed error", async () => {
+    const repository = createRepository();
+    const service = new SalesService(repository as never);
+    const input = {
+      customerId: null,
+      paymentMethod: "PIX" as const,
+      items: [{ productId: "33333333-3333-4333-8333-333333333333", quantity: 1 }],
+      bottle: null,
+    };
+
+    repository.createSale.mockRejectedValueOnce(new Error("conexao perdida"));
+
+    await expect(service.createSale(operatorUser, input)).rejects.toMatchObject({
+      message: "Nao foi possivel finalizar a venda.",
     });
   });
 
@@ -117,18 +147,28 @@ describe("SalesService", () => {
     });
   });
 
-  it("requires a cancellation reason and rejects double cancellation", async () => {
+  it("requires a cancellation reason and rejects double cancellation or missing sale", async () => {
     const repository = createRepository();
     const service = new SalesService(repository as never);
 
     await expect(service.cancelSale(adminUser, "88888888-8888-4888-8888-888888888888", "" as never)).rejects.toBeInstanceOf(BadRequestException);
     expect(repository.cancelSale).not.toHaveBeenCalled();
 
-    repository.cancelSale.mockRejectedValueOnce(new Error("Venda 88888888-8888-4888-8888-888888888888 ja cancelada."));
+    repository.cancelSale.mockRejectedValueOnce(
+      new SalesRepositoryError("SALE_ALREADY_CANCELED", "Venda 88888888-8888-4888-8888-888888888888 ja cancelada."),
+    );
 
     await expect(
       service.cancelSale(adminUser, "88888888-8888-4888-8888-888888888888", "Cliente desistiu."),
     ).rejects.toMatchObject({ message: "Venda ja cancelada." });
+
+    repository.cancelSale.mockRejectedValueOnce(
+      new SalesRepositoryError("SALE_NOT_FOUND", "Venda 88888888-8888-4888-8888-888888888888 nao encontrada."),
+    );
+
+    await expect(
+      service.cancelSale(adminUser, "88888888-8888-4888-8888-888888888888", "Cliente desistiu."),
+    ).rejects.toBeInstanceOf(NotFoundException);
   });
 
   it("returns minimized customer data for sales customer search", async () => {

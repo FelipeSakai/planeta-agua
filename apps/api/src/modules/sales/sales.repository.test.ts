@@ -3,6 +3,7 @@ import { afterAll, beforeEach, describe, expect, it } from "vitest";
 
 import { closeDb, db } from "../../db";
 import { customers, products, saleItems, sales, sessions, stockMovements, users } from "../../db/schema";
+import { SalesRepositoryError } from "./sales.errors";
 import { SalesRepository } from "./sales.repository";
 
 describe("SalesRepository", () => {
@@ -403,5 +404,155 @@ describe("SalesRepository", () => {
         expect.objectContaining({ type: "CANCELED_SALE", quantity: 3, reason: "Cliente desistiu na entrega." }),
       ]),
     );
+  });
+
+  it("rejects a sale without enough stock and rolls back the transaction", async () => {
+    const [user] = await db
+      .insert(users)
+      .values({
+        name: "Operador Estoque",
+        email: "operador-estoque@planetaagua.local",
+        passwordHash: "hash",
+        role: "OPERATOR",
+      })
+      .returning();
+    const [product] = await db
+      .insert(products)
+      .values({
+        name: "Galao Sem Estoque",
+        salePriceCents: 1800,
+        stockQuantity: 1,
+        minimumStock: 1,
+      })
+      .returning();
+
+    const insufficientStockRejection = repository.createSale({
+      customerId: null,
+      userId: user.id,
+      paymentMethod: "PIX",
+      items: [{ productId: product.id, quantity: 2 }],
+      bottle: null,
+    });
+
+    await expect(insufficientStockRejection).rejects.toBeInstanceOf(SalesRepositoryError);
+    await expect(insufficientStockRejection).rejects.toMatchObject({ code: "INSUFFICIENT_STOCK" });
+
+    const salesCount = await db.query.sales.findMany();
+    const itemsCount = await db.query.saleItems.findMany();
+    const movementsCount = await db.query.stockMovements.findMany();
+    const persistedProduct = await db.query.products.findFirst({
+      where: (currentProduct, { eq }) => eq(currentProduct.id, product.id),
+    });
+
+    expect(salesCount).toHaveLength(0);
+    expect(itemsCount).toHaveLength(0);
+    expect(movementsCount).toHaveLength(0);
+    expect(persistedProduct?.stockQuantity).toBe(1);
+  });
+
+  it("rejects a sale with an inactive product and rolls back the transaction", async () => {
+    const [user] = await db
+      .insert(users)
+      .values({
+        name: "Operador Inativo",
+        email: "operador-inativo@planetaagua.local",
+        passwordHash: "hash",
+        role: "OPERATOR",
+      })
+      .returning();
+    const [product] = await db
+      .insert(products)
+      .values({
+        name: "Galao Inativo",
+        salePriceCents: 1800,
+        stockQuantity: 5,
+        minimumStock: 1,
+        isActive: false,
+      })
+      .returning();
+
+    const inactiveProductRejection = repository.createSale({
+      customerId: null,
+      userId: user.id,
+      paymentMethod: "PIX",
+      items: [{ productId: product.id, quantity: 1 }],
+      bottle: null,
+    });
+
+    await expect(inactiveProductRejection).rejects.toBeInstanceOf(SalesRepositoryError);
+    await expect(inactiveProductRejection).rejects.toMatchObject({ code: "PRODUCT_INACTIVE" });
+
+    const salesCount = await db.query.sales.findMany();
+    const itemsCount = await db.query.saleItems.findMany();
+    const movementsCount = await db.query.stockMovements.findMany();
+    const persistedProduct = await db.query.products.findFirst({
+      where: (currentProduct, { eq }) => eq(currentProduct.id, product.id),
+    });
+
+    expect(salesCount).toHaveLength(0);
+    expect(itemsCount).toHaveLength(0);
+    expect(movementsCount).toHaveLength(0);
+    expect(persistedProduct?.stockQuantity).toBe(5);
+  });
+
+  it("prevents canceling a sale that is already canceled", async () => {
+    const [user] = await db
+      .insert(users)
+      .values({
+        name: "Administrador Duplicado",
+        email: "admin-duplicado@planetaagua.local",
+        passwordHash: "hash",
+        role: "ADMIN",
+      })
+      .returning();
+    const [product] = await db
+      .insert(products)
+      .values({
+        name: "Galao Cancelamento",
+        salePriceCents: 1500,
+        stockQuantity: 5,
+        minimumStock: 1,
+      })
+      .returning();
+
+    const createdSale = await repository.createSale({
+      customerId: null,
+      userId: user.id,
+      paymentMethod: "CASH",
+      items: [{ productId: product.id, quantity: 2 }],
+      bottle: null,
+    });
+
+    await repository.cancelSale({
+      saleId: createdSale.id,
+      userId: user.id,
+      reason: "Cliente desistiu.",
+    });
+
+    const duplicateCancelRejection = repository.cancelSale({
+      saleId: createdSale.id,
+      userId: user.id,
+      reason: "Segunda tentativa.",
+    });
+
+    await expect(duplicateCancelRejection).rejects.toBeInstanceOf(SalesRepositoryError);
+    await expect(duplicateCancelRejection).rejects.toMatchObject({ code: "SALE_ALREADY_CANCELED" });
+
+    const canceledSale = await db.query.sales.findFirst({
+      where: (sale, { eq }) => eq(sale.id, createdSale.id),
+    });
+    const productAfterSecondCancel = await db.query.products.findFirst({
+      where: (currentProduct, { eq }) => eq(currentProduct.id, product.id),
+    });
+    const saleMovements = await db.query.stockMovements.findMany({
+      where: (movement, { eq }) => eq(movement.referenceId, createdSale.id),
+    });
+    const canceledSaleMovements = saleMovements.filter((movement) => movement.type === "CANCELED_SALE");
+
+    expect(canceledSale?.status).toBe("CANCELED");
+    expect(canceledSale?.cancellationReason).toBe("Cliente desistiu.");
+    expect(productAfterSecondCancel?.stockQuantity).toBe(5);
+    expect(canceledSaleMovements).toHaveLength(1);
+    expect(canceledSaleMovements[0]).toMatchObject({ reason: "Cliente desistiu." });
   });
 });

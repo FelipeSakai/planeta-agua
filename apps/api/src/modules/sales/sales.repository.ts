@@ -3,6 +3,7 @@ import { and, asc, desc, eq, ilike, inArray, isNotNull, lt, or, sql } from "driz
 
 import { db } from "../../db";
 import { customers, products, saleItems, sales, stockMovements } from "../../db/schema";
+import { SalesRepositoryError } from "./sales.errors";
 import type { CreateSaleRepositoryInput, SaleStatus } from "./sales.types";
 
 const completedSaleStatus: SaleStatus = "COMPLETED";
@@ -73,17 +74,17 @@ export class SalesRepository {
         const product = productById.get(item.productId);
 
         if (!product) {
-          throw new Error(`Produto ${item.productId} nao encontrado.`);
+          throw new SalesRepositoryError("PRODUCT_NOT_FOUND", `Produto ${item.productId} nao encontrado.`);
         }
 
         if (!product.isActive) {
-          throw new Error(`Produto ${product.name} esta inativo.`);
+          throw new SalesRepositoryError("PRODUCT_INACTIVE", `Produto ${product.name} esta inativo.`);
         }
 
         const requestedQuantity = quantityByProductId.get(item.productId) ?? item.quantity;
 
         if (product.stockQuantity < requestedQuantity) {
-          throw new Error(`Estoque insuficiente para ${product.name}.`);
+          throw new SalesRepositoryError("INSUFFICIENT_STOCK", `Estoque insuficiente para ${product.name}.`);
         }
 
         totalAmountCents += product.salePriceCents * item.quantity;
@@ -108,7 +109,7 @@ export class SalesRepository {
           const product = productById.get(item.productId);
 
           if (!product) {
-            throw new Error(`Produto ${item.productId} nao encontrado.`);
+            throw new SalesRepositoryError("PRODUCT_NOT_FOUND", `Produto ${item.productId} nao encontrado.`);
           }
 
           return {
@@ -200,11 +201,11 @@ export class SalesRepository {
       const [sale] = await tx.select().from(sales).where(eq(sales.id, input.saleId)).for("update");
 
       if (!sale) {
-        throw new Error(`Venda ${input.saleId} nao encontrada.`);
+        throw new SalesRepositoryError("SALE_NOT_FOUND", `Venda ${input.saleId} nao encontrada.`);
       }
 
       if (sale.status === canceledSaleStatus) {
-        throw new Error(`Venda ${input.saleId} ja cancelada.`);
+        throw new SalesRepositoryError("SALE_ALREADY_CANCELED", `Venda ${input.saleId} ja cancelada.`);
       }
 
       const items = await tx.select().from(saleItems).where(eq(saleItems.saleId, sale.id));

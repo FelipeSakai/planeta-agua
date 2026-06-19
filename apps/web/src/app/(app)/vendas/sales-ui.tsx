@@ -110,26 +110,13 @@ export function SalesUi({ userRole, history, products, customers }: SalesUiProps
   const filteredProducts = products.filter((product) => product.name.toLowerCase().includes(productQuery.trim().toLowerCase()));
   const selectedBottleSourceKey = getBottleSourceKey(selectedCustomer);
   const isCurrentBottleSource = bottleSourceKey === selectedBottleSourceKey;
-  const resolvedBottleMonth = selectedCustomer && !isCurrentBottleSource
-    ? formatBottleFieldValue(selectedCustomer.previousBottle?.month)
-    : bottleMonth;
-  const resolvedBottleYear = selectedCustomer && !isCurrentBottleSource
-    ? formatBottleFieldValue(selectedCustomer.previousBottle?.year)
-    : bottleYear;
-  const resolvedBottleNotes = selectedCustomer && !isCurrentBottleSource ? "" : bottleNotes;
-  const currentBottle = selectedCustomer && resolvedBottleMonth.trim() && resolvedBottleYear.trim()
-    ? {
-        month: Number(resolvedBottleMonth),
-        year: Number(resolvedBottleYear),
-        notes: resolvedBottleNotes.trim() || null,
-      }
-    : null;
-  const bottleAlerts = selectedCustomer
-    ? buildBottleAlerts({
-        expired: isBottleExpired(currentBottle ?? selectedCustomer.previousBottle ?? null, new Date()),
-        mismatch: hasBottleMismatch(selectedCustomer.previousBottle ?? null, currentBottle),
-      })
-    : [];
+  const { resolvedBottleMonth, resolvedBottleYear, resolvedBottleNotes, bottleAlerts } = resolveBottleState({
+    selectedCustomer,
+    isCurrentBottleSource,
+    bottleMonth,
+    bottleYear,
+    bottleNotes,
+  });
   const totalAmountCents = cartItems.reduce((total, item) => total + item.unitPriceCents * item.quantity, 0);
 
   const historyColumns: Array<DataTableColumn<SalesHistoryEntry>> = [
@@ -781,6 +768,52 @@ export function syncCustomersFromProps({
     customerDirectory: nextCustomerDirectory,
     selectedCustomerId,
     selectedCustomer: nextCustomerDirectory.find((customer) => customer.id === selectedCustomerId) ?? null,
+  };
+}
+
+export function resolveBottleState({
+  selectedCustomer,
+  isCurrentBottleSource,
+  bottleMonth,
+  bottleYear,
+  bottleNotes,
+  now = new Date(),
+}: {
+  selectedCustomer: SalesCustomerOption | null;
+  isCurrentBottleSource: boolean;
+  bottleMonth: string;
+  bottleYear: string;
+  bottleNotes: string;
+  now?: Date;
+}) {
+  const usePreviousBottle = selectedCustomer !== null && !isCurrentBottleSource;
+  const resolvedBottleMonth = usePreviousBottle
+    ? formatBottleFieldValue(selectedCustomer?.previousBottle?.month)
+    : bottleMonth;
+  const resolvedBottleYear = usePreviousBottle
+    ? formatBottleFieldValue(selectedCustomer?.previousBottle?.year)
+    : bottleYear;
+  const resolvedBottleNotes = usePreviousBottle ? "" : bottleNotes;
+  const currentBottle = selectedCustomer && resolvedBottleMonth.trim() && resolvedBottleYear.trim()
+    ? {
+        month: Number(resolvedBottleMonth),
+        year: Number(resolvedBottleYear),
+        notes: resolvedBottleNotes.trim() || null,
+      }
+    : null;
+  const bottleAlerts = selectedCustomer
+    ? buildBottleAlerts({
+        expired: isBottleExpired(currentBottle ?? selectedCustomer.previousBottle ?? null, now),
+        mismatch: hasBottleMismatch(selectedCustomer.previousBottle ?? null, currentBottle),
+      })
+    : [];
+
+  return {
+    resolvedBottleMonth,
+    resolvedBottleYear,
+    resolvedBottleNotes,
+    currentBottle,
+    bottleAlerts,
   };
 }
 
