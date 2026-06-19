@@ -78,6 +78,7 @@ export function SalesUi({ userRole, history, products, customers }: SalesUiProps
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [knownCustomers, setKnownCustomers] = useState(customers);
+  const [customerDirectory, setCustomerDirectory] = useState(customers);
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
   const [customerQuery, setCustomerQuery] = useState("");
   const [productQuery, setProductQuery] = useState("");
@@ -95,7 +96,10 @@ export function SalesUi({ userRole, history, products, customers }: SalesUiProps
   const [cancelingSaleId, setCancelingSaleId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const selectedCustomer = knownCustomers.find((customer) => customer.id === selectedCustomerId) ?? null;
+  const selectedCustomer = customerDirectory.find((customer) => customer.id === selectedCustomerId) ?? null;
+  const customerOptions = sortSaleCustomers(
+    mergeSaleCustomers(knownCustomers, selectedCustomer ? [selectedCustomer] : []),
+  );
   const filteredProducts = products.filter((product) => product.name.toLowerCase().includes(productQuery.trim().toLowerCase()));
   const currentBottle = selectedCustomerId && bottleMonth.trim() && bottleYear.trim()
     ? {
@@ -173,22 +177,21 @@ export function SalesUi({ userRole, history, products, customers }: SalesUiProps
 
   function replaceKnownCustomers(nextCustomers: SalesCustomerOption[]) {
     setKnownCustomers(nextCustomers);
-
-    if (!selectedCustomerId) {
-      return;
-    }
-
-    const selectedCustomerStillAvailable = nextCustomers.some((customer) => customer.id === selectedCustomerId);
-
-    if (!selectedCustomerStillAvailable) {
-      setSelectedCustomerId("");
-      syncBottleFields(null);
-    }
+    setCustomerDirectory((currentCustomers) => mergeSaleCustomers(currentCustomers, nextCustomers));
   }
 
   function selectCustomer(customerId: string) {
     setSelectedCustomerId(customerId);
-    const customer = knownCustomers.find((item) => item.id === customerId) ?? null;
+
+    if (!customerId) {
+      syncBottleFields(null);
+      return;
+    }
+
+    const customer = customerDirectory.find((item) => item.id === customerId)
+      ?? knownCustomers.find((item) => item.id === customerId)
+      ?? null;
+
     syncBottleFields(customer);
   }
 
@@ -268,10 +271,8 @@ export function SalesUi({ userRole, history, products, customers }: SalesUiProps
         name: quickCustomerName,
         phone: quickCustomerPhone.trim() || null,
       });
-      setKnownCustomers((currentCustomers) => {
-        const nextCustomers = [...currentCustomers.filter((customer) => customer.id !== createdCustomer.id), createdCustomer];
-        return nextCustomers.sort((left, right) => left.name.localeCompare(right.name, "pt-BR"));
-      });
+      setKnownCustomers((currentCustomers) => sortSaleCustomers(mergeSaleCustomers(currentCustomers, [createdCustomer])));
+      setCustomerDirectory((currentCustomers) => mergeSaleCustomers(currentCustomers, [createdCustomer]));
       setSelectedCustomerId(createdCustomer.id);
       syncBottleFields(createdCustomer);
       setQuickCustomerName("");
@@ -392,7 +393,7 @@ export function SalesUi({ userRole, history, products, customers }: SalesUiProps
               <Field label="Cliente">
                 <SelectInput value={selectedCustomerId} onChange={(event) => selectCustomer(event.target.value)}>
                   <option value="">Sem cliente</option>
-                  {knownCustomers.map((customer) => (
+                  {customerOptions.map((customer) => (
                     <option key={customer.id} value={customer.id}>
                       {customer.name}
                     </option>
@@ -686,4 +687,21 @@ async function getResponseMessage(response: Response, fallback: string) {
   const payload = await response.json().catch(() => null) as { message?: string } | null;
 
   return payload?.message ?? fallback;
+}
+
+function mergeSaleCustomers(
+  currentCustomers: SalesCustomerOption[],
+  nextCustomers: SalesCustomerOption[],
+) {
+  const customerMap = new Map(currentCustomers.map((customer) => [customer.id, customer]));
+
+  for (const customer of nextCustomers) {
+    customerMap.set(customer.id, customer);
+  }
+
+  return Array.from(customerMap.values());
+}
+
+function sortSaleCustomers(customersToSort: SalesCustomerOption[]) {
+  return [...customersToSort].sort((left, right) => left.name.localeCompare(right.name, "pt-BR"));
 }

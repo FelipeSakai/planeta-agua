@@ -47,6 +47,31 @@ describe("SalesUi", () => {
     expect(html).not.toContain('<option value="c1" selected="">Maria</option>');
   });
 
+  it("keeps the selected customer bottle block when search results no longer include that customer", async () => {
+    const props = {
+      userRole: "ADMIN" as const,
+      history: [],
+      products: [],
+      customers: [{ id: "c1", name: "Maria", phone: null, previousBottle: { month: 6, year: 2024, notes: "azul" } }],
+    };
+
+    const html = renderToStaticMarkup(
+      createElement(
+        await importSalesUiWithState(props, {
+          knownCustomers: [],
+          selectedCustomerId: "c1",
+          bottleMonth: "6",
+          bottleYear: "2024",
+        }),
+        props,
+      ),
+    );
+
+    expect(html).toContain("Maria");
+    expect(html).toContain("Último galão conhecido");
+    expect(html).toContain("Mês do galão");
+  });
+
   it("ignores bottle note-only differences for mismatch alerts", async () => {
     const html = renderToStaticMarkup(
       createElement(
@@ -105,6 +130,7 @@ describe("SalesUi", () => {
 type SalesUiProps = Parameters<typeof SalesUi>[0];
 
 type StateOverrides = {
+  knownCustomers?: SalesUiProps["customers"];
   selectedCustomerId?: string;
   bottleMonth?: string;
   bottleYear?: string;
@@ -117,6 +143,7 @@ async function importSalesUiWithState(props: SalesUiProps, overrides: StateOverr
   vi.doMock("react", async (importOriginal) => {
     const actual = await importOriginal<typeof import("react")>();
     let stateIndex = 0;
+    let customerDirectoryOffset = 0;
 
     return {
       ...actual,
@@ -126,26 +153,31 @@ async function importSalesUiWithState(props: SalesUiProps, overrides: StateOverr
         stateIndex += 1;
 
         if (currentIndex === 0) {
+          return [overrides.knownCustomers ?? props.customers, vi.fn()];
+        }
+
+        if (currentIndex === 1 && Array.isArray(initialValue)) {
+          customerDirectoryOffset = 1;
           return [props.customers, vi.fn()];
         }
 
-        if (currentIndex === 1) {
+        if (currentIndex === 1 + customerDirectoryOffset) {
           return [overrides.selectedCustomerId ?? initialValue, vi.fn()];
         }
 
-        if (currentIndex === 5) {
+        if (currentIndex === 5 + customerDirectoryOffset) {
           return [overrides.cartItems ?? initialValue, vi.fn()];
         }
 
-        if (currentIndex === 6) {
+        if (currentIndex === 6 + customerDirectoryOffset) {
           return [overrides.bottleMonth ?? initialValue, vi.fn()];
         }
 
-        if (currentIndex === 7) {
+        if (currentIndex === 7 + customerDirectoryOffset) {
           return [overrides.bottleYear ?? initialValue, vi.fn()];
         }
 
-        if (currentIndex === 8) {
+        if (currentIndex === 8 + customerDirectoryOffset) {
           return [overrides.bottleNotes ?? initialValue, vi.fn()];
         }
 
