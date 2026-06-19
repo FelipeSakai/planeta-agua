@@ -108,7 +108,8 @@ export const expenses = pgTable("expenses", {
 
 export const usersRelations = relations(users, ({ many }) => ({
   sessions: many(sessions),
-  sales: many(sales),
+  createdSales: many(sales, { relationName: "saleCreatedByUser" }),
+  canceledSales: many(sales, { relationName: "saleCanceledByUser" }),
   stockMovements: many(stockMovements),
   expenses: many(expenses),
 }));
@@ -137,10 +138,12 @@ export const salesRelations = relations(sales, ({ one, many }) => ({
   user: one(users, {
     fields: [sales.userId],
     references: [users.id],
+    relationName: "saleCreatedByUser",
   }),
   canceledByUser: one(users, {
     fields: [sales.canceledByUserId],
     references: [users.id],
+    relationName: "saleCanceledByUser",
   }),
   items: many(saleItems),
 }));

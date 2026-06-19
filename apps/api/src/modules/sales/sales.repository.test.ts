@@ -177,6 +177,156 @@ describe("SalesRepository", () => {
     expect(latestBottle).toEqual({ month: 3, year: 2025, notes: "Atual" });
   });
 
+  it("lists sales with creator, customer, and canceler relations", async () => {
+    const [operator] = await db
+      .insert(users)
+      .values({
+        name: "Operador Lista",
+        email: "operador-lista@planetaagua.local",
+        passwordHash: "hash",
+        role: "OPERATOR",
+      })
+      .returning();
+    const [admin] = await db
+      .insert(users)
+      .values({
+        name: "Admin Lista",
+        email: "admin-lista@planetaagua.local",
+        passwordHash: "hash",
+        role: "ADMIN",
+      })
+      .returning();
+    const [customer] = await db.insert(customers).values({ name: "Cliente Lista" }).returning();
+    const [product] = await db
+      .insert(products)
+      .values({
+        name: "Galao Lista",
+        salePriceCents: 2100,
+        stockQuantity: 8,
+        minimumStock: 1,
+      })
+      .returning();
+
+    const completedSale = await repository.createSale({
+      customerId: customer.id,
+      userId: operator.id,
+      paymentMethod: "CASH",
+      items: [{ productId: product.id, quantity: 1 }],
+      bottle: null,
+    });
+
+    await db
+      .update(sales)
+      .set({ createdAt: new Date("2026-02-01T00:00:00.000Z") })
+      .where(eq(sales.id, completedSale.id));
+
+    const canceledSale = await repository.createSale({
+      customerId: customer.id,
+      userId: operator.id,
+      paymentMethod: "PIX",
+      items: [{ productId: product.id, quantity: 2 }],
+      bottle: null,
+    });
+
+    await repository.cancelSale({
+      saleId: canceledSale.id,
+      userId: admin.id,
+      reason: "Cliente desistiu.",
+    });
+
+    const listedSales = await repository.listSales();
+
+    expect(listedSales).toHaveLength(2);
+    expect(listedSales[0]).toMatchObject({
+      id: canceledSale.id,
+      user: { id: operator.id, name: "Operador Lista" },
+      customer: { id: customer.id, name: "Cliente Lista" },
+      canceledByUser: { id: admin.id, name: "Admin Lista" },
+      paymentMethod: "PIX",
+      status: "CANCELED",
+    });
+    expect(listedSales[1]).toMatchObject({
+      id: completedSale.id,
+      user: { id: operator.id, name: "Operador Lista" },
+      customer: { id: customer.id, name: "Cliente Lista" },
+      canceledByUser: null,
+      paymentMethod: "CASH",
+      status: "COMPLETED",
+    });
+  });
+
+  it("returns sale detail with relation data, items, and previous bottle", async () => {
+    const [operator] = await db
+      .insert(users)
+      .values({
+        name: "Operador Detalhe",
+        email: "operador-detalhe@planetaagua.local",
+        passwordHash: "hash",
+        role: "OPERATOR",
+      })
+      .returning();
+    const [customer] = await db.insert(customers).values({ name: "Cliente Detalhe" }).returning();
+    const [product] = await db
+      .insert(products)
+      .values({
+        name: "Galao Detalhe",
+        salePriceCents: 1950,
+        stockQuantity: 10,
+        minimumStock: 1,
+      })
+      .returning();
+
+    const firstSale = await repository.createSale({
+      customerId: customer.id,
+      userId: operator.id,
+      paymentMethod: "CASH",
+      items: [{ productId: product.id, quantity: 1 }],
+      bottle: { month: 4, year: 2024, notes: "Anterior" },
+    });
+
+    await db
+      .update(sales)
+      .set({ createdAt: new Date("2026-03-01T00:00:00.000Z") })
+      .where(eq(sales.id, firstSale.id));
+
+    const secondSale = await repository.createSale({
+      customerId: customer.id,
+      userId: operator.id,
+      paymentMethod: "DEBIT_CARD",
+      items: [{ productId: product.id, quantity: 2 }],
+      bottle: { month: 6, year: 2025, notes: "Atual" },
+    });
+
+    const saleDetail = await repository.getSaleDetail(secondSale.id);
+
+    expect(saleDetail).toMatchObject({
+      sale: {
+        id: secondSale.id,
+        customerId: customer.id,
+        userId: operator.id,
+        paymentMethod: "DEBIT_CARD",
+        status: "COMPLETED",
+        customer: { id: customer.id, name: "Cliente Detalhe" },
+        user: { id: operator.id, name: "Operador Detalhe" },
+        canceledByUser: null,
+        bottleMonth: 6,
+        bottleYear: 2025,
+        bottleNotes: "Atual",
+      },
+      previousBottle: { month: 4, year: 2024, notes: "Anterior" },
+      items: [
+        expect.objectContaining({
+          saleId: secondSale.id,
+          productId: product.id,
+          productNameSnapshot: "Galao Detalhe",
+          quantity: 2,
+          unitPriceCents: 1950,
+          totalPriceCents: 3900,
+        }),
+      ],
+    });
+  });
+
   it("cancels a sale by setting canceled fields and returning stock", async () => {
     const [user] = await db
       .insert(users)

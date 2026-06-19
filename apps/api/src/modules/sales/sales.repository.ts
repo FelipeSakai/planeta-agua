@@ -3,10 +3,10 @@ import { and, asc, desc, eq, ilike, inArray, isNotNull, lt, sql } from "drizzle-
 
 import { db } from "../../db";
 import { customers, products, saleItems, sales, stockMovements } from "../../db/schema";
-import type { CreateSaleRepositoryInput } from "./sales.types";
+import type { CreateSaleRepositoryInput, SaleStatus } from "./sales.types";
 
-const completedSaleStatus = "COMPLETED";
-const canceledSaleStatus = "CANCELED";
+const completedSaleStatus: SaleStatus = "COMPLETED";
+const canceledSaleStatus: SaleStatus = "CANCELED";
 
 @Injectable()
 export class SalesRepository {
