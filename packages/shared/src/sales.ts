@@ -1,7 +1,8 @@
 import { z } from "zod";
 
 export const paymentMethodValues = ["CASH", "PIX", "DEBIT_CARD", "CREDIT_CARD", "OTHER"] as const;
-export const saleStatusValues = ["COMPLETED", "CANCELED"] as const;
+export const saleStatusValues = ["COMPLETED", "CANCELED", "PENDING_DELIVERY"] as const;
+export const saleHistoryStatusFilterValues = ["COMPLETED", "CANCELED", "PENDING_DELIVERY"] as const;
 
 const isoDatetimeStringSchema = z.string().datetime({ offset: true });
 const nonNegativeAmountCentsSchema = z.number().int().min(0);
@@ -11,6 +12,8 @@ const cancellationReasonSchema = z.string().trim().min(3).max(160);
 const saleItemInputSchema = z.object({
   productId: z.string().uuid(),
   quantity: positiveQuantitySchema,
+  finalUnitPriceCents: nonNegativeAmountCentsSchema.optional(),
+  discountCents: nonNegativeAmountCentsSchema.optional(),
 });
 
 const bottleFieldsSchema = z.object({
@@ -26,6 +29,7 @@ export const createSaleInputSchema = z.object({
   paymentMethod: z.enum(paymentMethodValues),
   items: z.array(saleItemInputSchema).min(1),
   bottle: customerBottleRecordSchema,
+  deliveryPending: z.boolean().default(false),
 });
 
 export const cancelSaleInputSchema = z.object({
@@ -35,11 +39,15 @@ export const cancelSaleInputSchema = z.object({
 export const quickCustomerInputSchema = z.object({
   name: z.string().trim().min(2).max(120),
   phone: z.string().trim().min(8).max(20).nullable().optional(),
+  code: z.string().trim().max(40).nullable().optional(),
+  address: z.string().trim().max(200).nullable().optional(),
 });
 
 export const saleCustomerResponseSchema = quickCustomerInputSchema.extend({
   id: z.string().uuid(),
   phone: z.string().trim().min(8).max(20).nullable(),
+  code: z.string().trim().max(40).nullable(),
+  address: z.string().trim().max(200).nullable(),
   previousBottle: customerBottleRecordSchema,
 });
 
@@ -49,15 +57,17 @@ function validateCancellationState(
   value: { status: (typeof saleStatusValues)[number]; canceledAt: string | null; cancellationReason: string | null },
   ctx: z.core.$RefinementCtx,
 ) {
-  if (value.status === "COMPLETED" && (value.canceledAt !== null || value.cancellationReason !== null)) {
+  const canHaveCancellation = value.status === "CANCELED";
+
+  if (!canHaveCancellation && (value.canceledAt !== null || value.cancellationReason !== null)) {
     ctx.addIssue({
       code: "custom",
-      message: "Completed sales cannot include cancellation data.",
+      message: "Only canceled sales can include cancellation data.",
       path: ["status"],
     });
   }
 
-  if (value.status === "CANCELED" && (value.canceledAt === null || value.cancellationReason === null)) {
+  if (canHaveCancellation && (value.canceledAt === null || value.cancellationReason === null)) {
     ctx.addIssue({
       code: "custom",
       message: "Canceled sales must include cancellation data.",
@@ -79,6 +89,8 @@ const saleHistoryEntrySchema = z
     createdAt: isoDatetimeStringSchema,
     canceledAt: isoDatetimeStringSchema.nullable(),
     cancellationReason: cancellationReasonSchema.nullable(),
+    deliveredAt: isoDatetimeStringSchema.nullable(),
+    deliveredByUserId: z.string().uuid().nullable(),
   })
   .superRefine(validateCancellationState);
 
@@ -91,6 +103,8 @@ const saleDetailItemSchema = z.object({
   quantity: positiveQuantitySchema,
   unitPriceCents: nonNegativeAmountCentsSchema,
   totalPriceCents: nonNegativeAmountCentsSchema,
+  discountCents: nonNegativeAmountCentsSchema.nullable(),
+  finalUnitPriceCents: nonNegativeAmountCentsSchema.nullable(),
 });
 
 export const saleDetailResponseSchema = z.object({
@@ -107,6 +121,8 @@ export const saleDetailResponseSchema = z.object({
       createdAt: isoDatetimeStringSchema,
       canceledAt: isoDatetimeStringSchema.nullable(),
       cancellationReason: cancellationReasonSchema.nullable(),
+      deliveredAt: isoDatetimeStringSchema.nullable(),
+      deliveredByUserId: z.string().uuid().nullable(),
       bottle: customerBottleRecordSchema,
       previousBottle: customerBottleRecordSchema,
     })
@@ -119,6 +135,12 @@ export const saleDetailResponseSchema = z.object({
 });
 
 type BottleRecord = z.infer<typeof bottleFieldsSchema>;
+
+export const confirmDeliveryInputSchema = z.object({}).default({});
+
+export const saleHistoryFilterSchema = z.object({
+  status: z.enum(saleHistoryStatusFilterValues).optional(),
+});
 
 export type SaleCustomerResponse = z.infer<typeof saleCustomerResponseSchema>;
 export type SaleCustomersResponse = z.infer<typeof saleCustomersResponseSchema>;

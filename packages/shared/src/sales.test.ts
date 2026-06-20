@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  confirmDeliveryInputSchema,
   createSaleInputSchema,
   hasBottleMismatch,
   isBottleExpired,
@@ -8,7 +9,9 @@ import {
   quickCustomerInputSchema,
   saleCustomerResponseSchema,
   saleDetailResponseSchema,
+  saleHistoryFilterSchema,
   saleHistoryResponseSchema,
+  saleStatusValues,
 } from "./sales";
 
 const validSaleHistoryEntry = {
@@ -23,6 +26,8 @@ const validSaleHistoryEntry = {
   createdAt: "2026-06-15T10:00:00.000Z",
   canceledAt: null,
   cancellationReason: null,
+  deliveredAt: null,
+  deliveredByUserId: null,
 };
 
 const validSaleDetailResponse = {
@@ -38,6 +43,8 @@ const validSaleDetailResponse = {
     createdAt: "2026-06-15T10:00:00.000Z",
     canceledAt: null,
     cancellationReason: null,
+    deliveredAt: null,
+    deliveredByUserId: null,
     bottle: null,
     previousBottle: null,
   },
@@ -49,6 +56,8 @@ const validSaleDetailResponse = {
       quantity: 2,
       unitPriceCents: 1200,
       totalPriceCents: 2400,
+      discountCents: null,
+      finalUnitPriceCents: null,
     },
   ],
   bottleAlerts: {
@@ -88,6 +97,8 @@ describe("sales contracts", () => {
       id: "55555555-5555-4555-8555-555555555555",
       name: "Maria",
       phone: "11999999999",
+      code: null,
+      address: null,
       previousBottle: { month: 6, year: 2024, notes: "Azul" },
     });
 
@@ -168,5 +179,69 @@ describe("sales contracts", () => {
     expect(hasBottleMismatch({ month: 6, year: 2024 }, { month: 7, year: 2024 })).toBe(true);
     expect(hasBottleMismatch({ month: 6, year: 2024 }, { month: 6, year: 2024 })).toBe(false);
     expect(hasBottleMismatch(null, { month: 6, year: 2024 })).toBe(false);
+  });
+});
+
+describe("shared sales contracts", () => {
+  it("includes PENDING_DELIVERY in sale status values", () => {
+    expect(saleStatusValues).toContain("PENDING_DELIVERY");
+  });
+
+  it("accepts a sale item with optional finalUnitPriceCents and discountCents", () => {
+    const parsed = createSaleInputSchema.parse({
+      customerId: null,
+      paymentMethod: "PIX",
+      items: [{ productId: "33333333-3333-4333-8333-333333333333", quantity: 2, finalUnitPriceCents: 1300, discountCents: 100 }],
+      bottle: null,
+      deliveryPending: false,
+    });
+
+    expect(parsed.items[0].finalUnitPriceCents).toBe(1300);
+    expect(parsed.items[0].discountCents).toBe(100);
+  });
+
+  it("accepts a sale with deliveryPending true", () => {
+    const parsed = createSaleInputSchema.parse({
+      customerId: null,
+      paymentMethod: "CASH",
+      items: [{ productId: "33333333-3333-4333-8333-333333333333", quantity: 1 }],
+      bottle: null,
+      deliveryPending: true,
+    });
+
+    expect(parsed.deliveryPending).toBe(true);
+  });
+
+  it("accepts quick customer with code and address", () => {
+    const parsed = quickCustomerInputSchema.parse({ name: "Maria", code: "C001", address: "Rua A, 10" });
+
+    expect(parsed.code).toBe("C001");
+    expect(parsed.address).toBe("Rua A, 10");
+  });
+
+  it("sale customer response includes code and address", () => {
+    const parsed = saleCustomerResponseSchema.parse({
+      id: "99999999-9999-4999-8999-999999999999",
+      name: "Maria",
+      phone: "11999999999",
+      code: "C001",
+      address: "Rua A, 10",
+      previousBottle: null,
+    });
+
+    expect(parsed.code).toBe("C001");
+    expect(parsed.address).toBe("Rua A, 10");
+  });
+
+  it("confirm delivery input accepts empty object", () => {
+    expect(confirmDeliveryInputSchema.parse({})).toEqual({});
+  });
+
+  it("sale history filter accepts a status enum value", () => {
+    expect(saleHistoryFilterSchema.parse({ status: "PENDING_DELIVERY" })).toEqual({ status: "PENDING_DELIVERY" });
+  });
+
+  it("sale history filter rejects unknown status", () => {
+    expect(saleHistoryFilterSchema.safeParse({ status: "WEIRD" }).success).toBe(false);
   });
 });
