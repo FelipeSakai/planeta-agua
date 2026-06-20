@@ -34,10 +34,11 @@ function ensureResponseOk(response: Response, message: string) {
 export function saleFormToPayload(input: {
   customerId: string | null;
   paymentMethod: "CASH" | "PIX" | "CREDIT_CARD" | "DEBIT_CARD" | "OTHER";
-  items: Array<{ productId: string; quantity: number }>;
+  items: Array<{ productId: string; quantity: number; finalUnitPriceCents?: number; discountCents?: number }>;
   bottleMonth: string;
   bottleYear: string;
   bottleNotes: string;
+  deliveryPending: boolean;
 }) {
   const hasBottleMonth = input.bottleMonth.trim() !== "";
   const hasBottleYear = input.bottleYear.trim() !== "";
@@ -47,18 +48,20 @@ export function saleFormToPayload(input: {
   }
 
   const bottle = hasBottleMonth && hasBottleYear
-    ? {
-        month: Number(input.bottleMonth),
-        year: Number(input.bottleYear),
-        notes: input.bottleNotes.trim() || null,
-      }
+    ? { month: Number(input.bottleMonth), year: Number(input.bottleYear), notes: input.bottleNotes.trim() || null }
     : null;
 
   return createSaleInputSchema.parse({
     customerId: input.customerId,
     paymentMethod: input.paymentMethod,
-    items: input.items,
+    items: input.items.map((item) => ({
+      productId: item.productId,
+      quantity: item.quantity,
+      ...(item.finalUnitPriceCents !== undefined ? { finalUnitPriceCents: item.finalUnitPriceCents } : {}),
+      ...(item.discountCents !== undefined ? { discountCents: item.discountCents } : {}),
+    })),
     bottle,
+    deliveryPending: input.deliveryPending,
   });
 }
 
@@ -86,8 +89,13 @@ export function buildBottleAlerts(alerts: { expired: boolean; mismatch: boolean 
   return messages;
 }
 
-export async function fetchSalesHistory(cookieHeader: string) {
-  const response = await fetch(`${getServerApiUrl()}/sales`, {
+export async function fetchSalesHistory(cookieHeader: string, filter?: { status?: string }) {
+  const params = new URLSearchParams();
+  if (filter?.status) {
+    params.set("status", filter.status);
+  }
+  const qs = params.toString() ? `?${params.toString()}` : "";
+  const response = await fetch(`${getServerApiUrl()}/sales${qs}`, {
     headers: { cookie: cookieHeader },
     cache: "no-store",
   });
@@ -109,8 +117,11 @@ export async function fetchSaleDetail(cookieHeader: string, id: string) {
   return saleDetailResponseSchema.parse(await response.json());
 }
 
-export async function searchSaleCustomers(query: string, options?: SalesRequestOptions) {
-  const params = new URLSearchParams({ query });
+export async function searchSaleCustomers(primaryQuery: string, options?: SalesRequestOptions & { secondaryQuery?: string }) {
+  const params = new URLSearchParams({ query: primaryQuery });
+  if (options?.secondaryQuery) {
+    params.set("secondary", options.secondaryQuery);
+  }
   const response = await fetch(buildSalesUrl(`/sales/customers?${params.toString()}`, options?.cookieHeader), {
     headers: buildHeaders({}, options?.cookieHeader),
     cache: "no-store",
@@ -122,10 +133,7 @@ export async function searchSaleCustomers(query: string, options?: SalesRequestO
 }
 
 export async function createSaleCustomer(
-  input: {
-    name: string;
-    phone?: string | null;
-  },
+  input: { name: string; phone?: string | null; code?: string | null; address?: string | null },
   options?: SalesRequestOptions,
 ) {
   const payload = quickCustomerInputSchema.parse(input);
@@ -139,4 +147,17 @@ export async function createSaleCustomer(
   ensureResponseOk(response, "Nao foi possivel cadastrar o cliente.");
 
   return saleCustomerResponseSchema.parse(await response.json());
+}
+
+export async function confirmSaleDelivery(saleId: string) {
+  const response = await fetch(`/api/sales/${encodeURIComponent(saleId)}/deliver`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({}),
+    cache: "no-store",
+  });
+
+  ensureResponseOk(response, "Nao foi possivel confirmar a entrega.");
+
+  return response.json();
 }
