@@ -11,7 +11,7 @@ import {
 
 export const userRoleEnum = pgEnum("user_role", ["ADMIN", "OPERATOR"]);
 export const paymentMethodEnum = pgEnum("payment_method", ["CASH", "PIX", "CREDIT_CARD", "DEBIT_CARD", "OTHER"]);
-export const saleStatusEnum = pgEnum("sale_status", ["COMPLETED", "CANCELED"]);
+export const saleStatusEnum = pgEnum("sale_status", ["COMPLETED", "CANCELED", "PENDING_DELIVERY"]);
 export const stockMovementTypeEnum = pgEnum("stock_movement_type", ["IN", "OUT", "ADJUSTMENT", "SALE", "CANCELED_SALE"]);
 
 const timestamps = {
@@ -40,6 +40,7 @@ export const sessions = pgTable("sessions", {
 export const customers = pgTable("customers", {
   id: uuid("id").defaultRandom().primaryKey(),
   name: text("name").notNull(),
+  code: text("code"),
   phone: text("phone"),
   address: text("address"),
   notes: text("notes"),
@@ -70,6 +71,8 @@ export const sales = pgTable("sales", {
   canceledAt: timestamp("canceled_at", { withTimezone: true }),
   canceledByUserId: uuid("canceled_by_user_id").references(() => users.id),
   cancellationReason: text("cancellation_reason"),
+  deliveredAt: timestamp("delivered_at", { withTimezone: true }),
+  deliveredByUserId: uuid("delivered_by_user_id").references(() => users.id),
   ...timestamps,
 });
 
@@ -81,6 +84,8 @@ export const saleItems = pgTable("sale_items", {
   quantity: integer("quantity").notNull(),
   unitPriceCents: integer("unit_price_cents").notNull(),
   totalPriceCents: integer("total_price_cents").notNull(),
+  discountCents: integer("discount_cents"),
+  finalUnitPriceCents: integer("final_unit_price_cents"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
@@ -110,6 +115,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   sessions: many(sessions),
   createdSales: many(sales, { relationName: "saleCreatedByUser" }),
   canceledSales: many(sales, { relationName: "saleCanceledByUser" }),
+  deliveredSales: many(sales, { relationName: "saleDeliveredByUser" }),
   stockMovements: many(stockMovements),
   expenses: many(expenses),
 }));
@@ -144,6 +150,11 @@ export const salesRelations = relations(sales, ({ one, many }) => ({
     fields: [sales.canceledByUserId],
     references: [users.id],
     relationName: "saleCanceledByUser",
+  }),
+  deliveredByUser: one(users, {
+    fields: [sales.deliveredByUserId],
+    references: [users.id],
+    relationName: "saleDeliveredByUser",
   }),
   items: many(saleItems),
 }));
