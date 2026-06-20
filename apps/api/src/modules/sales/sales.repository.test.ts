@@ -50,6 +50,7 @@ describe("SalesRepository", () => {
       paymentMethod: "PIX",
       items: [{ productId: product.id, quantity: 2 }],
       bottle: null,
+      deliveryPending: false,
     });
 
     const persistedSale = await db.query.sales.findFirst({
@@ -122,6 +123,7 @@ describe("SalesRepository", () => {
       paymentMethod: "CASH",
       items: [{ productId: product.id, quantity: 1 }],
       bottle: { month: 5, year: 2025, notes: "Lacre azul" },
+      deliveryPending: false,
     });
 
     const persistedSale = await db.query.sales.findFirst({
@@ -162,6 +164,7 @@ describe("SalesRepository", () => {
       paymentMethod: "PIX",
       items: [{ productId: product.id, quantity: 1 }],
       bottle: { month: 1, year: 2024, notes: "Primeiro" },
+      deliveryPending: false,
     });
     await db.update(sales).set({ createdAt: new Date("2026-01-10T00:00:00.000Z") }).where(eq(sales.id, firstSale.id));
 
@@ -171,6 +174,7 @@ describe("SalesRepository", () => {
       paymentMethod: "PIX",
       items: [{ productId: product.id, quantity: 1 }],
       bottle: { month: 3, year: 2025, notes: "Atual" },
+      deliveryPending: false,
     });
 
     const latestBottle = await repository.getLatestBottleForCustomer(customer.id);
@@ -233,6 +237,7 @@ describe("SalesRepository", () => {
       paymentMethod: "CASH",
       items: [{ productId: product.id, quantity: 1 }],
       bottle: null,
+      deliveryPending: false,
     });
 
     await db
@@ -246,6 +251,7 @@ describe("SalesRepository", () => {
       paymentMethod: "PIX",
       items: [{ productId: product.id, quantity: 2 }],
       bottle: null,
+      deliveryPending: false,
     });
 
     await repository.cancelSale({
@@ -302,6 +308,7 @@ describe("SalesRepository", () => {
       paymentMethod: "CASH",
       items: [{ productId: product.id, quantity: 1 }],
       bottle: { month: 4, year: 2024, notes: "Anterior" },
+      deliveryPending: false,
     });
 
     await db
@@ -315,6 +322,7 @@ describe("SalesRepository", () => {
       paymentMethod: "DEBIT_CARD",
       items: [{ productId: product.id, quantity: 2 }],
       bottle: { month: 6, year: 2025, notes: "Atual" },
+      deliveryPending: false,
     });
 
     const saleDetail = await repository.getSaleDetail(secondSale.id);
@@ -373,6 +381,7 @@ describe("SalesRepository", () => {
       paymentMethod: "DEBIT_CARD",
       items: [{ productId: product.id, quantity: 3 }],
       bottle: null,
+      deliveryPending: false,
     });
 
     await repository.cancelSale({
@@ -432,6 +441,7 @@ describe("SalesRepository", () => {
       paymentMethod: "PIX",
       items: [{ productId: product.id, quantity: 2 }],
       bottle: null,
+      deliveryPending: false,
     });
 
     await expect(insufficientStockRejection).rejects.toBeInstanceOf(SalesRepositoryError);
@@ -477,6 +487,7 @@ describe("SalesRepository", () => {
       paymentMethod: "PIX",
       items: [{ productId: product.id, quantity: 1 }],
       bottle: null,
+      deliveryPending: false,
     });
 
     await expect(inactiveProductRejection).rejects.toBeInstanceOf(SalesRepositoryError);
@@ -521,6 +532,7 @@ describe("SalesRepository", () => {
       paymentMethod: "CASH",
       items: [{ productId: product.id, quantity: 2 }],
       bottle: null,
+      deliveryPending: false,
     });
 
     await repository.cancelSale({
@@ -554,5 +566,133 @@ describe("SalesRepository", () => {
     expect(productAfterSecondCancel?.stockQuantity).toBe(5);
     expect(canceledSaleMovements).toHaveLength(1);
     expect(canceledSaleMovements[0]).toMatchObject({ reason: "Cliente desistiu." });
+  });
+
+  it("creates a pending delivery sale that decrements stock and can be delivered", async () => {
+    const [user] = await db
+      .insert(users)
+      .values({ name: "Operador", email: "entrega@planetaagua.local", passwordHash: "hash", role: "OPERATOR" })
+      .returning();
+    const [product] = await db
+      .insert(products)
+      .values({ name: "Galao 20L", salePriceCents: 1800, stockQuantity: 5, minimumStock: 1 })
+      .returning();
+
+    const createdSale = await repository.createSale({
+      customerId: null,
+      userId: user.id,
+      paymentMethod: "CASH",
+      items: [{ productId: product.id, quantity: 1 }],
+      bottle: null,
+      deliveryPending: true,
+    });
+
+    expect(createdSale.status).toBe("PENDING_DELIVERY");
+
+    const delivered = await repository.confirmDelivery({ saleId: createdSale.id, userId: user.id });
+    expect(delivered.status).toBe("COMPLETED");
+    expect(delivered.deliveredAt).not.toBeNull();
+
+    const [updatedProduct] = await db.select().from(products).where(eq(products.id, product.id));
+    expect(updatedProduct.stockQuantity).toBe(4);
+  });
+
+  it("rejects delivering an already delivered or canceled sale", async () => {
+    const [user] = await db
+      .insert(users)
+      .values({ name: "Operador", email: "dup-entrega@planetaagua.local", passwordHash: "hash", role: "OPERATOR" })
+      .returning();
+    const [product] = await db
+      .insert(products)
+      .values({ name: "Galao 20L", salePriceCents: 1800, stockQuantity: 5, minimumStock: 1 })
+      .returning();
+
+    const createdSale = await repository.createSale({
+      customerId: null,
+      userId: user.id,
+      paymentMethod: "CASH",
+      items: [{ productId: product.id, quantity: 1 }],
+      bottle: null,
+      deliveryPending: false,
+    });
+
+    await expect(repository.confirmDelivery({ saleId: createdSale.id, userId: user.id })).rejects.toMatchObject({
+      code: "SALE_NOT_DELIVERABLE",
+    });
+
+    const canceledSale = await repository.createSale({
+      customerId: null,
+      userId: user.id,
+      paymentMethod: "CASH",
+      items: [{ productId: product.id, quantity: 1 }],
+      bottle: null,
+      deliveryPending: true,
+    });
+    await repository.cancelSale({ saleId: canceledSale.id, userId: user.id, reason: "Cliente desistiu." });
+
+    await expect(repository.confirmDelivery({ saleId: canceledSale.id, userId: user.id })).rejects.toMatchObject({
+      code: "SALE_NOT_DELIVERABLE",
+    });
+  });
+
+  it("creates a sale with edited unit price and per-item discount", async () => {
+    const [user] = await db
+      .insert(users)
+      .values({ name: "Operador", email: "preco@planetaagua.local", passwordHash: "hash", role: "OPERATOR" })
+      .returning();
+    const [product] = await db
+      .insert(products)
+      .values({ name: "Galao 20L", salePriceCents: 1500, stockQuantity: 5, minimumStock: 1 })
+      .returning();
+
+    const createdSale = await repository.createSale({
+      customerId: null,
+      userId: user.id,
+      paymentMethod: "PIX",
+      items: [{ productId: product.id, quantity: 2, finalUnitPriceCents: 1300, discountCents: 100 }],
+      bottle: null,
+      deliveryPending: false,
+    });
+
+    const persistedItems = await db.query.saleItems.findMany({
+      where: (item, { eq }) => eq(item.saleId, createdSale.id),
+    });
+
+    expect(persistedItems[0].finalUnitPriceCents).toBe(1300);
+    expect(persistedItems[0].discountCents).toBe(100);
+    expect(persistedItems[0].totalPriceCents).toBe(1300 * 2 - 100);
+    expect(createdSale.totalAmountCents).toBe(1300 * 2 - 100);
+  });
+
+  it("searches customers by code and address", async () => {
+    await db.insert(customers).values([
+      { name: "Maria", code: "C001", address: "Rua das Flores, 10" },
+      { name: "Joao", code: "C002", address: "Av. B, 200" },
+    ]);
+
+    const byCode = await repository.searchCustomers("", "C001");
+    expect(byCode.map((c) => c.name)).toContain("Maria");
+
+    const byAddress = await repository.searchCustomers("", "Flores");
+    expect(byAddress.map((c) => c.name)).toContain("Maria");
+  });
+
+  it("lists sales filtered by status", async () => {
+    const [user] = await db
+      .insert(users)
+      .values({ name: "Operador", email: "filtro@planetaagua.local", passwordHash: "hash", role: "OPERATOR" })
+      .returning();
+    const [product] = await db
+      .insert(products)
+      .values({ name: "Galao 20L", salePriceCents: 1800, stockQuantity: 10, minimumStock: 1 })
+      .returning();
+
+    await repository.createSale({
+      customerId: null, userId: user.id, paymentMethod: "CASH",
+      items: [{ productId: product.id, quantity: 1 }], bottle: null, deliveryPending: true,
+    });
+
+    const pending = await repository.listSales({ status: "PENDING_DELIVERY" });
+    expect(pending.every((s) => s.status === "PENDING_DELIVERY")).toBe(true);
   });
 });

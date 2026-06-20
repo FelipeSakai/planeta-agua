@@ -4,31 +4,40 @@ import { and, asc, desc, eq, ilike, inArray, isNotNull, lt, or, sql } from "driz
 import { db } from "../../db";
 import { customers, products, saleItems, sales, stockMovements } from "../../db/schema";
 import { SalesRepositoryError } from "./sales.errors";
-import type { CreateSaleRepositoryInput, SaleStatus } from "./sales.types";
+import type {
+  ConfirmDeliveryRepositoryInput,
+  CreateSaleRepositoryInput,
+  ListSalesOptions,
+  SaleStatus,
+} from "./sales.types";
 
 const completedSaleStatus: SaleStatus = "COMPLETED";
 const canceledSaleStatus: SaleStatus = "CANCELED";
+const pendingDeliveryStatus: SaleStatus = "PENDING_DELIVERY";
 
 @Injectable()
 export class SalesRepository {
-  async searchCustomers(query: string) {
-    const normalizedQuery = query.trim();
+  async searchCustomers(primaryQuery: string, secondaryQuery = "") {
+    const normalizedPrimary = primaryQuery.trim();
+    const normalizedSecondary = secondaryQuery.trim();
 
-    if (!normalizedQuery) {
-      return db.query.customers.findMany({
-        orderBy: [asc(customers.name)],
-        limit: 10,
-      });
+    if (!normalizedPrimary && !normalizedSecondary) {
+      return db.query.customers.findMany({ orderBy: [asc(customers.name)], limit: 10 });
     }
 
-    return db.query.customers.findMany({
-      where: or(ilike(customers.name, `%${normalizedQuery}%`), ilike(customers.phone, `%${normalizedQuery}%`)),
-      orderBy: [asc(customers.name)],
-      limit: 10,
-    });
+    const primaryClause = or(ilike(customers.name, `%${normalizedPrimary}%`), ilike(customers.phone, `%${normalizedPrimary}%`));
+    const secondaryClause = or(ilike(customers.code, `%${normalizedSecondary}%`), ilike(customers.address, `%${normalizedSecondary}%`));
+
+    const whereClause = normalizedPrimary && normalizedSecondary
+      ? and(primaryClause, secondaryClause)
+      : normalizedPrimary
+        ? primaryClause
+        : secondaryClause;
+
+    return db.query.customers.findMany({ where: whereClause, orderBy: [asc(customers.name)], limit: 10 });
   }
 
-  async createQuickCustomer(input: { name: string; phone?: string | null }) {
+  async createQuickCustomer(input: { name: string; phone?: string | null; code?: string | null; address?: string | null }) {
     const [customer] = await db.insert(customers).values(input).returning();
 
     return customer;
@@ -87,8 +96,22 @@ export class SalesRepository {
           throw new SalesRepositoryError("INSUFFICIENT_STOCK", `Estoque insuficiente para ${product.name}.`);
         }
 
-        totalAmountCents += product.salePriceCents * item.quantity;
+        if (item.finalUnitPriceCents !== undefined && item.finalUnitPriceCents < 0) {
+          throw new SalesRepositoryError("INVALID_ITEM_PRICE", `Preco invalido para ${product.name}.`);
+        }
+
+        const effectiveUnitPrice = item.finalUnitPriceCents ?? product.salePriceCents;
+        const discount = item.discountCents ?? 0;
+        const itemTotal = effectiveUnitPrice * item.quantity - discount;
+
+        if (itemTotal < 0) {
+          throw new SalesRepositoryError("INVALID_ITEM_PRICE", `Total do item ${product.name} ficou negativo.`);
+        }
+
+        totalAmountCents += itemTotal;
       }
+
+      const saleStatus: SaleStatus = input.deliveryPending ? pendingDeliveryStatus : completedSaleStatus;
 
       const [sale] = await tx
         .insert(sales)
@@ -97,7 +120,7 @@ export class SalesRepository {
           userId: input.userId,
           totalAmountCents,
           paymentMethod: input.paymentMethod,
-          status: completedSaleStatus,
+          status: saleStatus,
           bottleMonth: input.bottle?.month ?? null,
           bottleYear: input.bottle?.year ?? null,
           bottleNotes: input.bottle?.notes ?? null,
@@ -112,13 +135,18 @@ export class SalesRepository {
             throw new SalesRepositoryError("PRODUCT_NOT_FOUND", `Produto ${item.productId} nao encontrado.`);
           }
 
+          const effectiveUnitPrice = item.finalUnitPriceCents ?? product.salePriceCents;
+          const discount = item.discountCents ?? 0;
+
           return {
             saleId: sale.id,
             productId: product.id,
             productNameSnapshot: product.name,
             quantity: item.quantity,
             unitPriceCents: product.salePriceCents,
-            totalPriceCents: product.salePriceCents * item.quantity,
+            totalPriceCents: effectiveUnitPrice * item.quantity - discount,
+            discountCents: discount,
+            finalUnitPriceCents: item.finalUnitPriceCents ?? null,
           };
         }),
       );
@@ -143,13 +171,15 @@ export class SalesRepository {
     });
   }
 
-  listSales() {
+  listSales(options: ListSalesOptions = {}) {
     return db.query.sales.findMany({
+      where: options.status ? eq(sales.status, options.status) : undefined,
       orderBy: [desc(sales.createdAt)],
       with: {
         customer: { columns: { id: true, name: true } },
         user: { columns: { id: true, name: true } },
         canceledByUser: { columns: { id: true, name: true } },
+        deliveredByUser: { columns: { id: true, name: true } },
       },
     });
   }
@@ -161,6 +191,7 @@ export class SalesRepository {
         customer: { columns: { id: true, name: true } },
         user: { columns: { id: true, name: true } },
         canceledByUser: { columns: { id: true, name: true } },
+        deliveredByUser: { columns: { id: true, name: true } },
         items: { orderBy: [asc(saleItems.createdAt)] },
       },
     });
@@ -250,6 +281,28 @@ export class SalesRepository {
         .returning();
 
       return canceledSale;
+    });
+  }
+
+  async confirmDelivery(input: ConfirmDeliveryRepositoryInput) {
+    return db.transaction(async (tx) => {
+      const [sale] = await tx.select().from(sales).where(eq(sales.id, input.saleId)).for("update");
+
+      if (!sale) {
+        throw new SalesRepositoryError("SALE_NOT_FOUND", `Venda ${input.saleId} nao encontrada.`);
+      }
+
+      if (sale.status !== pendingDeliveryStatus) {
+        throw new SalesRepositoryError("SALE_NOT_DELIVERABLE", `Venda ${input.saleId} nao esta pendente de entrega.`);
+      }
+
+      const [delivered] = await tx
+        .update(sales)
+        .set({ status: completedSaleStatus, deliveredAt: new Date(), deliveredByUserId: input.userId, updatedAt: new Date() })
+        .where(eq(sales.id, sale.id))
+        .returning();
+
+      return delivered;
     });
   }
 }
