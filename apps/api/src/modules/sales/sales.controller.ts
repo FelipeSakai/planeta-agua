@@ -4,7 +4,13 @@ import { z } from "zod";
 
 import { requireRequestUser } from "../auth/current-user";
 import { AuthService } from "../auth/auth.service";
-import { cancelSaleInputSchema, createSaleInputSchema, quickCustomerInputSchema } from "./sales.schemas";
+import {
+  cancelSaleInputSchema,
+  confirmDeliveryInputSchema,
+  createSaleInputSchema,
+  quickCustomerInputSchema,
+  saleHistoryFilterSchema,
+} from "./sales.schemas";
 import { SalesService } from "./sales.service";
 
 const idSchema = z.string().uuid();
@@ -37,15 +43,16 @@ export class SalesController {
   ) {}
 
   @Get()
-  async list(@Req() request: Request) {
+  async list(@Req() request: Request, @Query("status") status?: string) {
     await requireRequestUser(request, this.authService);
-    return this.salesService.listSales();
+    const parsed = saleHistoryFilterSchema.safeParse({ status });
+    return this.salesService.listSales(parsed.success ? parsed.data : {});
   }
 
   @Get("customers")
-  async searchCustomers(@Req() request: Request, @Query("query") query = "") {
+  async searchCustomers(@Req() request: Request, @Query("query") primaryQuery = "", @Query("secondary") secondaryQuery = "") {
     await requireRequestUser(request, this.authService);
-    return this.salesService.searchCustomers(query);
+    return this.salesService.searchCustomers(primaryQuery, secondaryQuery);
   }
 
   @Get(":id")
@@ -77,5 +84,14 @@ export class SalesController {
     const input = parseSalesBody(cancelSaleInputSchema, body, "Dados do cancelamento invalidos.");
 
     return this.salesService.cancelSale(user, saleId, input.reason);
+  }
+
+  @Post(":id/deliver")
+  async deliver(@Param("id") id: string, @Req() request: Request, @Body() body: unknown) {
+    const user = await requireRequestUser(request, this.authService);
+    const saleId = parseSaleId(id);
+    parseSalesBody(confirmDeliveryInputSchema, body, "Dados de entrega invalidos.");
+
+    return this.salesService.confirmDelivery(user, saleId);
   }
 }

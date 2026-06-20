@@ -22,6 +22,7 @@ function createController() {
     getSaleDetail: vi.fn(),
     createSale: vi.fn(),
     cancelSale: vi.fn(),
+    confirmDelivery: vi.fn(),
     searchCustomers: vi.fn(),
     createQuickCustomer: vi.fn(),
   };
@@ -41,6 +42,7 @@ describe("SalesController", () => {
       paymentMethod: "PIX" as const,
       items: [{ productId: "22222222-2222-4222-8222-222222222222", quantity: 2 }],
       bottle: null,
+      deliveryPending: false,
     };
     const sale = { id: "33333333-3333-4333-8333-333333333333", status: "COMPLETED" as const };
     salesService.createSale.mockResolvedValueOnce(sale);
@@ -116,7 +118,7 @@ describe("SalesController", () => {
     salesService.searchCustomers.mockResolvedValueOnce(customers);
 
     await expect(controller.searchCustomers(request as never, "mar")).resolves.toEqual(customers);
-    expect(salesService.searchCustomers).toHaveBeenCalledWith("mar");
+    expect(salesService.searchCustomers).toHaveBeenCalledWith("mar", "");
   });
 
   it("creates a quick customer for authenticated sales flow", async () => {
@@ -145,5 +147,33 @@ describe("SalesController", () => {
     const { controller } = createController();
 
     await expect(controller.list({ cookies: {} } as never)).rejects.toBeInstanceOf(UnauthorizedException);
+  });
+
+  it("POST /sales/:id/deliver confirms delivery for the authenticated user", async () => {
+    const { controller, salesService } = createController();
+    const delivered = { id: "88888888-8888-4888-8888-888888888888", status: "COMPLETED" as const };
+    salesService.confirmDelivery.mockResolvedValueOnce(delivered);
+
+    await expect(controller.deliver("88888888-8888-4888-8888-888888888888", request as never, {})).resolves.toEqual(delivered);
+    expect(salesService.confirmDelivery).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "11111111-1111-4111-8111-111111111111", role: "OPERATOR" }),
+      "88888888-8888-4888-8888-888888888888",
+    );
+  });
+
+  it("GET /sales?status=PENDING_DELIVERY forwards the status filter to the service", async () => {
+    const { controller, salesService } = createController();
+    salesService.listSales.mockResolvedValueOnce([]);
+
+    await controller.list(request as never, "PENDING_DELIVERY");
+    expect(salesService.listSales).toHaveBeenCalledWith({ status: "PENDING_DELIVERY" });
+  });
+
+  it("GET /sales?status=WEIRD falls back to an unfiltered list", async () => {
+    const { controller, salesService } = createController();
+    salesService.listSales.mockResolvedValueOnce([]);
+
+    await controller.list(request as never, "WEIRD");
+    expect(salesService.listSales).toHaveBeenCalledWith({});
   });
 });

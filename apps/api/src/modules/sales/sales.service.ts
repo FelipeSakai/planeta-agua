@@ -7,6 +7,7 @@ import {
   cancelSaleInputSchema,
   createSaleInputSchema,
   quickCustomerInputSchema,
+  saleHistoryFilterSchema,
   type CreateSaleInput,
   type QuickCustomerInput,
   type SaleCustomerResponse,
@@ -24,8 +25,9 @@ type SalesCustomerSummary = SaleCustomerResponse;
 export class SalesService {
   constructor(private readonly salesRepository: SalesRepository) {}
 
-  async listSales(): Promise<SalesListResponse> {
-    const sales = await this.salesRepository.listSales();
+  async listSales(options: { status?: "COMPLETED" | "CANCELED" | "PENDING_DELIVERY" } = {}): Promise<SalesListResponse> {
+    const parsed = saleHistoryFilterSchema.safeParse(options);
+    const sales = await this.salesRepository.listSales(parsed.success ? parsed.data : {});
 
     return sales.map((sale) => this.toHistoryResponse(sale));
   }
@@ -68,8 +70,16 @@ export class SalesService {
     }
   }
 
-  async searchCustomers(query: string): Promise<SalesCustomerSummary[]> {
-    const customers = await this.salesRepository.searchCustomers(query);
+  async confirmDelivery(user: PermissionUser, saleId: string) {
+    try {
+      return await this.salesRepository.confirmDelivery({ saleId, userId: user.id });
+    } catch (error) {
+      throw this.mapConfirmDeliveryError(error);
+    }
+  }
+
+  async searchCustomers(primaryQuery: string, secondaryQuery = ""): Promise<SalesCustomerSummary[]> {
+    const customers = await this.salesRepository.searchCustomers(primaryQuery, secondaryQuery);
 
     return Promise.all(customers.map((customer) => this.toCustomerSummary(customer)));
   }
@@ -87,6 +97,8 @@ export class SalesService {
       id: customer.id,
       name: customer.name,
       phone: customer.phone,
+      code: customer.code ?? null,
+      address: customer.address ?? null,
       previousBottle: null,
     };
   }
@@ -115,6 +127,18 @@ export class SalesService {
     return new BadRequestException("Nao foi possivel cancelar a venda.");
   }
 
+  private mapConfirmDeliveryError(error: unknown) {
+    if (error instanceof SalesRepositoryError) {
+      if (error.code === "SALE_NOT_FOUND") {
+        return new NotFoundException("Venda nao encontrada.");
+      }
+
+      return new BadRequestException(error.message);
+    }
+
+    return new BadRequestException("Nao foi possivel confirmar a entrega.");
+  }
+
   private toHistoryResponse(sale: SaleListRow): SalesListResponse[number] {
     return {
       id: sale.id,
@@ -128,6 +152,8 @@ export class SalesService {
       createdAt: sale.createdAt.toISOString(),
       canceledAt: sale.canceledAt?.toISOString() ?? null,
       cancellationReason: sale.cancellationReason,
+      deliveredAt: sale.deliveredAt?.toISOString() ?? null,
+      deliveredByUserId: sale.deliveredByUserId ?? null,
     };
   }
 
@@ -147,6 +173,8 @@ export class SalesService {
         createdAt: detail.sale.createdAt.toISOString(),
         canceledAt: detail.sale.canceledAt?.toISOString() ?? null,
         cancellationReason: detail.sale.cancellationReason,
+        deliveredAt: detail.sale.deliveredAt?.toISOString() ?? null,
+        deliveredByUserId: detail.sale.deliveredByUserId ?? null,
         bottle,
         previousBottle: detail.previousBottle,
       },
@@ -157,6 +185,8 @@ export class SalesService {
         quantity: item.quantity,
         unitPriceCents: item.unitPriceCents,
         totalPriceCents: item.totalPriceCents,
+        discountCents: item.discountCents ?? null,
+        finalUnitPriceCents: item.finalUnitPriceCents ?? null,
       })),
       bottleAlerts: {
         expired: isBottleExpired(bottle, new Date()),
@@ -182,6 +212,8 @@ export class SalesService {
       id: customer.id,
       name: customer.name,
       phone: customer.phone,
+      code: customer.code ?? null,
+      address: customer.address ?? null,
       previousBottle: await this.salesRepository.getLatestBottleForCustomer(customer.id),
     };
   }

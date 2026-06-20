@@ -20,6 +20,7 @@ function createRepository() {
     getSaleDetail: vi.fn(),
     createSale: vi.fn(),
     cancelSale: vi.fn(),
+    confirmDelivery: vi.fn(),
     searchCustomers: vi.fn(),
     createQuickCustomer: vi.fn(),
     getLatestBottleForCustomer: vi.fn(),
@@ -35,6 +36,7 @@ describe("SalesService", () => {
       paymentMethod: "PIX" as const,
       items: [{ productId: "33333333-3333-4333-8333-333333333333", quantity: 2 }],
       bottle: null,
+      deliveryPending: false,
     };
 
     repository.createSale.mockRejectedValueOnce(
@@ -70,6 +72,7 @@ describe("SalesService", () => {
       paymentMethod: "PIX" as const,
       items: [{ productId: "33333333-3333-4333-8333-333333333333", quantity: 1 }],
       bottle: null,
+      deliveryPending: false,
     };
 
     repository.createSale.mockRejectedValueOnce(new Error("conexao perdida"));
@@ -94,6 +97,8 @@ describe("SalesService", () => {
         createdAt: new Date("2026-06-18T10:00:00.000Z"),
         canceledAt: null,
         cancellationReason: null,
+        deliveredAt: null,
+        deliveredByUserId: null,
         bottleMonth: 1,
         bottleYear: 2020,
         bottleNotes: "Casco antigo",
@@ -109,6 +114,8 @@ describe("SalesService", () => {
           quantity: 2,
           unitPriceCents: 1800,
           totalPriceCents: 3600,
+          discountCents: null,
+          finalUnitPriceCents: null,
         },
       ],
       previousBottle: { month: 2, year: 2020, notes: "Casco anterior" },
@@ -127,6 +134,8 @@ describe("SalesService", () => {
         createdAt: "2026-06-18T10:00:00.000Z",
         canceledAt: null,
         cancellationReason: null,
+        deliveredAt: null,
+        deliveredByUserId: null,
         bottle: { month: 1, year: 2020, notes: "Casco antigo" },
         previousBottle: { month: 2, year: 2020, notes: "Casco anterior" },
       },
@@ -138,6 +147,8 @@ describe("SalesService", () => {
           quantity: 2,
           unitPriceCents: 1800,
           totalPriceCents: 3600,
+          discountCents: null,
+          finalUnitPriceCents: null,
         },
       ],
       bottleAlerts: {
@@ -181,6 +192,7 @@ describe("SalesService", () => {
         id: "99999999-9999-4999-8999-999999999999",
         name: "Maria",
         phone: "11999999999",
+        code: null,
         address: "Rua A, 10",
         notes: "Cliente recorrente",
         createdAt: new Date("2026-06-18T09:00:00.000Z"),
@@ -194,6 +206,8 @@ describe("SalesService", () => {
         id: "99999999-9999-4999-8999-999999999999",
         name: "Maria",
         phone: "11999999999",
+        code: null,
+        address: "Rua A, 10",
         previousBottle,
       },
     ]);
@@ -207,6 +221,7 @@ describe("SalesService", () => {
       id: "12121212-1212-4212-8212-121212121212",
       name: "Joao",
       phone: "11888888888",
+      code: null,
       address: null,
       notes: null,
       createdAt: new Date("2026-06-18T11:00:00.000Z"),
@@ -217,6 +232,8 @@ describe("SalesService", () => {
       id: "12121212-1212-4212-8212-121212121212",
       name: "Joao",
       phone: "11888888888",
+      code: null,
+      address: null,
       previousBottle: null,
     });
   });
@@ -246,5 +263,50 @@ describe("SalesService", () => {
       userId: adminUser.id,
       reason: "Cliente desistiu.",
     });
+  });
+
+  it("confirms delivery for a pending delivery sale", async () => {
+    const repository = createRepository();
+    const service = new SalesService(repository as never);
+    const delivered = { id: "88888888-8888-4888-8888-888888888888", status: "COMPLETED" as const };
+
+    repository.confirmDelivery.mockResolvedValueOnce(delivered);
+    await expect(service.confirmDelivery(operatorUser, "88888888-8888-4888-8888-888888888888")).resolves.toEqual(delivered);
+    expect(repository.confirmDelivery).toHaveBeenCalledWith({ saleId: "88888888-8888-4888-8888-888888888888", userId: operatorUser.id });
+  });
+
+  it("maps confirmDelivery errors to not found or bad request", async () => {
+    const repository = createRepository();
+    const service = new SalesService(repository as never);
+
+    repository.confirmDelivery.mockRejectedValueOnce(new SalesRepositoryError("SALE_NOT_FOUND", "Venda nao encontrada."));
+    await expect(service.confirmDelivery(operatorUser, "88888888-8888-4888-8888-888888888888")).rejects.toBeInstanceOf(NotFoundException);
+
+    repository.confirmDelivery.mockRejectedValueOnce(new SalesRepositoryError("SALE_NOT_DELIVERABLE", "Nao pendente."));
+    await expect(service.confirmDelivery(operatorUser, "88888888-8888-4888-8888-888888888888")).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it("searches customers with primary and secondary queries", async () => {
+    const repository = createRepository();
+    const service = new SalesService(repository as never);
+
+    repository.searchCustomers.mockResolvedValueOnce([
+      { id: "99999999-9999-4999-8999-999999999999", name: "Maria", phone: "11999999999", code: "C001", address: "Rua A", notes: null, createdAt: new Date(), updatedAt: new Date() },
+    ]);
+    repository.getLatestBottleForCustomer.mockResolvedValueOnce(null);
+
+    await expect(service.searchCustomers("Maria", "C001")).resolves.toEqual([
+      { id: "99999999-9999-4999-8999-999999999999", name: "Maria", phone: "11999999999", code: "C001", address: "Rua A", previousBottle: null },
+    ]);
+    expect(repository.searchCustomers).toHaveBeenCalledWith("Maria", "C001");
+  });
+
+  it("lists sales with a status filter", async () => {
+    const repository = createRepository();
+    const service = new SalesService(repository as never);
+
+    repository.listSales.mockResolvedValueOnce([]);
+    await service.listSales({ status: "PENDING_DELIVERY" });
+    expect(repository.listSales).toHaveBeenCalledWith({ status: "PENDING_DELIVERY" });
   });
 });
