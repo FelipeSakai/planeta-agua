@@ -86,8 +86,8 @@ export function HistoryUi({ history, activeFilter }: HistoryUiProps) {
     try {
       await confirmSaleDelivery(saleId);
       refreshPage();
-    } catch {
-      setError("Nao foi possivel confirmar a entrega.");
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Nao foi possivel confirmar a entrega.");
     } finally {
       setActingSaleId(null);
     }
@@ -111,12 +111,13 @@ export function HistoryUi({ history, activeFilter }: HistoryUiProps) {
         body: JSON.stringify(payload),
       });
       if (!response.ok) {
-        setError("Nao foi possivel cancelar a venda.");
+        const body = await response.json().catch(() => null) as { message?: string } | null;
+        setError(body?.message ?? "Nao foi possivel cancelar a venda.");
         return;
       }
       refreshPage();
-    } catch {
-      setError("Nao foi possivel cancelar a venda.");
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Nao foi possivel cancelar a venda.");
     } finally {
       setActingSaleId(null);
     }
