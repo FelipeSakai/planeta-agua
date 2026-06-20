@@ -112,7 +112,7 @@ export function SalesUi({ products, customers }: SalesUiProps) {
   const totalAmountCents = cartItems.reduce((total, item) => {
     const effectiveUnitPrice = item.finalUnitPriceCents ?? item.unitPriceCents;
     const effectiveDiscount = item.discountCents ?? 0;
-    return total + Math.max(0, effectiveUnitPrice - effectiveDiscount) * item.quantity;
+    return total + Math.max(0, effectiveUnitPrice * item.quantity - effectiveDiscount);
   }, 0);
 
   function refreshPage() {
@@ -505,7 +505,7 @@ export function SalesUi({ products, customers }: SalesUiProps) {
                 {cartItems.map((item) => {
                   const effectiveUnitPrice = item.finalUnitPriceCents ?? item.unitPriceCents;
                   const effectiveDiscount = item.discountCents ?? 0;
-                  const subtotal = Math.max(0, effectiveUnitPrice - effectiveDiscount) * item.quantity;
+                  const subtotal = Math.max(0, effectiveUnitPrice * item.quantity - effectiveDiscount);
 
                   return (
                     <li className="space-y-2 rounded-[var(--radius-control)] border border-[var(--border)] p-3" key={item.productId}>
@@ -670,7 +670,8 @@ function mergeSaleCustomers(
 }
 
 function reaisToCents(value: string): number {
-  return Math.round(Number(value.replace(",", ".")) * 100);
+  const cents = Math.round(Number(value.replace(",", ".")) * 100);
+  return Number.isNaN(cents) ? 0 : cents;
 }
 
 function centsToReais(cents: number): string {

@@ -157,7 +157,10 @@ export async function confirmSaleDelivery(saleId: string) {
     cache: "no-store",
   });
 
-  ensureResponseOk(response, "Nao foi possivel confirmar a entrega.");
+  if (!response.ok) {
+    const body = await response.json().catch(() => null) as { message?: string } | null;
+    throw new Error(body?.message ?? "Nao foi possivel confirmar a entrega.");
+  }
 
   return response.json();
 }

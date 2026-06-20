@@ -100,6 +100,10 @@ export class SalesRepository {
           throw new SalesRepositoryError("INVALID_ITEM_PRICE", `Preco invalido para ${product.name}.`);
         }
 
+        if (item.discountCents !== undefined && item.discountCents < 0) {
+          throw new SalesRepositoryError("INVALID_ITEM_PRICE", `Desconto invalido para ${product.name}.`);
+        }
+
         const effectiveUnitPrice = item.finalUnitPriceCents ?? product.salePriceCents;
         const discount = item.discountCents ?? 0;
         const itemTotal = effectiveUnitPrice * item.quantity - discount;
