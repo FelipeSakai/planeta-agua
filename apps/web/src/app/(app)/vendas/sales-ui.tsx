@@ -462,21 +462,27 @@ export function SalesUi({ products, customers }: SalesUiProps) {
                   className="absolute z-30 mt-1 max-h-80 w-full overflow-auto rounded-[var(--radius-control)] border border-[var(--border)] bg-white shadow-lg"
                   role="listbox"
                 >
-                  {productResults.map((product) => (
-                    <li key={product.id}>
-                      <button
-                        className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm transition duration-150 hover:bg-[var(--card-muted)]"
-                        onClick={() => addProductToCart(product)}
-                        type="button"
-                      >
-                        <span>
-                          <span className="font-medium text-[var(--foreground)]">{product.name}</span>
-                          <span className="ml-2 text-xs text-[var(--muted)]">Estoque {product.stockQuantity}</span>
-                        </span>
-                        <span className="font-medium text-[var(--foreground)]">{formatCentsToBRL(product.salePriceCents)}</span>
-                      </button>
-                    </li>
-                  ))}
+                  {productResults.map((product) => {
+                    const outOfStock = product.stockQuantity <= 0;
+                    return (
+                      <li key={product.id}>
+                        <button
+                          className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm transition duration-150 hover:bg-[var(--card-muted)] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent"
+                          disabled={outOfStock}
+                          onClick={() => addProductToCart(product)}
+                          type="button"
+                        >
+                          <span>
+                            <span className="font-medium text-[var(--foreground)]">{product.name}</span>
+                            <span className="ml-2 text-xs text-[var(--muted)]">
+                              {outOfStock ? "sem estoque" : `Estoque ${product.stockQuantity}`}
+                            </span>
+                          </span>
+                          <span className="font-medium text-[var(--foreground)]">{formatCentsToBRL(product.salePriceCents)}</span>
+                        </button>
+                      </li>
+                    );
+                  })}
                 </ul>
               ) : null}
             </div>
