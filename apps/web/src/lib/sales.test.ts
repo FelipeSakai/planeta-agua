@@ -86,12 +86,14 @@ describe("sales web helpers", () => {
         bottleMonth: "6",
         bottleYear: "2024",
         bottleNotes: "azul",
+        deliveryPending: false,
       }),
     ).toEqual({
       customerId: null,
       paymentMethod: "PIX",
       items: [{ productId: "11111111-1111-4111-8111-111111111111", quantity: 2 }],
       bottle: { month: 6, year: 2024, notes: "azul" },
+      deliveryPending: false,
     });
   });
 
@@ -104,6 +106,7 @@ describe("sales web helpers", () => {
         bottleMonth: "",
         bottleYear: "",
         bottleNotes: "",
+        deliveryPending: false,
       }),
     ).toMatchObject({ bottle: null });
   });
@@ -117,6 +120,7 @@ describe("sales web helpers", () => {
         bottleMonth: "6",
         bottleYear: "",
         bottleNotes: "azul",
+        deliveryPending: false,
       }),
     ).toThrow("Informe mes e ano do galao.");
 
@@ -128,6 +132,7 @@ describe("sales web helpers", () => {
         bottleMonth: "",
         bottleYear: "2024",
         bottleNotes: "azul",
+        deliveryPending: false,
       }),
     ).toThrow("Informe mes e ano do galao.");
   });

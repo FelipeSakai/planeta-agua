@@ -46,7 +46,7 @@ type SalesHistoryEntry = {
   userName: string;
   totalAmountCents: number;
   paymentMethod: PaymentMethod;
-  status: "COMPLETED" | "CANCELED";
+  status: "COMPLETED" | "CANCELED" | "PENDING_DELIVERY";
   createdAt: string;
   canceledAt: string | null;
   cancellationReason: string | null;
@@ -308,6 +308,7 @@ export function SalesUi({ userRole, history, products, customers }: SalesUiProps
         bottleMonth: selectedCustomerId ? resolvedBottleMonth : "",
         bottleYear: selectedCustomerId ? resolvedBottleYear : "",
         bottleNotes: selectedCustomerId ? resolvedBottleNotes : "",
+        deliveryPending: false,
       });
       const response = await fetch("/api/sales", {
         method: "POST",

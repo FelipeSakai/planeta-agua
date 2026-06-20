@@ -20,13 +20,15 @@ describe("SalesUi", () => {
       id: "c1",
       name: "Maria",
       phone: "11999999999",
+      code: null,
+      address: null,
       previousBottle: { month: 7, year: 2026, notes: "verde" },
     };
 
     const syncedCustomers = syncCustomersFromProps({
       customers: [refreshedCustomer],
       customerDirectory: [
-        { id: "c1", name: "Maria", phone: "11999999999", previousBottle: { month: 6, year: 2024, notes: "azul" } },
+        { id: "c1", name: "Maria", phone: "11999999999", code: null, address: null, previousBottle: { month: 6, year: 2024, notes: "azul" } },
       ],
       selectedCustomerId: "c1",
     });
@@ -42,6 +44,8 @@ describe("SalesUi", () => {
       id: "c1",
       name: "Maria",
       phone: null,
+      code: null,
+      address: null,
       previousBottle: { month: 6, year: 2024, notes: "azul" },
     };
 
@@ -61,7 +65,7 @@ describe("SalesUi", () => {
         userRole: "OPERATOR",
         history: [],
         products: [],
-        customers: [{ id: "c1", name: "Maria", phone: "11999999999", previousBottle: { month: 6, year: 2024, notes: "azul" } }],
+        customers: [{ id: "c1", name: "Maria", phone: "11999999999", code: null, address: null, previousBottle: { month: 6, year: 2024, notes: "azul" } }],
       }),
     );
 
@@ -78,7 +82,7 @@ describe("SalesUi", () => {
         userRole: "OPERATOR",
         history: [],
         products: [],
-        customers: [{ id: "c1", name: "Maria", phone: "11999999999", previousBottle: { month: 6, year: 2024, notes: "azul" } }],
+        customers: [{ id: "c1", name: "Maria", phone: "11999999999", code: null, address: null, previousBottle: { month: 6, year: 2024, notes: "azul" } }],
       }),
     );
 
@@ -91,6 +95,8 @@ describe("SalesUi", () => {
       id: "c1",
       name: "Maria",
       phone: null,
+      code: null,
+      address: null,
       previousBottle: { month: 6, year: 2024, notes: "azul" },
     };
 
@@ -114,6 +120,8 @@ describe("SalesUi", () => {
       id: "c1",
       name: "Maria",
       phone: null,
+      code: null,
+      address: null,
       previousBottle: { month: 6, year: 2024, notes: "azul" },
     };
 
@@ -134,6 +142,8 @@ describe("SalesUi", () => {
       id: "c1",
       name: "Maria",
       phone: null,
+      code: null,
+      address: null,
       previousBottle: { month: 6, year: 2024, notes: "azul" },
     };
 
