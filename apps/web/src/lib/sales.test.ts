@@ -30,6 +30,8 @@ const salesHistoryPayload = [
     createdAt: "2026-06-15T10:00:00.000Z",
     canceledAt: null,
     cancellationReason: null,
+    deliveredAt: null,
+    deliveredByUserId: null,
   },
 ];
 
@@ -46,6 +48,8 @@ const saleDetailPayload = {
     createdAt: "2026-06-15T10:00:00.000Z",
     canceledAt: null,
     cancellationReason: null,
+    deliveredAt: null,
+    deliveredByUserId: null,
     bottle: null,
     previousBottle: null,
   },
@@ -57,6 +61,8 @@ const saleDetailPayload = {
       quantity: 2,
       unitPriceCents: 1200,
       totalPriceCents: 2400,
+      discountCents: null,
+      finalUnitPriceCents: null,
     },
   ],
   bottleAlerts: {
@@ -69,6 +75,8 @@ const customerPayload = {
   id: "55555555-5555-4555-8555-555555555555",
   name: "Maria",
   phone: "11999999999",
+  code: null,
+  address: null,
   previousBottle: { month: 6, year: 2024, notes: "Azul" },
 };
 
