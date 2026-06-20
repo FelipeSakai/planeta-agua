@@ -15,6 +15,74 @@ afterEach(() => {
 });
 
 describe("SalesUi", () => {
+  it("does not render long explanatory paragraphs", () => {
+    const html = renderToStaticMarkup(
+      createElement(SalesUi, {
+        userRole: "OPERATOR",
+        products: [],
+        customers: [],
+      }),
+    );
+
+    expect(html).not.toContain("Cliente opcional");
+    expect(html).not.toContain("Voce pode finalizar a venda sem cliente");
+    expect(html).not.toContain("Somente produtos ativos aparecem aqui");
+    expect(html).not.toContain("Ajuste quantidades rapidamente antes de finalizar");
+  });
+
+  it("renders two customer search fields and a product search field", () => {
+    const html = renderToStaticMarkup(
+      createElement(SalesUi, {
+        userRole: "OPERATOR",
+        products: [],
+        customers: [],
+      }),
+    );
+
+    expect(html).toContain("Buscar por nome ou telefone");
+    expect(html).toContain("Codigo ou endereco");
+    expect(html).toContain("Digite o nome do produto");
+  });
+
+  it("renders the cart sidebar with finalize button", () => {
+    const html = renderToStaticMarkup(
+      createElement(SalesUi, {
+        userRole: "OPERATOR",
+        products: [],
+        customers: [],
+      }),
+    );
+
+    expect(html).toContain("Carrinho");
+    expect(html).toContain("Finalizar venda");
+  });
+
+  it("renders a delivery-later checkbox", () => {
+    const html = renderToStaticMarkup(
+      createElement(SalesUi, {
+        userRole: "OPERATOR",
+        products: [],
+        customers: [],
+      }),
+    );
+
+    expect(html).toContain("Entregar depois");
+  });
+
+  it("does not render sales history on the sales page", () => {
+    const html = renderToStaticMarkup(
+      createElement(SalesUi, {
+        userRole: "OPERATOR",
+        products: [],
+        customers: [],
+      }),
+    );
+
+    expect(html).not.toContain("Historico recente");
+  });
+});
+
+describe("syncCustomersFromProps", () => {
   it("replaces stale previous bottle data on refresh without clearing the selected customer id", () => {
     const refreshedCustomer = {
       id: "c1",
@@ -58,38 +126,9 @@ describe("SalesUi", () => {
     expect(syncedCustomers.selectedCustomer).toEqual(directoryCustomer);
     expect(syncedCustomers.customerDirectory).toEqual([directoryCustomer]);
   });
+});
 
-  it("keeps customer optional even when customers are preloaded", () => {
-    const html = renderToStaticMarkup(
-      createElement(SalesUi, {
-        userRole: "OPERATOR",
-        history: [],
-        products: [],
-        customers: [{ id: "c1", name: "Maria", phone: "11999999999", code: null, address: null, previousBottle: { month: 6, year: 2024, notes: "azul" } }],
-      }),
-    );
-
-    expect(html).toContain("Cliente opcional");
-    expect(html).toContain("Siga sem cliente quando o atendimento for rápido de balcão.");
-    expect(html).toContain("Finalizar venda");
-    expect(html).not.toContain("Último galão conhecido");
-    expect(html).not.toContain("Mês do galão");
-  });
-
-  it("renders the customer select with 'Sem cliente' selected by default", () => {
-    const html = renderToStaticMarkup(
-      createElement(SalesUi, {
-        userRole: "OPERATOR",
-        history: [],
-        products: [],
-        customers: [{ id: "c1", name: "Maria", phone: "11999999999", code: null, address: null, previousBottle: { month: 6, year: 2024, notes: "azul" } }],
-      }),
-    );
-
-    expect(html).toContain('<option value="" selected="">Sem cliente</option>');
-    expect(html).not.toContain('<option value="c1" selected="">Maria</option>');
-  });
-
+describe("resolveBottleState", () => {
   it("resolves bottle fields from the previous customer record when the operator has not edited them", () => {
     const customer = {
       id: "c1",
@@ -157,30 +196,5 @@ describe("SalesUi", () => {
     });
 
     expect(state.bottleAlerts).toContain("Galão informado difere do último registro do cliente.");
-  });
-
-  it("shows cancel action in history for operators and admins", () => {
-    const html = renderToStaticMarkup(
-      createElement(SalesUi, {
-        userRole: "OPERATOR",
-        history: [
-          {
-            id: "s1",
-            status: "COMPLETED",
-            customerName: null,
-            userName: "Operador",
-            totalAmountCents: 1000,
-            paymentMethod: "PIX",
-            createdAt: "2026-06-18T00:00:00.000Z",
-            canceledAt: null,
-            cancellationReason: null,
-          },
-        ],
-        products: [],
-        customers: [],
-      }),
-    );
-
-    expect(html).toContain("Cancelar venda");
   });
 });
