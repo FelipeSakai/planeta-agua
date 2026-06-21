@@ -1,7 +1,9 @@
 import { relations } from "drizzle-orm";
 import {
   boolean,
+  date,
   integer,
+  jsonb,
   pgEnum,
   pgTable,
   text,
@@ -108,6 +110,21 @@ export const expenses = pgTable("expenses", {
   paymentMethod: paymentMethodEnum("payment_method"),
   date: timestamp("date", { withTimezone: true }).notNull(),
   createdBy: uuid("created_by").notNull().references(() => users.id),
+  isDeleted: boolean("is_deleted").notNull().default(false),
+  deletedAt: timestamp("deleted_at", { withTimezone: true }),
+  deletedBy: uuid("deleted_by").references(() => users.id),
+  ...timestamps,
+});
+
+export const cashRegisters = pgTable("cash_registers", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  date: date("date").notNull().unique(),
+  openingBalanceCents: integer("opening_balance_cents").notNull().default(0),
+  openedAt: timestamp("opened_at", { withTimezone: true }).defaultNow().notNull(),
+  openedByUserId: uuid("opened_by_user_id").notNull().references(() => users.id),
+  closedAt: timestamp("closed_at", { withTimezone: true }),
+  closedByUserId: uuid("closed_by_user_id").references(() => users.id),
+  counts: jsonb("counts").notNull().default({}),
   ...timestamps,
 });
 
@@ -117,7 +134,10 @@ export const usersRelations = relations(users, ({ many }) => ({
   canceledSales: many(sales, { relationName: "saleCanceledByUser" }),
   deliveredSales: many(sales, { relationName: "saleDeliveredByUser" }),
   stockMovements: many(stockMovements),
-  expenses: many(expenses),
+  expenses: many(expenses, { relationName: "expenseCreatedBy" }),
+  deletedExpenses: many(expenses, { relationName: "expenseDeletedBy" }),
+  openedCashRegisters: many(cashRegisters, { relationName: "cashRegisterOpenedBy" }),
+  closedCashRegisters: many(cashRegisters, { relationName: "cashRegisterClosedBy" }),
 }));
 
 export const sessionsRelations = relations(sessions, ({ one }) => ({
@@ -178,5 +198,31 @@ export const stockMovementsRelations = relations(stockMovements, ({ one }) => ({
   user: one(users, {
     fields: [stockMovements.userId],
     references: [users.id],
+  }),
+}));
+
+export const expensesRelations = relations(expenses, ({ one }) => ({
+  createdByUser: one(users, {
+    fields: [expenses.createdBy],
+    references: [users.id],
+    relationName: "expenseCreatedBy",
+  }),
+  deletedByUser: one(users, {
+    fields: [expenses.deletedBy],
+    references: [users.id],
+    relationName: "expenseDeletedBy",
+  }),
+}));
+
+export const cashRegistersRelations = relations(cashRegisters, ({ one }) => ({
+  openedByUser: one(users, {
+    fields: [cashRegisters.openedByUserId],
+    references: [users.id],
+    relationName: "cashRegisterOpenedBy",
+  }),
+  closedByUser: one(users, {
+    fields: [cashRegisters.closedByUserId],
+    references: [users.id],
+    relationName: "cashRegisterClosedBy",
   }),
 }));
