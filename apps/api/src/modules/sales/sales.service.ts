@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { hasBottleMismatch, isBottleExpired, type SessionUser } from "shared";
 
+import { FinanceService } from "../finance/finance.service";
 import { SalesRepository } from "./sales.repository";
 import { SalesRepositoryError } from "./sales.errors";
 import {
@@ -23,7 +24,10 @@ type SalesCustomerSummary = SaleCustomerResponse;
 
 @Injectable()
 export class SalesService {
-  constructor(private readonly salesRepository: SalesRepository) {}
+  constructor(
+    private readonly salesRepository: SalesRepository,
+    private readonly financeService: FinanceService,
+  ) {}
 
   async listSales(options: { status?: "COMPLETED" | "CANCELED" | "PENDING_DELIVERY" } = {}): Promise<SalesListResponse> {
     const parsed = saleHistoryFilterSchema.safeParse(options);
@@ -48,6 +52,8 @@ export class SalesService {
     if (!parsedInput.success) {
       throw new BadRequestException("Dados da venda invalidos.");
     }
+
+    await this.financeService.ensureCashRegisterForToday(user.id);
 
     try {
       return await this.salesRepository.createSale({ ...parsedInput.data, userId: user.id });

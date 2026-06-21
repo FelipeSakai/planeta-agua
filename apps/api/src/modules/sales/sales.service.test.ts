@@ -27,10 +27,16 @@ function createRepository() {
   };
 }
 
+function createFinanceService() {
+  return {
+    ensureCashRegisterForToday: vi.fn().mockResolvedValue(undefined),
+  };
+}
+
 describe("SalesService", () => {
   it("rejects a sale when repository reports inactive product, missing product, or insufficient stock", async () => {
     const repository = createRepository();
-    const service = new SalesService(repository as never);
+    const service = new SalesService(repository as never, createFinanceService() as never);
     const input = {
       customerId: null,
       paymentMethod: "PIX" as const,
@@ -66,7 +72,7 @@ describe("SalesService", () => {
 
   it("falls back to a generic message when the repository throws a non-typed error", async () => {
     const repository = createRepository();
-    const service = new SalesService(repository as never);
+    const service = new SalesService(repository as never, createFinanceService() as never);
     const input = {
       customerId: null,
       paymentMethod: "PIX" as const,
@@ -84,7 +90,7 @@ describe("SalesService", () => {
 
   it("returns bottle alerts based on previous customer bottle history", async () => {
     const repository = createRepository();
-    const service = new SalesService(repository as never);
+    const service = new SalesService(repository as never, createFinanceService() as never);
 
     repository.getSaleDetail.mockResolvedValueOnce({
       sale: {
@@ -160,7 +166,7 @@ describe("SalesService", () => {
 
   it("requires a cancellation reason and rejects double cancellation or missing sale", async () => {
     const repository = createRepository();
-    const service = new SalesService(repository as never);
+    const service = new SalesService(repository as never, createFinanceService() as never);
 
     await expect(service.cancelSale(adminUser, "88888888-8888-4888-8888-888888888888", "" as never)).rejects.toBeInstanceOf(BadRequestException);
     expect(repository.cancelSale).not.toHaveBeenCalled();
@@ -184,7 +190,7 @@ describe("SalesService", () => {
 
   it("returns minimized customer data for sales customer search", async () => {
     const repository = createRepository();
-    const service = new SalesService(repository as never);
+    const service = new SalesService(repository as never, createFinanceService() as never);
     const previousBottle = { month: 6, year: 2024, notes: "Azul" };
 
     repository.searchCustomers.mockResolvedValueOnce([
@@ -215,7 +221,7 @@ describe("SalesService", () => {
 
   it("returns minimized customer data for quick customer creation", async () => {
     const repository = createRepository();
-    const service = new SalesService(repository as never);
+    const service = new SalesService(repository as never, createFinanceService() as never);
 
     repository.createQuickCustomer.mockResolvedValueOnce({
       id: "12121212-1212-4212-8212-121212121212",
@@ -240,7 +246,7 @@ describe("SalesService", () => {
 
   it("allows operators and admins to cancel sales", async () => {
     const repository = createRepository();
-    const service = new SalesService(repository as never);
+    const service = new SalesService(repository as never, createFinanceService() as never);
     const canceledSale = { id: "88888888-8888-4888-8888-888888888888", status: "CANCELED" as const };
 
     repository.cancelSale.mockResolvedValueOnce(canceledSale);
@@ -267,7 +273,7 @@ describe("SalesService", () => {
 
   it("confirms delivery for a pending delivery sale", async () => {
     const repository = createRepository();
-    const service = new SalesService(repository as never);
+    const service = new SalesService(repository as never, createFinanceService() as never);
     const delivered = { id: "88888888-8888-4888-8888-888888888888", status: "COMPLETED" as const };
 
     repository.confirmDelivery.mockResolvedValueOnce(delivered);
@@ -277,7 +283,7 @@ describe("SalesService", () => {
 
   it("maps confirmDelivery errors to not found or bad request", async () => {
     const repository = createRepository();
-    const service = new SalesService(repository as never);
+    const service = new SalesService(repository as never, createFinanceService() as never);
 
     repository.confirmDelivery.mockRejectedValueOnce(new SalesRepositoryError("SALE_NOT_FOUND", "Venda nao encontrada."));
     await expect(service.confirmDelivery(operatorUser, "88888888-8888-4888-8888-888888888888")).rejects.toBeInstanceOf(NotFoundException);
@@ -288,7 +294,7 @@ describe("SalesService", () => {
 
   it("searches customers with primary and secondary queries", async () => {
     const repository = createRepository();
-    const service = new SalesService(repository as never);
+    const service = new SalesService(repository as never, createFinanceService() as never);
 
     repository.searchCustomers.mockResolvedValueOnce([
       { id: "99999999-9999-4999-8999-999999999999", name: "Maria", phone: "11999999999", code: "C001", address: "Rua A", notes: null, createdAt: new Date(), updatedAt: new Date() },
@@ -303,10 +309,38 @@ describe("SalesService", () => {
 
   it("lists sales with a status filter", async () => {
     const repository = createRepository();
-    const service = new SalesService(repository as never);
+    const service = new SalesService(repository as never, createFinanceService() as never);
 
     repository.listSales.mockResolvedValueOnce([]);
     await service.listSales({ status: "PENDING_DELIVERY" });
     expect(repository.listSales).toHaveBeenCalledWith({ status: "PENDING_DELIVERY" });
+  });
+
+  it("ensures cash register exists before creating a sale", async () => {
+    const repository = createRepository();
+    const financeService = createFinanceService();
+    const service = new SalesService(repository as never, financeService as never);
+    const input = {
+      customerId: null,
+      paymentMethod: "PIX" as const,
+      items: [{ productId: "33333333-3333-4333-8333-333333333333", quantity: 1 }],
+      bottle: null,
+      deliveryPending: false,
+    };
+
+    const callOrder: string[] = [];
+    financeService.ensureCashRegisterForToday.mockImplementationOnce(async () => {
+      callOrder.push("ensureCashRegisterForToday");
+      return undefined;
+    });
+    repository.createSale.mockImplementationOnce(async () => {
+      callOrder.push("createSale");
+      return { id: "s1" };
+    });
+
+    await service.createSale(operatorUser, input);
+
+    expect(financeService.ensureCashRegisterForToday).toHaveBeenCalledWith(operatorUser.id);
+    expect(callOrder).toEqual(["ensureCashRegisterForToday", "createSale"]);
   });
 });
