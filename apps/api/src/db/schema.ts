@@ -124,7 +124,7 @@ export const cashRegisters = pgTable("cash_registers", {
   openedByUserId: uuid("opened_by_user_id").notNull().references(() => users.id),
   closedAt: timestamp("closed_at", { withTimezone: true }),
   closedByUserId: uuid("closed_by_user_id").references(() => users.id),
-  counts: jsonb("counts").notNull().default({}),
+  counts: jsonb("counts").$type<Record<string, { expected: number; counted: number; difference: number }>>().notNull().default({}),
   ...timestamps,
 });
 
