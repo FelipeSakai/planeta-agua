@@ -30,23 +30,25 @@ describe("app shell navigation", () => {
   });
 
   it("keeps admin-only modules hidden from operators", () => {
-    const items = getNavigationItems("OPERATOR", "/financeiro");
+    const items = getNavigationItems("OPERATOR", "/caixa");
 
-    expect(items.map((item) => item.href)).not.toContain("/financeiro");
     expect(items.map((item) => item.href)).not.toContain("/usuarios");
+    expect(items.map((item) => item.href)).not.toContain("/estoque");
+    expect(items.map((item) => item.href)).toContain("/caixa");
+    expect(items.map((item) => item.href)).toContain("/financeiro/despesas");
     expect(items.map((item) => item.href)).toContain("/produtos");
   });
 
   it("hides admin-only entries from operators", () => {
     const items = getVisibleNavigation("OPERATOR").map((item) => item.label);
 
-    expect(items).toEqual(["Dashboard", "Vendas", "Produtos", "Clientes"]);
+    expect(items).toEqual(["Dashboard", "Vendas", "Caixa", "Produtos", "Clientes", "Financeiro"]);
   });
 
   it("shows all entries to admins", () => {
     const items = getVisibleNavigation("ADMIN").map((item) => item.label);
 
-    expect(items).toEqual(["Dashboard", "Vendas", "Produtos", "Clientes", "Estoque", "Financeiro", "Usuarios"]);
+    expect(items).toEqual(["Dashboard", "Vendas", "Caixa", "Produtos", "Clientes", "Estoque", "Financeiro", "Usuarios"]);
   });
 
   it("renders a server-side mobile navigation menu for operators", () => {
@@ -65,7 +67,9 @@ describe("app shell navigation", () => {
     expect(html).toContain("<details");
     expect(html).toContain("Menu");
     expect(html).toContain('href="/vendas"');
-    expect(html).not.toContain('href="/financeiro"');
+    expect(html).toContain('href="/caixa"');
+    expect(html).toContain('href="/financeiro/despesas"');
+    expect(html).not.toContain('href="/usuarios"');
     expect(html).toContain("Sair");
   });
 

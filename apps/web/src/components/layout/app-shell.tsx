@@ -25,10 +25,11 @@ type NavigationItemWithState = NavigationItem & {
 const navigation: readonly NavigationItem[] = [
   { label: "Dashboard", href: "/dashboard", roles: ["ADMIN", "OPERATOR"] },
   { label: "Vendas", href: "/vendas", roles: ["ADMIN", "OPERATOR"] },
+  { label: "Caixa", href: "/caixa", roles: ["ADMIN", "OPERATOR"] },
   { label: "Produtos", href: "/produtos", roles: ["ADMIN", "OPERATOR"] },
   { label: "Clientes", href: "/clientes", roles: ["ADMIN", "OPERATOR"] },
   { label: "Estoque", href: "/estoque", roles: ["ADMIN"] },
-  { label: "Financeiro", href: "/financeiro", roles: ["ADMIN"] },
+  { label: "Financeiro", href: "/financeiro/despesas", roles: ["ADMIN", "OPERATOR"] },
   { label: "Usuarios", href: "/usuarios", roles: ["ADMIN"] },
 ] as const;
 
