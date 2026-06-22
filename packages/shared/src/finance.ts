@@ -70,7 +70,7 @@ export const dashboardResponseSchema = z.object({
 });
 
 export const cashRegisterCountsSchema = z.object({
-  expected: nonNegativeAmountCentsSchema,
+  expected: z.number().int(),
   counted: nonNegativeAmountCentsSchema,
   difference: z.number().int(),
 });

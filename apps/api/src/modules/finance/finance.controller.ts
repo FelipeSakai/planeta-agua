@@ -52,9 +52,10 @@ export class FinanceController {
   @Get("expenses")
   async listExpenses(@Req() request: Request, @Query("startDate") startDate?: string, @Query("endDate") endDate?: string) {
     await requireRequestUser(request, this.authService);
+    const end = endDate ? new Date(endDate + "T23:59:59.999Z") : new Date(new Date().setUTCHours(23, 59, 59, 999));
     return this.financeService.listExpenses({
       startDate: startDate ? new Date(startDate) : undefined,
-      endDate: endDate ? new Date(endDate) : undefined,
+      endDate: end,
     });
   }
 
@@ -85,7 +86,7 @@ export class FinanceController {
     }
 
     const start = startDate ? new Date(startDate) : new Date(new Date().setHours(0, 0, 0, 0));
-    const end = endDate ? new Date(endDate) : new Date(new Date().setHours(23, 59, 59, 999));
+    const end = endDate ? new Date(endDate + "T23:59:59.999Z") : new Date(new Date().setUTCHours(23, 59, 59, 999));
     return this.financeService.getFinanceSummary(start, end);
   }
 }

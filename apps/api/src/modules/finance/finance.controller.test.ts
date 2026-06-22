@@ -113,7 +113,7 @@ describe("FinanceController", () => {
 
     expect(financeService.listExpenses).toHaveBeenCalledWith({
       startDate: new Date("2026-06-01"),
-      endDate: new Date("2026-06-30"),
+      endDate: new Date("2026-06-30T23:59:59.999Z"),
     });
   });
 
@@ -123,7 +123,8 @@ describe("FinanceController", () => {
 
     await controller.listExpenses(request as never);
 
-    expect(financeService.listExpenses).toHaveBeenCalledWith({ startDate: undefined, endDate: undefined });
+    const expectedEnd = new Date(new Date().setUTCHours(23, 59, 59, 999));
+    expect(financeService.listExpenses).toHaveBeenCalledWith({ startDate: undefined, endDate: expectedEnd });
   });
 
   it("POST /expenses requires authentication", async () => {
@@ -207,7 +208,7 @@ describe("FinanceController", () => {
     financeService.getFinanceSummary.mockResolvedValueOnce(summary);
 
     await expect(controller.summary(request as never, "2026-06-01", "2026-06-30")).resolves.toEqual(summary);
-    expect(financeService.getFinanceSummary).toHaveBeenCalledWith(new Date("2026-06-01"), new Date("2026-06-30"));
+    expect(financeService.getFinanceSummary).toHaveBeenCalledWith(new Date("2026-06-01"), new Date("2026-06-30T23:59:59.999Z"));
   });
 
   it("GET /finance/summary requires authentication", async () => {

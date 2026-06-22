@@ -45,8 +45,8 @@ export default async function CaixaPage() {
       .reduce((sum, expense) => sum + expense.amountCents, 0);
     const expectedCents =
       method === "CASH"
-        ? Math.max(0, cashRegister.openingBalanceCents + salesCents - expensesCents)
-        : Math.max(0, salesCents - expensesCents);
+        ? cashRegister.openingBalanceCents + salesCents - expensesCents
+        : salesCents - expensesCents;
 
     return { method, salesCents, expensesCents, expectedCents };
   });

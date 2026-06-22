@@ -40,7 +40,7 @@ export class FinanceRepository {
     });
 
     const recentSales = await db.query.sales.findMany({
-      where: eq(sales.status, completedStatus),
+      where: and(gte(sales.createdAt, startOfDay), lte(sales.createdAt, endOfDay), eq(sales.status, completedStatus)),
       orderBy: [desc(sales.createdAt)],
       limit: 10,
       with: { customer: { columns: { name: true } } },
@@ -166,7 +166,7 @@ export class FinanceRepository {
       const salesCents = daySales.filter((s) => s.paymentMethod === method).reduce((sum, s) => sum + s.totalAmountCents, 0);
       const expensesCents = dayExpenses.filter((e) => e.paymentMethod === method).reduce((sum, e) => sum + e.amountCents, 0);
       const expected = method === "CASH" ? openingBalanceCents + salesCents - expensesCents : salesCents - expensesCents;
-      return { method, expected: Math.max(0, expected), salesCents, expensesCents };
+      return { method, expected, salesCents, expensesCents };
     });
   }
 }
