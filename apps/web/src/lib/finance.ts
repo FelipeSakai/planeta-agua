@@ -49,7 +49,12 @@ export async function fetchCashRegisterToday(cookieHeader: string) {
 
   ensureResponseOk(response, "Nao foi possivel carregar o caixa do dia.");
 
-  return cashRegisterResponseSchema.parse(await response.json());
+  const text = await response.text();
+  if (!text) {
+    return null;
+  }
+
+  return cashRegisterResponseSchema.parse(JSON.parse(text));
 }
 
 export async function fetchFinanceSummary(
