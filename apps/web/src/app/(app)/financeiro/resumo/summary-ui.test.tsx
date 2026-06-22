@@ -15,7 +15,7 @@ const summary: FinanceSummaryResponse = {
   ],
 };
 
-const today = "2026-06-21";
+const today = new Date().toISOString().slice(0, 10);
 
 describe("SummaryUi", () => {
   it("renders the Resumo financeiro title", () => {

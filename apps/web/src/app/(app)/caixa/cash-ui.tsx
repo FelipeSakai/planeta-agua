@@ -121,6 +121,12 @@ export function CashUi({ cashRegister, summary }: CashUiProps) {
 
       {error ? <Alert variant="danger">{error}</Alert> : null}
 
+      {isOpen && cashRegister.openingBalanceCents === 0 ? (
+        <Alert variant="warning">
+          Fundo de caixa esta R$ 0,00. Informe o valor de abertura antes de fechar o dia.
+        </Alert>
+      ) : null}
+
       <Panel className="p-4">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-base font-semibold text-[var(--foreground)]">Fundo de caixa</h2>
