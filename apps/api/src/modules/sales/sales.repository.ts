@@ -1,8 +1,9 @@
 import { Injectable } from "@nestjs/common";
 import { and, asc, desc, eq, ilike, inArray, isNotNull, lt, or, sql } from "drizzle-orm";
+import { calculateBottleExpiresAt } from "shared";
 
 import { db } from "../../db";
-import { customers, products, saleItems, sales, stockMovements } from "../../db/schema";
+import { customerBottles, customers, products, saleItems, sales, stockMovements } from "../../db/schema";
 import { SalesRepositoryError } from "./sales.errors";
 import type {
   ConfirmDeliveryRepositoryInput,
@@ -169,6 +170,26 @@ export class SalesRepository {
           reason: null,
           referenceId: sale.id,
         });
+      }
+
+      const completeBottleItems = input.items.filter((item) => {
+        const product = productById.get(item.productId);
+        return product?.bottleType === "COMPLETE";
+      });
+
+      if (completeBottleItems.length > 0 && input.customerId && input.bottle) {
+        for (const item of completeBottleItems) {
+          for (let i = 0; i < item.quantity; i++) {
+            await tx.insert(customerBottles).values({
+              customerId: input.customerId,
+              saleId: sale.id,
+              month: input.bottle.month,
+              year: input.bottle.year,
+              notes: input.bottle.notes ?? null,
+              expiresAt: calculateBottleExpiresAt(input.bottle.month, input.bottle.year),
+            });
+          }
+        }
       }
 
       return sale;
