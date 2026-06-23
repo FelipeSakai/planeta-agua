@@ -163,7 +163,8 @@ Seguir o padrão das telas existentes (Produtos/Estoque/Vendas): cards brancos s
 
 - Nome obrigatório, mínimo 2 caracteres.
 - Telefone opcional; se preenchido, deve ter formato válido.
-- Não permitir criar cliente com nome ou telefone já cadastrado, exceto na edição do próprio registro.
+- **Telefone repetido**: bloquear criação/edição (telefone é considerado único).
+- **Nome repetido**: avisar o operador, mostrar os clientes existentes com nome igual ou similar, mas permitir prosseguir com a criação/edição se ele confirmar.
 - Cliente inativo não aparece na busca da tela de vendas.
 
 ### 7.2. Galão
