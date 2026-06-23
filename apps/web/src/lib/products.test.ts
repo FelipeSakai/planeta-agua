@@ -28,6 +28,7 @@ describe("web product helpers", () => {
       salePriceCents: 1250,
       stockQuantity: 10,
       minimumStock: 3,
+      bottleType: "NONE",
     });
   });
 
@@ -80,6 +81,7 @@ describe("web product helpers", () => {
           minimumStock: 3,
           isActive: true,
           isLowStock: false,
+          bottleType: "NONE",
           createdAt: "2026-06-15T00:00:00.000Z",
           updatedAt: "2026-06-15T00:00:00.000Z",
         },

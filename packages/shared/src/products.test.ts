@@ -18,6 +18,7 @@ describe("product shared contracts", () => {
       salePriceCents: 1200,
       stockQuantity: 10,
       minimumStock: 3,
+      bottleType: "NONE",
     });
   });
 
@@ -86,6 +87,7 @@ describe("product shared contracts", () => {
         minimumStock: 3,
         isActive: true,
         isLowStock: true,
+        bottleType: "NONE",
         createdAt: "2026-06-15T00:00:00.000Z",
         updatedAt: "2026-06-15T00:00:00.000Z",
       }).isLowStock,

@@ -35,6 +35,9 @@ export const createProductSchema = z.object({
 export const updateProductSchema = createProductSchema
   .omit({ stockQuantity: true })
   .partial()
+  .extend({
+    bottleType: z.enum(bottleTypeValues).optional(),
+  })
   .strict()
   .refine((value) => Object.keys(value).length > 0);
 
