@@ -68,6 +68,7 @@ export function ProductsUi({ userRole, products, summary }: ProductsUiProps) {
             description: payload.description,
             salePriceCents: payload.salePriceCents,
             minimumStock: payload.minimumStock,
+            bottleType: payload.bottleType,
           }
         : payload;
 
@@ -197,6 +198,14 @@ export function ProductsUi({ userRole, products, summary }: ProductsUiProps) {
 
             <Field label="Estoque minimo">
               <TextInput defaultValue={editingProduct?.minimumStock ?? 0} min="0" name="minimumStock" required type="number" />
+            </Field>
+
+            <Field label="Tipo de galao">
+              <SelectInput defaultValue={editingProduct?.bottleType ?? "NONE"} name="bottleType">
+                <option value="NONE">Nao e galao</option>
+                <option value="COMPLETE">Galao completo</option>
+                <option value="EXCHANGE">Troca de galao</option>
+              </SelectInput>
             </Field>
 
             <Field label="Descricao">

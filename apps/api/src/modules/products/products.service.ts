@@ -87,6 +87,7 @@ export class ProductsService {
       minimumStock: product.minimumStock,
       isActive: product.isActive,
       isLowStock: product.stockQuantity <= product.minimumStock,
+      bottleType: product.bottleType,
       createdAt: product.createdAt.toISOString(),
       updatedAt: product.updatedAt.toISOString(),
     };

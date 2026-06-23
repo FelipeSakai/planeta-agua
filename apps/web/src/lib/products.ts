@@ -14,6 +14,7 @@ export function productFormToPayload(formData: FormData) {
     salePriceCents: parseBRLToCents(String(formData.get("salePrice") ?? "")),
     stockQuantity: String(formData.get("stockQuantity") ?? ""),
     minimumStock: String(formData.get("minimumStock") ?? ""),
+    bottleType: String(formData.get("bottleType") ?? "NONE"),
   });
 }
 

@@ -21,12 +21,15 @@ const requiredNonNegativeIntegerSchema = z.preprocess((value) => {
   return Number.NaN;
 }, z.number().int().min(0));
 
+export const bottleTypeValues = ["NONE", "COMPLETE", "EXCHANGE"] as const;
+
 export const createProductSchema = z.object({
   name: z.string().trim().min(1),
   description: nullableDescriptionSchema,
   salePriceCents: requiredNonNegativeIntegerSchema,
   stockQuantity: requiredNonNegativeIntegerSchema,
   minimumStock: requiredNonNegativeIntegerSchema,
+  bottleType: z.enum(bottleTypeValues).default("NONE"),
 });
 
 export const updateProductSchema = createProductSchema
@@ -44,6 +47,7 @@ export const productResponseSchema = z.object({
   minimumStock: z.number().int().min(0),
   isActive: z.boolean(),
   isLowStock: z.boolean(),
+  bottleType: z.enum(bottleTypeValues),
   createdAt: z.string(),
   updatedAt: z.string(),
 });

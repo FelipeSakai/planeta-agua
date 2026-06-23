@@ -13,6 +13,7 @@ type ProductRowForTest = {
   stockQuantity: number;
   minimumStock: number;
   isActive: boolean;
+  bottleType: "NONE" | "COMPLETE" | "EXCHANGE";
   createdAt: Date;
   updatedAt: Date;
 };
@@ -26,6 +27,7 @@ function makeProduct(overrides: Partial<ProductRowForTest> = {}): ProductRowForT
     stockQuantity: 3,
     minimumStock: 3,
     isActive: true,
+    bottleType: "NONE",
     createdAt: now,
     updatedAt: now,
     ...overrides,
@@ -77,6 +79,7 @@ describe("ProductsService", () => {
         salePriceCents: 1800,
         stockQuantity: 8,
         minimumStock: 2,
+        bottleType: "NONE",
       },
     );
 
@@ -87,6 +90,7 @@ describe("ProductsService", () => {
         salePriceCents: 1800,
         stockQuantity: 8,
         minimumStock: 2,
+        bottleType: "NONE",
       },
       adminUser.id,
     );
@@ -100,6 +104,7 @@ describe("ProductsService", () => {
           salePriceCents: 100,
           stockQuantity: -1,
           minimumStock: 1,
+          bottleType: "NONE",
         },
       ),
     ).rejects.toThrow();
@@ -117,6 +122,7 @@ describe("ProductsService", () => {
           salePriceCents: 1800,
           stockQuantity: 8,
           minimumStock: 2,
+          bottleType: "NONE",
         },
       ),
     ).rejects.toBeInstanceOf(ForbiddenException);
