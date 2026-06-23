@@ -15,6 +15,7 @@ export const userRoleEnum = pgEnum("user_role", ["ADMIN", "OPERATOR"]);
 export const paymentMethodEnum = pgEnum("payment_method", ["CASH", "PIX", "CREDIT_CARD", "DEBIT_CARD", "OTHER"]);
 export const saleStatusEnum = pgEnum("sale_status", ["COMPLETED", "CANCELED", "PENDING_DELIVERY"]);
 export const stockMovementTypeEnum = pgEnum("stock_movement_type", ["IN", "OUT", "ADJUSTMENT", "SALE", "CANCELED_SALE"]);
+export const bottleTypeEnum = pgEnum("bottle_type", ["NONE", "COMPLETE", "EXCHANGE"]);
 
 const timestamps = {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
@@ -46,6 +47,7 @@ export const customers = pgTable("customers", {
   phone: text("phone"),
   address: text("address"),
   notes: text("notes"),
+  isActive: boolean("is_active").notNull().default(true),
   ...timestamps,
 });
 
@@ -57,6 +59,7 @@ export const products = pgTable("products", {
   stockQuantity: integer("stock_quantity").notNull().default(0),
   minimumStock: integer("minimum_stock").notNull().default(0),
   isActive: boolean("is_active").notNull().default(true),
+  bottleType: bottleTypeEnum("bottle_type").notNull().default("NONE"),
   ...timestamps,
 });
 
@@ -128,6 +131,18 @@ export const cashRegisters = pgTable("cash_registers", {
   ...timestamps,
 });
 
+export const customerBottles = pgTable("customer_bottles", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  customerId: uuid("customer_id").notNull().references(() => customers.id),
+  saleId: uuid("sale_id").references(() => sales.id),
+  month: integer("month").notNull(),
+  year: integer("year").notNull(),
+  notes: text("notes"),
+  isActive: boolean("is_active").notNull().default(true),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  ...timestamps,
+});
+
 export const usersRelations = relations(users, ({ many }) => ({
   sessions: many(sessions),
   createdSales: many(sales, { relationName: "saleCreatedByUser" }),
@@ -149,6 +164,18 @@ export const sessionsRelations = relations(sessions, ({ one }) => ({
 
 export const customersRelations = relations(customers, ({ many }) => ({
   sales: many(sales),
+  bottles: many(customerBottles),
+}));
+
+export const customerBottlesRelations = relations(customerBottles, ({ one }) => ({
+  customer: one(customers, {
+    fields: [customerBottles.customerId],
+    references: [customers.id],
+  }),
+  sale: one(sales, {
+    fields: [customerBottles.saleId],
+    references: [sales.id],
+  }),
 }));
 
 export const productsRelations = relations(products, ({ many }) => ({
