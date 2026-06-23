@@ -5,7 +5,7 @@ import { calculateBottleExpiresAt } from "shared";
 import { db } from "../../db";
 import { customerBottles, customers, saleItems, sales } from "../../db/schema";
 import { CustomersRepositoryError } from "./customers.errors";
-import type { CreateCustomerBottleInput, CreateCustomerInput, UpdateCustomerBottleInput, UpdateCustomerInput } from "shared";
+import type { CreateCustomerInput, UpdateCustomerBottleInput, UpdateCustomerInput } from "shared";
 
 @Injectable()
 export class CustomersRepository {
