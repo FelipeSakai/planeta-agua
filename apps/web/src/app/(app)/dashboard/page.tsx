@@ -5,7 +5,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { MetricCard } from "@/components/ui/metric-card";
-import { PageHeader } from "@/components/ui/page-header";
 import { Panel } from "@/components/ui/panel";
 import { requireUser } from "@/lib/auth";
 import { fetchCashRegisterDetails, fetchDashboard } from "@/lib/finance";
@@ -33,11 +32,6 @@ const recentSaleStatusLabels: Record<DashboardResponse["recentSales"][number]["s
   CANCELED: "Cancelada",
 };
 
-function formatTimeOfDay(iso: string) {
-  const date = new Date(iso);
-  return date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
-}
-
 export default async function DashboardPage() {
   const user = await requireUser();
   const cookieStore = await cookies();
@@ -64,7 +58,6 @@ export function DashboardView({
   userName: string | null;
   cashDetails: CashRegisterDetailsResponse | null;
 }>) {
-  void userName;
   const canOpenStock = userRole === "ADMIN";
   const lowStockCount = data.lowStockProducts.length;
   const lowStockTone = lowStockCount > 0 ? ("warning" as const) : ("success" as const);
@@ -81,33 +74,70 @@ export function DashboardView({
   const cashSalesCents = cashDetails?.totalSalesCents ?? 0;
   const cashExpensesCents = cashDetails?.totalExpensesCents ?? 0;
   const expectedCashCents = cashDetails?.expectedCashCents ?? 0;
+  const maxPaymentAmount = Math.max(...data.totalsByPaymentMethod.map((total) => total.amountCents), 0);
 
   return (
     <section className="space-y-6">
-      <PageHeader
-        eyebrow="Dashboard"
-        title="Resumo operacional"
-        description="Acompanhe o dia da loja, veja alertas e acesse os fluxos principais."
-        actions={
-          <Link href="/vendas">
-            <Button type="button">Nova venda</Button>
-          </Link>
-        }
-      />
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(360px,0.8fr)]">
+        <Panel className="flex min-h-56 flex-col justify-between bg-[var(--foreground)] p-6 text-white">
+          <div>
+            <p className="text-sm text-white/70">{userName ? `Bom dia, ${userName}` : "Resumo do dia"}</p>
+            <h1 className="mt-2 text-3xl font-semibold tracking-[-0.03em]">Pronto para vender</h1>
+            <p className="mt-2 max-w-xl text-sm text-white/75">
+              Inicie a venda, acompanhe entregas e confira o caixa sem procurar pelos atalhos.
+            </p>
+          </div>
+          <div className="mt-6 flex flex-wrap gap-2">
+            <Link href="/vendas">
+              <Button type="button" variant="secondary">
+                Comecar venda
+              </Button>
+            </Link>
+            <Link
+              href="/entregas"
+              className="inline-flex min-h-10 items-center rounded-[var(--radius-control)] border border-white/20 px-4 text-sm font-medium text-white transition hover:bg-white/10"
+            >
+              Ver entregas
+            </Link>
+            <Link
+              href="/caixa"
+              className="inline-flex min-h-10 items-center rounded-[var(--radius-control)] border border-white/20 px-4 text-sm font-medium text-white transition hover:bg-white/10"
+            >
+              Abrir caixa
+            </Link>
+            <Link
+              href="/produtos"
+              className="inline-flex min-h-10 items-center rounded-[var(--radius-control)] border border-white/20 px-4 text-sm font-medium text-white transition hover:bg-white/10"
+            >
+              Produtos
+            </Link>
+          </div>
+        </Panel>
+
+        <Panel className="p-4">
+          <h2 className="text-base font-semibold text-[var(--foreground)]">Pendencias agora</h2>
+          <div className="mt-4 grid gap-3">
+            <OperationalStatusRow label="Entregas pendentes" value={data.pendingDeliveries.length} href="/entregas" />
+            <OperationalStatusRow label="Estoque critico" value={lowStockCount} href={canOpenStock ? "/estoque" : undefined} />
+            <OperationalStatusRow label="Caixa" value={cashRegisterStatus} href="/caixa" />
+          </div>
+        </Panel>
+      </div>
 
       <div className="grid gap-4 md:grid-cols-3">
         <MetricCard
-          label="Faturamento hoje"
-          value={formatCentsToBRL(data.todayRevenueCents)}
-          detail="Entradas confirmadas no dia"
-        />
-        <MetricCard
           label="Vendas hoje"
           value={data.todaySalesCount}
-          detail={data.todaySalesCount > 0 ? "Vendas registradas hoje" : "Aguardando registros de venda"}
+          detail={formatCentsToBRL(data.todayRevenueCents)}
         />
         <MetricCard
-          label="Estoque baixo"
+          label="Entregas pendentes"
+          value={data.pendingDeliveries.length}
+          detail="Aguardando confirmacao"
+          tone={data.pendingDeliveries.length > 0 ? "warning" : "success"}
+        />
+        <MetricCard
+          label="Estoque critico"
           value={lowStockCount}
           detail={lowStockDetail}
           tone={lowStockTone}
@@ -169,7 +199,7 @@ export function DashboardView({
       <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
         <Panel className="p-4">
           <div className="mb-4 flex flex-col gap-1">
-            <h2 className="text-base font-semibold text-[var(--foreground)]">Total por pagamento</h2>
+            <h2 className="text-base font-semibold text-[var(--foreground)]">Resumo por pagamento</h2>
             <p className="text-sm text-[var(--muted)]">
               Distribuicao das vendas concluidas hoje por forma de pagamento.
             </p>
@@ -178,18 +208,28 @@ export function DashboardView({
           {data.totalsByPaymentMethod.length > 0 ? (
             <ul className="divide-y divide-[var(--border)]">
               {data.totalsByPaymentMethod.map((total) => (
-                <li key={total.method} className="flex items-center justify-between py-3">
-                  <div>
-                    <p className="text-sm font-medium text-[var(--foreground)]">
-                      {paymentMethodLabels[total.method]}
-                    </p>
-                    <p className="text-xs text-[var(--muted)]">
-                      {total.salesCount} venda{total.salesCount !== 1 ? "s" : ""}
-                    </p>
+                <li key={total.method} className="py-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-medium text-[var(--foreground)]">
+                        {paymentMethodLabels[total.method]}
+                      </p>
+                      <p className="text-xs text-[var(--muted)]">
+                        {total.salesCount} venda{total.salesCount !== 1 ? "s" : ""}
+                      </p>
+                    </div>
+                    <span className="text-sm font-semibold text-[var(--foreground)]">
+                      {formatCentsToBRL(total.amountCents)}
+                    </span>
                   </div>
-                  <span className="text-sm font-semibold text-[var(--foreground)]">
-                    {formatCentsToBRL(total.amountCents)}
-                  </span>
+                  <div className="mt-2 h-2 overflow-hidden rounded-full bg-[var(--card-muted)]">
+                    <div
+                      className="payment-bar h-full rounded-full bg-[var(--brand)]"
+                      style={{
+                        width: `${maxPaymentAmount > 0 ? Math.max(8, (total.amountCents / maxPaymentAmount) * 100) : 0}%`,
+                      }}
+                    />
+                  </div>
                 </li>
               ))}
             </ul>
@@ -269,35 +309,30 @@ export function DashboardView({
           />
         )}
       </Panel>
-
-      <Panel className="p-4">
-        <div className="flex flex-col gap-1">
-          <h2 className="text-base font-semibold text-[var(--foreground)]">Atalhos operacionais</h2>
-          <p className="text-sm text-[var(--muted)]">
-            Acesse rapidamente os fluxos mais usados na rotina da loja.
-          </p>
-        </div>
-
-        <div className="mt-4 grid gap-3 sm:grid-cols-3">
-          <Link href="/vendas">
-            <Button className="w-full" type="button">
-              Nova venda
-            </Button>
-          </Link>
-          <Link href="/produtos">
-            <Button className="w-full" type="button" variant="secondary">
-              Produtos
-            </Button>
-          </Link>
-          {canOpenStock ? (
-            <Link href="/estoque">
-              <Button className="w-full" type="button" variant="secondary">
-                Estoque
-              </Button>
-            </Link>
-          ) : null}
-        </div>
-      </Panel>
     </section>
   );
+}
+
+function OperationalStatusRow({
+  label,
+  value,
+  href,
+}: {
+  label: string;
+  value: string | number;
+  href?: string;
+}) {
+  const content = (
+    <div className="flex items-center justify-between gap-3 rounded-[var(--radius-control)] border border-[var(--border-soft)] bg-[var(--card-muted)] px-3 py-2">
+      <span className="text-sm text-[var(--muted)]">{label}</span>
+      <strong className="text-sm text-[var(--foreground)]">{value}</strong>
+    </div>
+  );
+
+  return href ? <Link href={href}>{content}</Link> : content;
+}
+
+function formatTimeOfDay(iso: string) {
+  const date = new Date(iso);
+  return date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
 }

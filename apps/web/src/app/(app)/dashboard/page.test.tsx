@@ -84,16 +84,38 @@ function render(role: UserRole, data: DashboardResponse = sampleData, details: C
 }
 
 describe("DashboardView", () => {
+  it("renders the daily workbench greeting and dominant sale action", () => {
+    const html = render("ADMIN");
+
+    expect(html).toContain("Bom dia, Operador");
+    expect(html).toContain("Comecar venda");
+    expect(html).toContain('href="/vendas"');
+  });
+
+  it("keeps operational secondary actions visible near the top", () => {
+    const html = render("ADMIN");
+
+    expect(html).toContain("Ver entregas");
+    expect(html).toContain("Abrir caixa");
+    expect(html).toContain("Produtos");
+  });
+
+  it("renders payment distribution as simple CSS bars", () => {
+    const html = render("ADMIN");
+
+    expect(html).toContain("Resumo por pagamento");
+    expect(html).toContain("payment-bar");
+  });
+
   it("renders the operational header", () => {
     const html = render("ADMIN");
 
-    expect(html).toContain("Resumo operacional");
+    expect(html).toContain("Pronto para vender");
   });
 
   it("renders today revenue formatted in BRL", () => {
     const html = render("ADMIN");
 
-    expect(html).toContain("Faturamento hoje");
     expect(html).toContain("R$ 125,90");
   });
 
@@ -117,21 +139,21 @@ describe("DashboardView", () => {
   it("renders low stock count with warning tone when there are alerts", () => {
     const html = render("ADMIN");
 
-    expect(html).toContain("Estoque baixo");
+    expect(html).toContain("Estoque critico");
     expect(html).toContain("1");
   });
 
   it("renders low stock count with success tone when there are no alerts", () => {
     const html = render("ADMIN", emptyData);
 
-    expect(html).toContain("Estoque baixo");
+    expect(html).toContain("Estoque critico");
     expect(html).toContain("0");
   });
 
   it("renders totals by payment method", () => {
     const html = render("ADMIN");
 
-    expect(html).toContain("Total por pagamento");
+    expect(html).toContain("Resumo por pagamento");
     expect(html).toContain("Dinheiro");
     expect(html).toContain("Pix");
     expect(html).toContain("R$ 42,00");
@@ -164,10 +186,10 @@ describe("DashboardView", () => {
     expect(html).toContain("Nenhuma venda registrada hoje");
   });
 
-  it("shows the Nova venda shortcut linking to /vendas", () => {
+  it("shows the sale action linking to /vendas", () => {
     const html = render("ADMIN");
 
-    expect(html).toContain("Nova venda");
+    expect(html).toContain("Comecar venda");
     expect(html).toContain('href="/vendas"');
   });
 
