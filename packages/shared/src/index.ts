@@ -23,6 +23,16 @@ export {
   type CustomerDetailResponse,
   type DuplicateCheckResponse,
 } from "./customers";
+export {
+  createDriverSchema,
+  updateDriverSchema,
+  driverResponseSchema,
+  driversListResponseSchema,
+  type CreateDriverInput,
+  type UpdateDriverInput,
+  type DriverResponse,
+  type DriversListResponse,
+} from "./drivers";
 export * from "./finance";
 export * from "./products";
 export * from "./sales";

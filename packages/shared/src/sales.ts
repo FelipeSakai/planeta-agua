@@ -30,6 +30,7 @@ export const createSaleInputSchema = z.object({
   items: z.array(saleItemInputSchema).min(1),
   bottle: customerBottleRecordSchema,
   deliveryPending: z.boolean().default(false),
+  driverId: z.string().uuid().nullable().optional(),
 });
 
 export const cancelSaleInputSchema = z.object({
@@ -91,6 +92,8 @@ const saleHistoryEntrySchema = z
     cancellationReason: cancellationReasonSchema.nullable(),
     deliveredAt: isoDatetimeStringSchema.nullable(),
     deliveredByUserId: z.string().uuid().nullable(),
+    driverId: z.string().uuid().nullable(),
+    driverName: z.string().nullable(),
   })
   .superRefine(validateCancellationState);
 
