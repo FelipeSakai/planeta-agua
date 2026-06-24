@@ -70,6 +70,10 @@ a {
   background: rgb(8 119 168 / 18%);
 }
 
+.print-only {
+  display: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
