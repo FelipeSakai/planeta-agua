@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -88,6 +88,7 @@ export function SalesUi({ products, customers }: SalesUiProps) {
   const [isSavingCustomer, setIsSavingCustomer] = useState(false);
   const [isSearchingCustomers, setIsSearchingCustomers] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const syncedCustomers = syncCustomersFromProps({
     customers,
@@ -114,6 +115,12 @@ export function SalesUi({ products, customers }: SalesUiProps) {
     const effectiveDiscount = item.discountCents ?? 0;
     return total + Math.max(0, effectiveUnitPrice * item.quantity - effectiveDiscount);
   }, 0);
+
+  useEffect(() => {
+    if (!successMessage) return;
+    const timer = setTimeout(() => setSuccessMessage(null), 5000);
+    return () => clearTimeout(timer);
+  }, [successMessage]);
 
   function refreshPage() {
     startTransition(() => router.refresh());
@@ -166,6 +173,7 @@ export function SalesUi({ products, customers }: SalesUiProps) {
       ];
     });
     setError(null);
+    setSuccessMessage(null);
   }
 
   function updateCartQuantity(productId: string, nextValue: string) {
@@ -296,6 +304,11 @@ export function SalesUi({ products, customers }: SalesUiProps) {
         return;
       }
 
+      const paymentLabel = paymentMethodLabels[paymentMethod];
+      const totalFormatted = formatCentsToBRL(totalAmountCents);
+      const cashNote = paymentMethod === "CASH" ? " Entrou no caixa de hoje." : "";
+      setSuccessMessage(`Venda registrada! Total: ${totalFormatted} - Forma: ${paymentLabel}.${cashNote}`);
+
       setCartItems([]);
       setProductQuery("");
       setDeliveryPending(false);
@@ -318,6 +331,8 @@ export function SalesUi({ products, customers }: SalesUiProps) {
       </div>
 
       {error ? <Alert variant="danger">{error}</Alert> : null}
+
+      {successMessage ? <Alert variant="success">{successMessage}</Alert> : null}
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(340px,380px)]">
         <div className="space-y-6">
