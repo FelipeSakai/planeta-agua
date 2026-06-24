@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 
 import { requireUser } from "@/lib/auth";
+import { fetchDrivers } from "@/lib/drivers";
 import { fetchProducts } from "@/lib/products";
 import { searchSaleCustomers } from "@/lib/sales";
 
@@ -13,9 +14,10 @@ export default async function SalesPage() {
     .getAll()
     .map((cookie) => `${cookie.name}=${cookie.value}`)
     .join("; ");
-  const [productsData, customers] = await Promise.all([
+  const [productsData, customers, driversData] = await Promise.all([
     fetchProducts(cookieHeader),
     searchSaleCustomers("", { cookieHeader }),
+    fetchDrivers(cookieHeader),
   ]);
 
   return (
@@ -23,6 +25,7 @@ export default async function SalesPage() {
       userRole={user.role}
       products={productsData.products.filter((product) => product.isActive)}
       customers={customers}
+      drivers={driversData.drivers.filter((d) => d.isActive)}
     />
   );
 }

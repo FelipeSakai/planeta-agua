@@ -160,6 +160,8 @@ export class SalesService {
       cancellationReason: sale.cancellationReason,
       deliveredAt: sale.deliveredAt?.toISOString() ?? null,
       deliveredByUserId: sale.deliveredByUserId ?? null,
+      driverId: sale.driverId ?? null,
+      driverName: sale.driver?.name ?? null,
     };
   }
 

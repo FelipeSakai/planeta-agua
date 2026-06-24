@@ -28,6 +28,8 @@ const validSaleHistoryEntry = {
   cancellationReason: null,
   deliveredAt: null,
   deliveredByUserId: null,
+  driverId: null,
+  driverName: null,
 };
 
 const validSaleDetailResponse = {

@@ -39,6 +39,7 @@ export function saleFormToPayload(input: {
   bottleYear: string;
   bottleNotes: string;
   deliveryPending: boolean;
+  driverId: string | null;
 }) {
   const hasBottleMonth = input.bottleMonth.trim() !== "";
   const hasBottleYear = input.bottleYear.trim() !== "";
@@ -62,6 +63,7 @@ export function saleFormToPayload(input: {
     })),
     bottle,
     deliveryPending: input.deliveryPending,
+    driverId: input.driverId || null,
   });
 }
 

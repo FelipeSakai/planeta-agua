@@ -21,6 +21,7 @@ describe("SalesUi", () => {
         userRole: "OPERATOR",
         products: [],
         customers: [],
+        drivers: [],
       }),
     );
 
@@ -36,6 +37,7 @@ describe("SalesUi", () => {
         userRole: "OPERATOR",
         products: [],
         customers: [],
+        drivers: [],
       }),
     );
 
@@ -50,6 +52,7 @@ describe("SalesUi", () => {
         userRole: "OPERATOR",
         products: [],
         customers: [],
+        drivers: [],
       }),
     );
 
@@ -63,6 +66,7 @@ describe("SalesUi", () => {
         userRole: "OPERATOR",
         products: [],
         customers: [],
+        drivers: [],
       }),
     );
 
@@ -75,6 +79,7 @@ describe("SalesUi", () => {
         userRole: "OPERATOR",
         products: [],
         customers: [],
+        drivers: [],
       }),
     );
 

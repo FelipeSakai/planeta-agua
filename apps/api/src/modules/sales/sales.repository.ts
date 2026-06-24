@@ -129,6 +129,7 @@ export class SalesRepository {
           bottleMonth: input.bottle?.month ?? null,
           bottleYear: input.bottle?.year ?? null,
           bottleNotes: input.bottle?.notes ?? null,
+          driverId: input.driverId ?? null,
         })
         .returning();
 
@@ -205,6 +206,7 @@ export class SalesRepository {
         user: { columns: { id: true, name: true } },
         canceledByUser: { columns: { id: true, name: true } },
         deliveredByUser: { columns: { id: true, name: true } },
+        driver: { columns: { id: true, name: true } },
       },
     });
   }
@@ -217,6 +219,7 @@ export class SalesRepository {
         user: { columns: { id: true, name: true } },
         canceledByUser: { columns: { id: true, name: true } },
         deliveredByUser: { columns: { id: true, name: true } },
+        driver: { columns: { id: true, name: true } },
         items: { orderBy: [asc(saleItems.createdAt)] },
       },
     });

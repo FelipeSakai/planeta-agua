@@ -29,6 +29,8 @@ describe("HistoryUi", () => {
     cancellationReason: null,
     deliveredAt: null,
     deliveredByUserId: null,
+    driverId: null,
+    driverName: null,
   };
 
   it("renders filter tabs including pending delivery", () => {

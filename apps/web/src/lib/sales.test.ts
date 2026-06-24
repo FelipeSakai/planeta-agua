@@ -32,6 +32,8 @@ const salesHistoryPayload = [
     cancellationReason: null,
     deliveredAt: null,
     deliveredByUserId: null,
+    driverId: null,
+    driverName: null,
   },
 ];
 
@@ -95,6 +97,7 @@ describe("sales web helpers", () => {
         bottleYear: "2024",
         bottleNotes: "azul",
         deliveryPending: false,
+        driverId: null,
       }),
     ).toEqual({
       customerId: null,
@@ -102,6 +105,7 @@ describe("sales web helpers", () => {
       items: [{ productId: "11111111-1111-4111-8111-111111111111", quantity: 2 }],
       bottle: { month: 6, year: 2024, notes: "azul" },
       deliveryPending: false,
+      driverId: null,
     });
   });
 
@@ -115,6 +119,7 @@ describe("sales web helpers", () => {
         bottleYear: "",
         bottleNotes: "",
         deliveryPending: false,
+        driverId: null,
       }),
     ).toMatchObject({ bottle: null });
   });
@@ -129,6 +134,7 @@ describe("sales web helpers", () => {
         bottleYear: "",
         bottleNotes: "azul",
         deliveryPending: false,
+        driverId: null,
       }),
     ).toThrow("Informe mes e ano do galao.");
 
@@ -141,6 +147,7 @@ describe("sales web helpers", () => {
         bottleYear: "2024",
         bottleNotes: "azul",
         deliveryPending: false,
+        driverId: null,
       }),
     ).toThrow("Informe mes e ano do galao.");
   });

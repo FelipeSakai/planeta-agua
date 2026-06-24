@@ -169,6 +169,11 @@ export function HistoryUi({ history, activeFilter }: HistoryUiProps) {
       cell: (row) => paymentMethodLabels[row.paymentMethod],
     },
     {
+      key: "entregador",
+      header: "Entregador",
+      cell: (row) => row.driverName ?? "-",
+    },
+    {
       key: "status",
       header: "Status",
       cell: (row) => <Badge variant={statusBadgeVariants[row.status]}>{statusLabels[row.status]}</Badge>,
@@ -236,6 +241,9 @@ export function HistoryUi({ history, activeFilter }: HistoryUiProps) {
             <p className="text-sm text-[var(--muted)]">
               {formatCentsToBRL(row.totalAmountCents)} · {paymentMethodLabels[row.paymentMethod]}
             </p>
+            {row.driverName ? (
+              <p className="text-xs text-[var(--muted)]">Entregador: {row.driverName}</p>
+            ) : null}
             <p className="text-xs text-[var(--muted)]">{formatDateTime(row.createdAt)}</p>
             <div className="pt-2">{renderActions(row)}</div>
           </div>

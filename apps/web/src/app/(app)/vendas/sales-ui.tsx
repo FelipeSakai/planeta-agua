@@ -8,6 +8,7 @@ import {
   hasBottleMismatch,
   isBottleExpired,
   paymentMethodValues,
+  type DriverResponse,
   type ProductResponse,
   type UserRole,
 } from "shared";
@@ -53,6 +54,7 @@ type SalesUiProps = {
   userRole: UserRole;
   products: ProductResponse[];
   customers: SalesCustomerOption[];
+  drivers: DriverResponse[];
 };
 
 const paymentMethodLabels: Record<PaymentMethod, string> = {
@@ -63,7 +65,7 @@ const paymentMethodLabels: Record<PaymentMethod, string> = {
   OTHER: "Outro",
 };
 
-export function SalesUi({ products, customers }: SalesUiProps) {
+export function SalesUi({ products, customers, drivers }: SalesUiProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [customerDirectory, setCustomerDirectory] = useState<SalesCustomerOption[]>([]);
@@ -75,6 +77,7 @@ export function SalesUi({ products, customers }: SalesUiProps) {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | "">("PIX");
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [deliveryPending, setDeliveryPending] = useState(false);
+  const [selectedDriverId, setSelectedDriverId] = useState("");
   const [bottleMonth, setBottleMonth] = useState("");
   const [bottleYear, setBottleYear] = useState("");
   const [bottleNotes, setBottleNotes] = useState("");
@@ -292,6 +295,7 @@ export function SalesUi({ products, customers }: SalesUiProps) {
         bottleYear: selectedCustomerId ? resolvedBottleYear : "",
         bottleNotes: selectedCustomerId ? resolvedBottleNotes : "",
         deliveryPending,
+        driverId: selectedDriverId || null,
       });
       const response = await fetch("/api/sales", {
         method: "POST",
@@ -312,6 +316,7 @@ export function SalesUi({ products, customers }: SalesUiProps) {
       setCartItems([]);
       setProductQuery("");
       setDeliveryPending(false);
+      setSelectedDriverId("");
       refreshPage();
     } catch (saleError) {
       setError(saleError instanceof Error ? saleError.message : "Nao foi possivel finalizar a venda.");
@@ -585,6 +590,20 @@ export function SalesUi({ products, customers }: SalesUiProps) {
               />
               Entregar depois
             </label>
+
+            <Field label="Entregador">
+              <SelectInput
+                value={selectedDriverId}
+                onChange={(event) => setSelectedDriverId(event.target.value)}
+              >
+                <option value="">Sem entregador</option>
+                {drivers.map((driver) => (
+                  <option key={driver.id} value={driver.id}>
+                    {driver.name}
+                  </option>
+                ))}
+              </SelectInput>
+            </Field>
 
             <div className="rounded-[var(--radius-control)] bg-[var(--card-muted)] p-3">
               <p className="text-xs font-medium uppercase tracking-[0.08em] text-[var(--muted)]">Total</p>

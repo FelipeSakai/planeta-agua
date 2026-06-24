@@ -25,6 +25,7 @@ export type CreateSaleRepositoryInput = {
   items: SaleItemRepositoryInput[];
   bottle: { month: number; year: number; notes?: string | null } | null;
   deliveryPending: boolean;
+  driverId?: string | null;
 };
 
 export type ConfirmDeliveryRepositoryInput = {
