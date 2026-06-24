@@ -10,6 +10,12 @@ const customerNames = [
   "Vanessa Nunes", "Jorge Pinto", "Renata Dias", "Sergio Teixeira", "Gabriela Moura",
 ];
 
+const customerUuids = customerNames.map((_, i) =>
+  `${String(i + 1).padStart(8, "0")}-0000-0000-0000-${String(i + 1).padStart(12, "0")}`,
+);
+
+export const customerIds = customerUuids;
+
 export async function seedCustomers(): Promise<void> {
   console.log("Seeding customers...");
 
@@ -18,7 +24,7 @@ export async function seedCustomers(): Promise<void> {
     const hasAddress = index % 3 !== 0;
 
     return {
-      id: `customer-${String(index + 1).padStart(4, "0")}-0000-0000-000000000000`,
+      id: customerUuids[index],
       name,
       phone: hasPhone ? `(11) 9${String(1000 + index).padStart(4, "0")}-${String(1000 + index).padStart(4, "0")}` : null,
       address: hasAddress ? `Rua ${name.split(" ")[0]}, ${100 + index}` : null,

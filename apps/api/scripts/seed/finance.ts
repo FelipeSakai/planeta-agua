@@ -14,7 +14,7 @@ export async function seedFinance(): Promise<void> {
     const dateStr = date.toISOString().split("T")[0];
 
     cashRegistersData.push({
-      id: `cash-${dateStr.replace(/-/g, "")}-0000-0000-000000000000`,
+      id: `${String(20000 + i).padStart(8, "0")}-0000-0000-0000-${String(20000 + i).padStart(12, "0")}`,
       date: dateStr,
       openingBalanceCents: 5000 + Math.floor(Math.random() * 15000),
       openedAt: new Date(date.setHours(8, 0, 0, 0)),
@@ -37,7 +37,7 @@ export async function seedFinance(): Promise<void> {
     const userId = i % 2 === 0 ? adminId : op1Id;
 
     expensesData.push({
-      id: `expense-${String(i + 1).padStart(4, "0")}-0000-0000-000000000000`,
+      id: `${String(30000 + i).padStart(8, "0")}-0000-0000-0000-${String(30000 + i).padStart(12, "0")}`,
       description: `Despesa ${i + 1} - seed`,
       amountCents: 5000 + Math.floor(Math.random() * 20000),
       category: categories[i % categories.length],

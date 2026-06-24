@@ -1,5 +1,6 @@
 import { db } from "../../src/db";
 import { sales, saleItems } from "../../src/db/schema";
+import { customerIds } from "./customers";
 
 export async function seedSales(): Promise<void> {
   console.log("Seeding sales...");
@@ -14,16 +15,16 @@ export async function seedSales(): Promise<void> {
   const agua1500Id = "77777777-7777-7777-7777-777777777777";
 
   const now = new Date();
-  const salesData: typeof sales.$inferInsert[] = [];
-  const saleItemsData: typeof saleItems.$inferInsert[] = [];
+  const salesData: (typeof sales.$inferInsert)[] = [];
+  const saleItemsData: (typeof saleItems.$inferInsert)[] = [];
 
   for (let i = 0; i < 80; i++) {
     const daysAgo = Math.floor(Math.random() * 30);
     const saleDate = new Date(now.getTime() - daysAgo * 24 * 60 * 60 * 1000);
-    const saleId = `sale-${String(i + 1).padStart(4, "0")}-0000-0000-000000000000`;
+    const saleId = `${String(i + 1).padStart(8, "0")}-0000-0000-0000-${String(i + 1).padStart(12, "0")}`;
 
     const userId = i % 3 === 0 ? op1Id : i % 3 === 1 ? op2Id : adminId;
-    const custId = `customer-${String((i % 28) + 1).padStart(4, "0")}-0000-0000-000000000000`;
+    const custId = customerIds[i % 28];
 
     const isCanceled = i < 5;
     const isPendingDelivery = i >= 5 && i < 8;
@@ -39,20 +40,20 @@ export async function seedSales(): Promise<void> {
     const hasExchangeBottle = i % 5 === 1;
 
     if (hasCompleteBottle) {
-      items.push({ id: `item-${String(i * 3 + 1).padStart(4, "0")}-0000-0000-000000000000`, saleId, productId: galaoCompletoId, productNameSnapshot: "Galao 20L Completo", quantity: 1, unitPriceCents: 1200, totalPriceCents: 1200, discountCents: null, finalUnitPriceCents: null });
+      items.push({ id: `${String(i * 3 + 1).padStart(8, "0")}-0000-0000-0000-${String(i * 3 + 1).padStart(12, "0")}`, saleId, productId: galaoCompletoId, productNameSnapshot: "Galao 20L Completo", quantity: 1, unitPriceCents: 1200, totalPriceCents: 1200, discountCents: null, finalUnitPriceCents: null });
       totalAmountCents += 1200;
     } else if (hasExchangeBottle) {
-      items.push({ id: `item-${String(i * 3 + 1).padStart(4, "0")}-0000-0000-000000000000`, saleId, productId: galaoTrocaId, productNameSnapshot: "Galao 20L Troca", quantity: 1, unitPriceCents: 800, totalPriceCents: 800, discountCents: null, finalUnitPriceCents: null });
+      items.push({ id: `${String(i * 3 + 1).padStart(8, "0")}-0000-0000-0000-${String(i * 3 + 1).padStart(12, "0")}`, saleId, productId: galaoTrocaId, productNameSnapshot: "Galao 20L Troca", quantity: 1, unitPriceCents: 800, totalPriceCents: 800, discountCents: null, finalUnitPriceCents: null });
       totalAmountCents += 800;
     }
 
     if (i % 2 === 0) {
-      items.push({ id: `item-${String(i * 3 + 2).padStart(4, "0")}-0000-0000-000000000000`, saleId, productId: agua500Id, productNameSnapshot: "Agua 500ml (fardo 12un)", quantity: 1, unitPriceCents: 1800, totalPriceCents: 1800, discountCents: null, finalUnitPriceCents: null });
+      items.push({ id: `${String(i * 3 + 2).padStart(8, "0")}-0000-0000-0000-${String(i * 3 + 2).padStart(12, "0")}`, saleId, productId: agua500Id, productNameSnapshot: "Agua 500ml (fardo 12un)", quantity: 1, unitPriceCents: 1800, totalPriceCents: 1800, discountCents: null, finalUnitPriceCents: null });
       totalAmountCents += 1800;
     }
 
     if (i % 3 === 0) {
-      items.push({ id: `item-${String(i * 3 + 3).padStart(4, "0")}-0000-0000-000000000000`, saleId, productId: agua1500Id, productNameSnapshot: "Agua 1,5L", quantity: 2, unitPriceCents: 500, totalPriceCents: 1000, discountCents: null, finalUnitPriceCents: null });
+      items.push({ id: `${String(i * 3 + 3).padStart(8, "0")}-0000-0000-0000-${String(i * 3 + 3).padStart(12, "0")}`, saleId, productId: agua1500Id, productNameSnapshot: "Agua 1,5L", quantity: 2, unitPriceCents: 500, totalPriceCents: 1000, discountCents: null, finalUnitPriceCents: null });
       totalAmountCents += 1000;
     }
 

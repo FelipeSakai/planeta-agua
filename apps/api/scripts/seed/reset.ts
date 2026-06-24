@@ -6,6 +6,7 @@ import {
   products,
   saleItems,
   sales,
+  sessions,
   stockMovements,
   users,
   cashRegisters,
@@ -20,6 +21,7 @@ export async function resetAllTables(): Promise<void> {
   await db.delete(stockMovements);
   await db.delete(expenses);
   await db.delete(cashRegisters);
+  await db.delete(sessions);
   await db.delete(customers);
   await db.delete(products);
   await db.delete(users);
