@@ -17,7 +17,7 @@ export async function seedUsers(): Promise<void> {
 
   await db.insert(users).values([
     {
-      id: "11111111-1111-1111-1111-111111111111",
+      id: "11111111-1111-4111-8111-111111111111",
       name: "Admin",
       email: "admin@planetaagua.local",
       passwordHash: adminHash,
@@ -25,7 +25,7 @@ export async function seedUsers(): Promise<void> {
       isActive: true,
     },
     {
-      id: "22222222-2222-2222-2222-222222222222",
+      id: "22222222-2222-4222-8222-222222222222",
       name: "Operador 1",
       email: "op1@planetaagua.local",
       passwordHash: op1Hash,
@@ -33,7 +33,7 @@ export async function seedUsers(): Promise<void> {
       isActive: true,
     },
     {
-      id: "33333333-3333-3333-3333-333333333333",
+      id: "33333333-3333-4333-8333-333333333333",
       name: "Operador 2",
       email: "op2@planetaagua.local",
       passwordHash: op2Hash,

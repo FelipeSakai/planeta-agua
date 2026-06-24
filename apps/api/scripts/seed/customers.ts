@@ -10,9 +10,11 @@ const customerNames = [
   "Vanessa Nunes", "Jorge Pinto", "Renata Dias", "Sergio Teixeira", "Gabriela Moura",
 ];
 
-const customerUuids = customerNames.map((_, i) =>
-  `${String(i + 1).padStart(8, "0")}-0000-0000-0000-${String(i + 1).padStart(12, "0")}`,
-);
+const customerUuids = customerNames.map((_, i) => {
+  const n = String(i + 1).padStart(8, "0");
+  const m = String(i + 1).padStart(12, "0");
+  return `${n}-0000-4000-8000-${m}`;
+});
 
 export const customerIds = customerUuids;
 

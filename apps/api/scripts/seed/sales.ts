@@ -5,14 +5,14 @@ import { customerIds } from "./customers";
 export async function seedSales(): Promise<void> {
   console.log("Seeding sales...");
 
-  const adminId = "11111111-1111-1111-1111-111111111111";
-  const op1Id = "22222222-2222-2222-2222-222222222222";
-  const op2Id = "33333333-3333-3333-3333-333333333333";
+  const adminId = "11111111-1111-4111-8111-111111111111";
+  const op1Id = "22222222-2222-4222-8222-222222222222";
+  const op2Id = "33333333-3333-4333-8333-333333333333";
 
-  const galaoCompletoId = "44444444-4444-4444-4444-444444444444";
-  const galaoTrocaId = "55555555-5555-5555-5555-555555555555";
-  const agua500Id = "66666666-6666-6666-6666-666666666666";
-  const agua1500Id = "77777777-7777-7777-7777-777777777777";
+  const galaoCompletoId = "44444444-4444-4444-8444-444444444444";
+  const galaoTrocaId = "55555555-5555-4555-8555-555555555555";
+  const agua500Id = "66666666-6666-4666-8666-666666666666";
+  const agua1500Id = "77777777-7777-4777-8777-777777777777";
 
   const now = new Date();
   const salesData: (typeof sales.$inferInsert)[] = [];
@@ -21,7 +21,7 @@ export async function seedSales(): Promise<void> {
   for (let i = 0; i < 80; i++) {
     const daysAgo = Math.floor(Math.random() * 30);
     const saleDate = new Date(now.getTime() - daysAgo * 24 * 60 * 60 * 1000);
-    const saleId = `${String(i + 1).padStart(8, "0")}-0000-0000-0000-${String(i + 1).padStart(12, "0")}`;
+    const saleId = `${String(i + 1).padStart(8, "0")}-0000-4000-8000-${String(i + 1).padStart(12, "0")}`;
 
     const userId = i % 3 === 0 ? op1Id : i % 3 === 1 ? op2Id : adminId;
     const custId = customerIds[i % 28];
@@ -40,20 +40,20 @@ export async function seedSales(): Promise<void> {
     const hasExchangeBottle = i % 5 === 1;
 
     if (hasCompleteBottle) {
-      items.push({ id: `${String(i * 3 + 1).padStart(8, "0")}-0000-0000-0000-${String(i * 3 + 1).padStart(12, "0")}`, saleId, productId: galaoCompletoId, productNameSnapshot: "Galao 20L Completo", quantity: 1, unitPriceCents: 1200, totalPriceCents: 1200, discountCents: null, finalUnitPriceCents: null });
+      items.push({ id: `${String(i * 3 + 1).padStart(8, "0")}-0000-4000-8000-${String(i * 3 + 1).padStart(12, "0")}`, saleId, productId: galaoCompletoId, productNameSnapshot: "Galao 20L Completo", quantity: 1, unitPriceCents: 1200, totalPriceCents: 1200, discountCents: null, finalUnitPriceCents: null });
       totalAmountCents += 1200;
     } else if (hasExchangeBottle) {
-      items.push({ id: `${String(i * 3 + 1).padStart(8, "0")}-0000-0000-0000-${String(i * 3 + 1).padStart(12, "0")}`, saleId, productId: galaoTrocaId, productNameSnapshot: "Galao 20L Troca", quantity: 1, unitPriceCents: 800, totalPriceCents: 800, discountCents: null, finalUnitPriceCents: null });
+      items.push({ id: `${String(i * 3 + 1).padStart(8, "0")}-0000-4000-8000-${String(i * 3 + 1).padStart(12, "0")}`, saleId, productId: galaoTrocaId, productNameSnapshot: "Galao 20L Troca", quantity: 1, unitPriceCents: 800, totalPriceCents: 800, discountCents: null, finalUnitPriceCents: null });
       totalAmountCents += 800;
     }
 
     if (i % 2 === 0) {
-      items.push({ id: `${String(i * 3 + 2).padStart(8, "0")}-0000-0000-0000-${String(i * 3 + 2).padStart(12, "0")}`, saleId, productId: agua500Id, productNameSnapshot: "Agua 500ml (fardo 12un)", quantity: 1, unitPriceCents: 1800, totalPriceCents: 1800, discountCents: null, finalUnitPriceCents: null });
+      items.push({ id: `${String(i * 3 + 2).padStart(8, "0")}-0000-4000-8000-${String(i * 3 + 2).padStart(12, "0")}`, saleId, productId: agua500Id, productNameSnapshot: "Agua 500ml (fardo 12un)", quantity: 1, unitPriceCents: 1800, totalPriceCents: 1800, discountCents: null, finalUnitPriceCents: null });
       totalAmountCents += 1800;
     }
 
     if (i % 3 === 0) {
-      items.push({ id: `${String(i * 3 + 3).padStart(8, "0")}-0000-0000-0000-${String(i * 3 + 3).padStart(12, "0")}`, saleId, productId: agua1500Id, productNameSnapshot: "Agua 1,5L", quantity: 2, unitPriceCents: 500, totalPriceCents: 1000, discountCents: null, finalUnitPriceCents: null });
+      items.push({ id: `${String(i * 3 + 3).padStart(8, "0")}-0000-4000-8000-${String(i * 3 + 3).padStart(12, "0")}`, saleId, productId: agua1500Id, productNameSnapshot: "Agua 1,5L", quantity: 2, unitPriceCents: 500, totalPriceCents: 1000, discountCents: null, finalUnitPriceCents: null });
       totalAmountCents += 1000;
     }
 
