@@ -309,18 +309,13 @@ export function SalesUi({ products, customers }: SalesUiProps) {
 
   return (
     <section className="space-y-6">
-      <PageHeader
-        actions={
-          <Link
-            href="/vendas/historico"
-            className="inline-flex min-h-10 items-center justify-center rounded-[var(--radius-control)] border border-[var(--border)] bg-white px-4 py-2 text-sm font-medium text-[var(--foreground)] transition duration-150 hover:bg-[var(--card-muted)]"
-          >
-            Ver historico
-          </Link>
-        }
-        eyebrow="Operacao"
-        title="Vendas"
-      />
+      <PageHeader eyebrow="Operacao" title="Vendas" />
+
+      <div className="flex justify-end">
+        <Link href="/vendas/historico" className="text-base text-[var(--brand)] hover:underline">
+          Ver historico -&gt;
+        </Link>
+      </div>
 
       {error ? <Alert variant="danger">{error}</Alert> : null}
 
