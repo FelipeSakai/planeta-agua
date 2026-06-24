@@ -78,6 +78,7 @@ export const sales = pgTable("sales", {
   cancellationReason: text("cancellation_reason"),
   deliveredAt: timestamp("delivered_at", { withTimezone: true }),
   deliveredByUserId: uuid("delivered_by_user_id").references(() => users.id),
+  driverId: uuid("driver_id").references(() => drivers.id),
   ...timestamps,
 });
 
@@ -128,6 +129,14 @@ export const cashRegisters = pgTable("cash_registers", {
   closedAt: timestamp("closed_at", { withTimezone: true }),
   closedByUserId: uuid("closed_by_user_id").references(() => users.id),
   counts: jsonb("counts").$type<Record<string, { expected: number; counted: number; difference: number }>>().notNull().default({}),
+  ...timestamps,
+});
+
+export const drivers = pgTable("drivers", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  name: text("name").notNull(),
+  phone: text("phone"),
+  isActive: boolean("is_active").notNull().default(true),
   ...timestamps,
 });
 
@@ -203,6 +212,11 @@ export const salesRelations = relations(sales, ({ one, many }) => ({
     references: [users.id],
     relationName: "saleDeliveredByUser",
   }),
+  driver: one(drivers, {
+    fields: [sales.driverId],
+    references: [drivers.id],
+    relationName: "saleDriver",
+  }),
   items: many(saleItems),
 }));
 
@@ -252,4 +266,8 @@ export const cashRegistersRelations = relations(cashRegisters, ({ one }) => ({
     references: [users.id],
     relationName: "cashRegisterClosedBy",
   }),
+}));
+
+export const driversRelations = relations(drivers, ({ many }) => ({
+  sales: many(sales, { relationName: "saleDriver" }),
 }));
