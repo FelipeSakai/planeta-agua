@@ -74,10 +74,23 @@ describe("shared finance contracts", () => {
       recentSales: [
         { id: "s1", customerName: "Maria", totalAmountCents: 1800, paymentMethod: "PIX", status: "COMPLETED", createdAt: "2026-06-20T10:00:00.000Z" },
       ],
+      pendingDeliveries: [
+        {
+          id: "11111111-1111-4111-8111-111111111111",
+          customerName: "Maria",
+          customerPhone: "11999999999",
+          customerAddress: "Rua A, 10",
+          driverName: "Joao",
+          totalAmountCents: 3600,
+          paymentMethod: "CASH",
+          createdAt: "2026-06-20T11:00:00.000Z",
+        },
+      ],
     });
 
     expect(parsed.todayRevenueCents).toBe(18000);
     expect(parsed.lowStockProducts).toHaveLength(1);
+    expect(parsed.pendingDeliveries).toHaveLength(1);
   });
 
   it("validates a cash register response", () => {

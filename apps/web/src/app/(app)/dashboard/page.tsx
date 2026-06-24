@@ -92,6 +92,43 @@ export function DashboardView({
         />
       </div>
 
+      {data.pendingDeliveries.length > 0 ? (
+        <Panel className="p-4">
+          <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h2 className="text-base font-semibold text-[var(--foreground)]">Entregas pendentes</h2>
+              <p className="text-sm text-[var(--muted)]">
+                Vendas que ainda precisam de confirmacao individual.
+              </p>
+            </div>
+            <Link href="/entregas" className="text-sm font-medium text-[var(--brand)] hover:underline">
+              Ver entregas
+            </Link>
+          </div>
+
+          <ul className="divide-y divide-[var(--border)]">
+            {data.pendingDeliveries.map((delivery) => (
+              <li key={delivery.id} className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium text-[var(--foreground)]">
+                    {delivery.customerName ?? "Consumidor"}
+                  </p>
+                  <p className="text-xs text-[var(--muted)]">
+                    {delivery.customerAddress ?? "Endereco nao informado"} · {delivery.driverName ?? "Sem entregador"}
+                  </p>
+                </div>
+                <div className="flex items-center justify-between gap-3 sm:flex-col sm:items-end sm:justify-start">
+                  <span className="text-sm font-semibold text-[var(--foreground)]">
+                    {formatCentsToBRL(delivery.totalAmountCents)}
+                  </span>
+                  <span className="text-xs text-[var(--muted)]">{paymentMethodLabels[delivery.paymentMethod]}</span>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </Panel>
+      ) : null}
+
       <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
         <Panel className="p-4">
           <div className="mb-4 flex flex-col gap-1">

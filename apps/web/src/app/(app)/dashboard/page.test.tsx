@@ -34,6 +34,18 @@ const sampleData: DashboardResponse = {
       createdAt: "2026-06-20T11:30:00.000Z",
     },
   ],
+  pendingDeliveries: [
+    {
+      id: "11111111-1111-4111-8111-111111111111",
+      customerName: "Maria Souza",
+      customerPhone: "11999999999",
+      customerAddress: "Rua A, 10",
+      driverName: "Joao",
+      totalAmountCents: 4200,
+      paymentMethod: "CASH",
+      createdAt: "2026-06-20T12:00:00.000Z",
+    },
+  ],
 };
 
 const emptyData: DashboardResponse = {
@@ -42,6 +54,7 @@ const emptyData: DashboardResponse = {
   totalsByPaymentMethod: [],
   lowStockProducts: [],
   recentSales: [],
+  pendingDeliveries: [],
 };
 
 function render(role: UserRole, data: DashboardResponse = sampleData) {
@@ -124,6 +137,15 @@ describe("DashboardView", () => {
 
     expect(html).toContain("Nova venda");
     expect(html).toContain('href="/vendas"');
+  });
+
+  it("renders pending deliveries with a link to deliveries page", () => {
+    const html = render("ADMIN");
+
+    expect(html).toContain("Entregas pendentes");
+    expect(html).toContain("Maria Souza");
+    expect(html).toContain("Rua A, 10");
+    expect(html).toContain('href="/entregas"');
   });
 
   it("shows stock shortcut for admins", () => {

@@ -30,7 +30,22 @@ export class FinanceService {
   constructor(private readonly financeRepository: FinanceRepository) {}
 
   async getDashboardData() {
-    return this.financeRepository.getDashboardData(new Date());
+    const data = await this.financeRepository.getDashboardData(new Date());
+    const pendingDeliveries = await this.financeRepository.getPendingDeliveries();
+
+    return {
+      ...data,
+      pendingDeliveries: pendingDeliveries.map((sale) => ({
+        id: sale.id,
+        customerName: sale.customer?.name ?? null,
+        customerPhone: sale.customer?.phone ?? null,
+        customerAddress: sale.customer?.address ?? null,
+        driverName: sale.driver?.name ?? null,
+        totalAmountCents: sale.totalAmountCents,
+        paymentMethod: sale.paymentMethod,
+        createdAt: sale.createdAt.toISOString(),
+      })),
+    };
   }
 
   async getCashRegisterForToday() {

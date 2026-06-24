@@ -123,9 +123,12 @@ export function CashUi({ details }: CashUiProps) {
     <section className="space-y-6">
       <PageHeader
         actions={
-          isOpen ? (
-            <Button onClick={() => setIsCloseDrawerOpen(true)}>Fechar caixa</Button>
-          ) : null
+          <div className="flex flex-wrap gap-2">
+            <Button className="no-print" onClick={() => window.print()} type="button" variant="secondary">
+              Imprimir fechamento
+            </Button>
+            {isOpen ? <Button onClick={() => setIsCloseDrawerOpen(true)}>Fechar caixa</Button> : null}
+          </div>
         }
         eyebrow="Operacao"
         title="Caixa de hoje"
@@ -328,6 +331,60 @@ export function CashUi({ details }: CashUiProps) {
           </div>
         </Panel>
       ) : null}
+
+      <div className="print-area hidden">
+        <div className="mx-auto max-w-2xl space-y-4 font-mono text-sm text-black">
+          <div className="text-center">
+            <h1 className="text-lg font-bold">Planeta Agua</h1>
+            <p className="text-xs">Fechamento do Caixa - {new Date().toLocaleDateString("pt-BR")}</p>
+          </div>
+
+          <div className="space-y-1 border-y border-black py-2">
+            <p>Fundo de caixa: {formatCentsToBRL(cashRegister?.openingBalanceCents ?? 0)}</p>
+            <p className="font-bold">Total vendas: {formatCentsToBRL(details.totalSalesCents)}</p>
+            <p>Total despesas: {formatCentsToBRL(details.totalExpensesCents)}</p>
+            <p className="font-bold">Saldo esperado em dinheiro: {formatCentsToBRL(details.expectedCashCents)}</p>
+          </div>
+
+          <div className="border-t border-black pt-2">
+            <p className="mb-2 font-bold">Resumo por forma:</p>
+            {summary.map((row) => (
+              <div key={row.method} className="flex justify-between gap-4 text-xs">
+                <span>{paymentMethodLabels[row.method]}</span>
+                <span>
+                  Vendas {formatCentsToBRL(row.salesCents)} | Despesas {formatCentsToBRL(row.expensesCents)} | Esperado {formatCentsToBRL(row.expectedCents)}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          <div className="border-t border-black pt-2">
+            <p className="mb-2 font-bold">Vendas do dia:</p>
+            {todaySales.length === 0 ? <p className="text-xs">Nenhuma venda registrada.</p> : null}
+            {todaySales.map((sale) => (
+              <div key={sale.id} className="flex justify-between gap-4 text-xs">
+                <span>
+                  {formatTimeOfDay(sale.createdAt)} - {sale.customerName ?? "Consumidor"} - {paymentMethodLabels[sale.paymentMethod] ?? sale.paymentMethod}
+                </span>
+                <span>{formatCentsToBRL(sale.totalAmountCents)}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="border-t border-black pt-2">
+            <p className="mb-2 font-bold">Despesas do dia:</p>
+            {todayExpenses.length === 0 ? <p className="text-xs">Nenhuma despesa registrada.</p> : null}
+            {todayExpenses.map((expense) => (
+              <div key={expense.id} className="flex justify-between gap-4 text-xs">
+                <span>
+                  {expense.description} - {expense.paymentMethod ? (paymentMethodLabels[expense.paymentMethod] ?? expense.paymentMethod) : "-"}
+                </span>
+                <span>{formatCentsToBRL(expense.amountCents)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
 
       {cashRegister && isOpen ? (
         <Drawer

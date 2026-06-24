@@ -26,6 +26,7 @@ const navigation: readonly NavigationItem[] = [
   { label: "Dashboard", href: "/dashboard", roles: ["ADMIN", "OPERATOR"] },
   { label: "Nova Venda", href: "/vendas", roles: ["ADMIN", "OPERATOR"] },
   { label: "Historico", href: "/vendas/historico", roles: ["ADMIN", "OPERATOR"] },
+  { label: "Entregas", href: "/entregas", roles: ["ADMIN", "OPERATOR"] },
   { label: "Caixa", href: "/caixa", roles: ["ADMIN", "OPERATOR"] },
   { label: "Produtos", href: "/produtos", roles: ["ADMIN", "OPERATOR"] },
   { label: "Clientes", href: "/clientes", roles: ["ADMIN", "OPERATOR"] },
@@ -35,7 +36,7 @@ const navigation: readonly NavigationItem[] = [
   { label: "Usuarios", href: "/usuarios", roles: ["ADMIN"] },
 ] as const;
 
-const navLinkBaseClassName = "rounded-xl px-3 py-2 text-base font-medium";
+const navLinkBaseClassName = "rounded-xl px-3 py-2 text-sm font-medium";
 const navLinkActiveClassName = `${navLinkBaseClassName} bg-[var(--brand)] text-white`;
 const navLinkInactiveClassName = `${navLinkBaseClassName} text-[var(--muted)] transition duration-150 hover:bg-[var(--card-muted)] hover:text-[var(--foreground)] motion-reduce:transition-none`;
 

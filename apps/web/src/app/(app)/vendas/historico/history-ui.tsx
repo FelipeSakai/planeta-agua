@@ -7,10 +7,12 @@ import {
   formatCentsToBRL,
   paymentMethodValues,
   saleHistoryResponseSchema,
+  type SaleDetailResponse,
   type UserRole,
 } from "shared";
 import { z } from "zod";
 
+import { PrintRecibo, printRecibo } from "@/components/recibo/print-recibo";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -64,6 +66,7 @@ export function HistoryUi({ history, activeFilter }: HistoryUiProps) {
   const [showTodayOnly, setShowTodayOnly] = useState(false);
   const [actingSaleId, setActingSaleId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [printSale, setPrintSale] = useState<SaleDetailResponse | null>(null);
 
   const visibleHistory = useMemo(() => {
     if (!showTodayOnly) {
@@ -123,15 +126,42 @@ export function HistoryUi({ history, activeFilter }: HistoryUiProps) {
     }
   }
 
+  async function handlePrint(saleId: string) {
+    setError(null);
+
+    try {
+      const response = await fetch(`/api/sales/${encodeURIComponent(saleId)}`);
+      if (!response.ok) {
+        setError("Nao foi possivel carregar o recibo.");
+        return;
+      }
+      const detail = await response.json() as SaleDetailResponse;
+      setPrintSale(detail);
+      setTimeout(() => printRecibo(), 100);
+    } catch {
+      setError("Nao foi possivel carregar o recibo.");
+    }
+  }
+
   function renderActions(row: SaleHistoryEntry) {
     if (row.status === "CANCELED") {
-      return <span className="text-sm text-[var(--muted)]">Cancelada</span>;
+      return (
+        <div className="flex flex-wrap gap-2">
+          <Button className="no-print" variant="secondary" onClick={() => void handlePrint(row.id)}>
+            Imprimir
+          </Button>
+          <span className="text-sm text-[var(--muted)]">Cancelada</span>
+        </div>
+      );
     }
 
     const isActing = actingSaleId === row.id || isPending;
 
     return (
       <div className="flex flex-wrap gap-2">
+        <Button className="no-print" variant="secondary" onClick={() => void handlePrint(row.id)} disabled={isActing}>
+          Imprimir
+        </Button>
         {row.status === "PENDING_DELIVERY" ? (
           <Button
             disabled={isActing}
@@ -196,6 +226,7 @@ export function HistoryUi({ history, activeFilter }: HistoryUiProps) {
       <PageHeader eyebrow="Operacao" title="Historico de vendas" />
 
       {error ? <Alert variant="danger">{error}</Alert> : null}
+      {printSale ? <PrintRecibo sale={printSale} /> : null}
 
       <Panel className="p-4">
         <div className="flex flex-wrap gap-2">

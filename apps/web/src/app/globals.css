@@ -29,13 +29,13 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-  --text-xs: 16px;
-  --text-sm: 18px;
-  --text-base: 21px;
-  --text-lg: 23px;
-  --text-xl: 28px;
-  --text-2xl: 36px;
-  --text-3xl: 52px;
+  --text-xs: 13px;
+  --text-sm: 15px;
+  --text-base: 18px;
+  --text-lg: 20px;
+  --text-xl: 24px;
+  --text-2xl: 30px;
+  --text-3xl: 46px;
 }
 
 * {
@@ -51,7 +51,7 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
-  font-size: 21px;
+  font-size: 18px;
   line-height: 1.5;
 }
 
@@ -78,5 +78,29 @@ a {
     animation-iteration-count: 1 !important;
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  .print-area,
+  .print-area * {
+    visibility: visible;
+  }
+
+  .print-area {
+    display: block !important;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    padding: 20px;
+  }
+
+  .no-print {
+    display: none !important;
   }
 }

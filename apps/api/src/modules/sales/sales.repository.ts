@@ -202,7 +202,7 @@ export class SalesRepository {
       where: options.status ? eq(sales.status, options.status) : undefined,
       orderBy: [desc(sales.createdAt)],
       with: {
-        customer: { columns: { id: true, name: true } },
+        customer: { columns: { id: true, name: true, phone: true, address: true } },
         user: { columns: { id: true, name: true } },
         canceledByUser: { columns: { id: true, name: true } },
         deliveredByUser: { columns: { id: true, name: true } },
@@ -215,7 +215,7 @@ export class SalesRepository {
     const sale = await db.query.sales.findFirst({
       where: eq(sales.id, id),
       with: {
-        customer: { columns: { id: true, name: true } },
+        customer: { columns: { id: true, name: true, phone: true, address: true } },
         user: { columns: { id: true, name: true } },
         canceledByUser: { columns: { id: true, name: true } },
         deliveredByUser: { columns: { id: true, name: true } },

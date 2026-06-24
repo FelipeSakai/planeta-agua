@@ -15,6 +15,7 @@ import type {
 } from "./finance.types";
 
 const completedStatus = "COMPLETED" as const;
+const pendingDeliveryStatus = "PENDING_DELIVERY" as const;
 
 @Injectable()
 export class FinanceRepository {
@@ -60,6 +61,18 @@ export class FinanceRepository {
         createdAt: s.createdAt.toISOString(),
       })),
     };
+  }
+
+  async getPendingDeliveries() {
+    return db.query.sales.findMany({
+      where: eq(sales.status, pendingDeliveryStatus),
+      orderBy: [desc(sales.createdAt)],
+      limit: 10,
+      with: {
+        customer: { columns: { id: true, name: true, phone: true, address: true } },
+        driver: { columns: { id: true, name: true } },
+      },
+    });
   }
 
   async getCashRegisterForDate(date: string): Promise<CashRegisterRow | undefined> {

@@ -37,6 +37,8 @@ const validSaleDetailResponse = {
     id: "11111111-1111-4111-8111-111111111111",
     customerId: null,
     customerName: null,
+    customerPhone: null,
+    customerAddress: null,
     userId: "22222222-2222-4222-8222-222222222222",
     userName: "Operador",
     totalAmountCents: 2400,
@@ -47,6 +49,8 @@ const validSaleDetailResponse = {
     cancellationReason: null,
     deliveredAt: null,
     deliveredByUserId: null,
+    driverId: null,
+    driverName: null,
     bottle: null,
     previousBottle: null,
   },
@@ -170,6 +174,24 @@ describe("sales contracts", () => {
         },
       }),
     ).toThrow();
+  });
+
+  it("keeps delivery driver data in sale detail responses", () => {
+    const parsed = saleDetailResponseSchema.parse({
+      ...validSaleDetailResponse,
+      sale: {
+        ...validSaleDetailResponse.sale,
+        customerPhone: "11999999999",
+        customerAddress: "Rua A, 10",
+        driverId: "55555555-5555-4555-8555-555555555555",
+        driverName: "Joao Entregador",
+      },
+    });
+
+    expect(parsed.sale.customerPhone).toBe("11999999999");
+    expect(parsed.sale.customerAddress).toBe("Rua A, 10");
+    expect(parsed.sale.driverId).toBe("55555555-5555-4555-8555-555555555555");
+    expect(parsed.sale.driverName).toBe("Joao Entregador");
   });
 
   it("flags expired bottles after 3 years", () => {

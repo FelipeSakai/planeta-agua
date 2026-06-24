@@ -116,6 +116,8 @@ export const saleDetailResponseSchema = z.object({
       id: z.string().uuid(),
       customerId: z.string().uuid().nullable(),
       customerName: z.string().nullable(),
+      customerPhone: z.string().nullable(),
+      customerAddress: z.string().nullable(),
       userId: z.string().uuid(),
       userName: z.string(),
       totalAmountCents: nonNegativeAmountCentsSchema,
@@ -126,6 +128,8 @@ export const saleDetailResponseSchema = z.object({
       cancellationReason: cancellationReasonSchema.nullable(),
       deliveredAt: isoDatetimeStringSchema.nullable(),
       deliveredByUserId: z.string().uuid().nullable(),
+      driverId: z.string().uuid().nullable(),
+      driverName: z.string().nullable(),
       bottle: customerBottleRecordSchema,
       previousBottle: customerBottleRecordSchema,
     })
@@ -147,6 +151,8 @@ export const saleHistoryFilterSchema = z.object({
 
 export type SaleCustomerResponse = z.infer<typeof saleCustomerResponseSchema>;
 export type SaleCustomersResponse = z.infer<typeof saleCustomersResponseSchema>;
+export type SaleHistoryResponse = z.infer<typeof saleHistoryResponseSchema>;
+export type SaleDetailResponse = z.infer<typeof saleDetailResponseSchema>;
 
 export function getBottleAgeInMonths(bottle: Pick<BottleRecord, "month" | "year">, now: Date) {
   return (now.getUTCFullYear() - bottle.year) * 12 + (now.getUTCMonth() + 1 - bottle.month);
