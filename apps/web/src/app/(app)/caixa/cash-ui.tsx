@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   formatCentsToBRL,
   paymentMethodValues,
-  type CashRegisterResponse,
+  type CashRegisterDetailsResponse,
 } from "shared";
 
 import { Alert } from "@/components/ui/alert";
@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Drawer } from "@/components/ui/drawer";
 import { Field, TextInput } from "@/components/ui/form-controls";
+import { MetricCard } from "@/components/ui/metric-card";
 import { PageHeader } from "@/components/ui/page-header";
 import { Panel } from "@/components/ui/panel";
 import { closeCashRegister, updateOpeningBalance } from "@/lib/finance";
@@ -27,8 +28,7 @@ export type PaymentSummary = {
 };
 
 export type CashUiProps = {
-  cashRegister: CashRegisterResponse;
-  summary: PaymentSummary[];
+  details: CashRegisterDetailsResponse;
 };
 
 const paymentMethodLabels: Record<PaymentMethod, string> = {
@@ -39,18 +39,22 @@ const paymentMethodLabels: Record<PaymentMethod, string> = {
   OTHER: "Outro",
 };
 
-export function CashUi({ cashRegister, summary }: CashUiProps) {
+export function CashUi({ details }: CashUiProps) {
   const router = useRouter();
+  const { cashRegister, todaySales, todayExpenses } = details;
   const [isPending, startTransition] = useTransition();
   const [openingBalanceInput, setOpeningBalanceInput] = useState(
-    centsToReais(cashRegister.openingBalanceCents),
+    centsToReais(cashRegister?.openingBalanceCents ?? 0),
   );
   const [isSavingOpening, setIsSavingOpening] = useState(false);
   const [isCloseDrawerOpen, setIsCloseDrawerOpen] = useState(false);
   const [countedInputs, setCountedInputs] = useState<Record<PaymentMethod, string>>(() => {
     const initial = {} as Record<PaymentMethod, string>;
     for (const method of paymentMethodValues) {
-      const expected = summary.find((row) => row.method === method)?.expectedCents ?? 0;
+      const row = details.totalsByPaymentMethod.find((item) => item.method === method);
+      const salesCents = row?.salesCents ?? 0;
+      const expensesCents = row?.expensesCents ?? 0;
+      const expected = method === "CASH" ? details.expectedCashCents : salesCents - expensesCents;
       initial[method] = centsToReais(expected);
     }
     return initial;
@@ -58,7 +62,15 @@ export function CashUi({ cashRegister, summary }: CashUiProps) {
   const [isClosing, setIsClosing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const isOpen = cashRegister.closedAt === null;
+  const isOpen = cashRegister !== null && cashRegister.closedAt === null;
+
+  const summary: PaymentSummary[] = paymentMethodValues.map((method) => {
+    const row = details.totalsByPaymentMethod.find((item) => item.method === method);
+    const salesCents = row?.salesCents ?? 0;
+    const expensesCents = row?.expensesCents ?? 0;
+    const expectedCents = method === "CASH" ? details.expectedCashCents : salesCents - expensesCents;
+    return { method, salesCents, expensesCents, expectedCents };
+  });
 
   function refreshPage() {
     startTransition(() => router.refresh());
@@ -121,41 +133,53 @@ export function CashUi({ cashRegister, summary }: CashUiProps) {
 
       {error ? <Alert variant="danger">{error}</Alert> : null}
 
-      {isOpen && cashRegister.openingBalanceCents === 0 ? (
+      {isOpen && (cashRegister?.openingBalanceCents ?? 0) === 0 ? (
         <Alert variant="warning">
           Fundo de caixa esta R$ 0,00. Informe o valor de abertura antes de fechar o dia.
         </Alert>
       ) : null}
 
-      <Panel className="p-4">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="text-base font-semibold text-[var(--foreground)]">Fundo de caixa</h2>
-          <Badge variant={isOpen ? "success" : "neutral"}>{isOpen ? "Aberto" : "Fechado"}</Badge>
-        </div>
+      {cashRegister ? (
+        <Panel className="p-4">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-base font-semibold text-[var(--foreground)]">Fundo de caixa</h2>
+            <Badge variant={isOpen ? "success" : "neutral"}>{isOpen ? "Aberto" : "Fechado"}</Badge>
+          </div>
 
-        <div className="mt-4 flex flex-wrap items-end gap-3">
-          <Field label="Fundo de caixa (R$)">
-            <TextInput
-              disabled={!isOpen || isSavingOpening}
-              inputMode="decimal"
-              value={openingBalanceInput}
-              onChange={(event) => setOpeningBalanceInput(event.target.value)}
-            />
-          </Field>
-          {isOpen ? (
-            <Button
-              disabled={isSavingOpening || isPending}
-              onClick={handleUpdateOpening}
-              variant="secondary"
-            >
-              {isSavingOpening ? "Atualizando..." : "Atualizar fundo"}
-            </Button>
-          ) : null}
-        </div>
-        <p className="mt-3 text-xs text-[var(--muted)]">
-          Saldo atual: {formatCentsToBRL(cashRegister.openingBalanceCents)}
-        </p>
-      </Panel>
+          <div className="mt-4 flex flex-wrap items-end gap-3">
+            <Field label="Fundo de caixa (R$)">
+              <TextInput
+                disabled={!isOpen || isSavingOpening}
+                inputMode="decimal"
+                value={openingBalanceInput}
+                onChange={(event) => setOpeningBalanceInput(event.target.value)}
+              />
+            </Field>
+            {isOpen ? (
+              <Button
+                disabled={isSavingOpening || isPending}
+                onClick={handleUpdateOpening}
+                variant="secondary"
+              >
+                {isSavingOpening ? "Atualizando..." : "Atualizar fundo"}
+              </Button>
+            ) : null}
+          </div>
+          <p className="mt-3 text-xs text-[var(--muted)]">
+            Saldo atual: {formatCentsToBRL(cashRegister.openingBalanceCents)}
+          </p>
+        </Panel>
+      ) : (
+        <Panel className="p-4">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-base font-semibold text-[var(--foreground)]">Fundo de caixa</h2>
+            <Badge variant="neutral">Nao aberto</Badge>
+          </div>
+          <p className="mt-3 text-sm text-[var(--muted)]">
+            O caixa abre na primeira venda do dia.
+          </p>
+        </Panel>
+      )}
 
       <Panel className="p-4">
         <h2 className="text-base font-semibold text-[var(--foreground)]">Resumo por pagamento</h2>
@@ -185,7 +209,81 @@ export function CashUi({ cashRegister, summary }: CashUiProps) {
         </div>
       </Panel>
 
-      {!isOpen ? (
+      <div className="grid gap-4 sm:grid-cols-3">
+        <MetricCard label="Total Vendas" value={formatCentsToBRL(details.totalSalesCents)} />
+        <MetricCard label="Total Despesas" value={formatCentsToBRL(details.totalExpensesCents)} />
+        <MetricCard label="Saldo Esperado" value={formatCentsToBRL(details.expectedCashCents)} />
+      </div>
+
+      <Panel className="p-4">
+        <h2 className="text-base font-semibold text-[var(--foreground)]">Vendas do dia</h2>
+        {todaySales.length === 0 ? (
+          <p className="mt-4 text-sm text-[var(--muted)]">Nenhuma venda registrada hoje.</p>
+        ) : (
+          <div className="mt-4 overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-[var(--border)] text-left text-xs uppercase text-[var(--muted)]">
+                  <th className="py-2 pr-4">Horario</th>
+                  <th className="py-2 pr-4">Cliente</th>
+                  <th className="py-2 pr-4">Forma</th>
+                  <th className="py-2">Valor</th>
+                </tr>
+              </thead>
+              <tbody>
+                {todaySales.map((sale) => (
+                  <tr key={sale.id} className="border-b border-[var(--border-soft)] last:border-0">
+                    <td className="py-3 pr-4 text-[var(--muted)]">{formatTimeOfDay(sale.createdAt)}</td>
+                    <td className="py-3 pr-4 text-[var(--foreground)]">{sale.customerName ?? "—"}</td>
+                    <td className="py-3 pr-4 text-[var(--foreground)]">
+                      {paymentMethodLabels[sale.paymentMethod] ?? sale.paymentMethod}
+                    </td>
+                    <td className="py-3 font-semibold text-[var(--foreground)]">
+                      {formatCentsToBRL(sale.totalAmountCents)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Panel>
+
+      <Panel className="p-4">
+        <h2 className="text-base font-semibold text-[var(--foreground)]">Despesas do dia</h2>
+        {todayExpenses.length === 0 ? (
+          <p className="mt-4 text-sm text-[var(--muted)]">Nenhuma despesa registrada hoje.</p>
+        ) : (
+          <div className="mt-4 overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-[var(--border)] text-left text-xs uppercase text-[var(--muted)]">
+                  <th className="py-2 pr-4">Descricao</th>
+                  <th className="py-2 pr-4">Forma</th>
+                  <th className="py-2">Valor</th>
+                </tr>
+              </thead>
+              <tbody>
+                {todayExpenses.map((expense) => (
+                  <tr key={expense.id} className="border-b border-[var(--border-soft)] last:border-0">
+                    <td className="py-3 pr-4 text-[var(--foreground)]">{expense.description}</td>
+                    <td className="py-3 pr-4 text-[var(--foreground)]">
+                      {expense.paymentMethod
+                        ? (paymentMethodLabels[expense.paymentMethod] ?? expense.paymentMethod)
+                        : "—"}
+                    </td>
+                    <td className="py-3 font-semibold text-[var(--foreground)]">
+                      {formatCentsToBRL(expense.amountCents)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Panel>
+
+      {cashRegister && !isOpen ? (
         <Panel className="p-4">
           <h2 className="text-base font-semibold text-[var(--foreground)]">Fechamento</h2>
           <div className="mt-4 overflow-x-auto">
@@ -231,7 +329,7 @@ export function CashUi({ cashRegister, summary }: CashUiProps) {
         </Panel>
       ) : null}
 
-      {isOpen ? (
+      {cashRegister && isOpen ? (
         <Drawer
           badge={<Badge variant="warning">Fechamento</Badge>}
           description="Informe o valor contado por forma de pagamento para fechar o caixa."
@@ -305,4 +403,9 @@ function reaisToCents(value: string): number {
 
 function centsToReais(cents: number): string {
   return (cents / 100).toFixed(2).replace(".", ",");
+}
+
+function formatTimeOfDay(iso: string): string {
+  const date = new Date(iso);
+  return date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
 }

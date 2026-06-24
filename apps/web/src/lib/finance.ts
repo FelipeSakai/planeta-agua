@@ -1,4 +1,5 @@
 import {
+  cashRegisterDetailsResponseSchema,
   cashRegisterResponseSchema,
   closeCashRegisterInputSchema,
   createExpenseInputSchema,
@@ -8,6 +9,7 @@ import {
   financeSummaryResponseSchema,
   updateExpenseInputSchema,
   updateOpeningBalanceInputSchema,
+  type CashRegisterDetailsResponse,
 } from "shared";
 
 import { getServerApiUrl } from "./api";
@@ -55,6 +57,21 @@ export async function fetchCashRegisterToday(cookieHeader: string) {
   }
 
   return cashRegisterResponseSchema.parse(JSON.parse(text));
+}
+
+export async function fetchCashRegisterDetails(
+  cookieHeader: string,
+): Promise<CashRegisterDetailsResponse | null> {
+  const response = await fetch(`${getServerApiUrl()}/cash-register/today/details`, {
+    headers: { cookie: cookieHeader },
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    return null;
+  }
+
+  return cashRegisterDetailsResponseSchema.parse(await response.json());
 }
 
 export async function fetchFinanceSummary(

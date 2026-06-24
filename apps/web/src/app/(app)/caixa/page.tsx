@@ -1,14 +1,9 @@
 import { cookies } from "next/headers";
 
-import { EmptyState } from "@/components/ui/empty-state";
-import { PageHeader } from "@/components/ui/page-header";
 import { requireUser } from "@/lib/auth";
-import { fetchCashRegisterToday, fetchDashboard, fetchExpenses } from "@/lib/finance";
-import { paymentMethodValues } from "shared";
+import { fetchCashRegisterDetails } from "@/lib/finance";
 
-import { CashUi, type PaymentSummary } from "./cash-ui";
-
-type PaymentMethod = (typeof paymentMethodValues)[number];
+import { CashUi } from "./cash-ui";
 
 export default async function CaixaPage() {
   await requireUser();
@@ -17,39 +12,15 @@ export default async function CaixaPage() {
     .getAll()
     .map((cookie) => `${cookie.name}=${cookie.value}`)
     .join("; ");
+  const details = await fetchCashRegisterDetails(cookieHeader);
 
-  const cashRegister = await fetchCashRegisterToday(cookieHeader);
-
-  if (!cashRegister) {
+  if (!details) {
     return (
       <section className="space-y-6">
-        <PageHeader eyebrow="Operacao" title="Caixa de hoje" />
-        <EmptyState
-          title="Nenhuma venda registrada hoje"
-          description="O caixa abre na primeira venda."
-        />
+        <p className="text-base text-[var(--muted)]">Nao foi possivel carregar o caixa.</p>
       </section>
     );
   }
 
-  const [dashboard, expenses] = await Promise.all([
-    fetchDashboard(cookieHeader),
-    fetchExpenses({ cookieHeader, startDate: cashRegister.date, endDate: cashRegister.date }),
-  ]);
-
-  const summary: PaymentSummary[] = paymentMethodValues.map((method: PaymentMethod) => {
-    const salesCents =
-      dashboard.totalsByPaymentMethod.find((total) => total.method === method)?.amountCents ?? 0;
-    const expensesCents = expenses
-      .filter((expense) => expense.paymentMethod === method)
-      .reduce((sum, expense) => sum + expense.amountCents, 0);
-    const expectedCents =
-      method === "CASH"
-        ? cashRegister.openingBalanceCents + salesCents - expensesCents
-        : salesCents - expensesCents;
-
-    return { method, salesCents, expensesCents, expectedCents };
-  });
-
-  return <CashUi cashRegister={cashRegister} summary={summary} />;
+  return <CashUi details={details} />;
 }
