@@ -61,12 +61,24 @@ const recentSaleSchema = z.object({
   createdAt: isoDatetimeStringSchema,
 });
 
+export const pendingDeliveryItemSchema = z.object({
+  id: z.string().uuid(),
+  customerName: z.string().nullable(),
+  customerPhone: z.string().nullable(),
+  customerAddress: z.string().nullable(),
+  driverName: z.string().nullable(),
+  totalAmountCents: nonNegativeAmountCentsSchema,
+  paymentMethod: z.enum(paymentMethodValues),
+  createdAt: isoDatetimeStringSchema,
+});
+
 export const dashboardResponseSchema = z.object({
   todayRevenueCents: nonNegativeAmountCentsSchema,
   todaySalesCount: z.number().int().min(0),
   totalsByPaymentMethod: z.array(paymentMethodTotalSchema),
   lowStockProducts: z.array(lowStockProductSchema),
   recentSales: z.array(recentSaleSchema),
+  pendingDeliveries: z.array(pendingDeliveryItemSchema),
 });
 
 export const cashRegisterCountsSchema = z.object({
@@ -148,6 +160,7 @@ export type UpdateExpenseInput = z.infer<typeof updateExpenseInputSchema>;
 export type ExpenseResponse = z.infer<typeof expenseResponseSchema>;
 export type ExpenseListResponse = z.infer<typeof expenseListResponseSchema>;
 export type DashboardResponse = z.infer<typeof dashboardResponseSchema>;
+export type PendingDeliveryItem = z.infer<typeof pendingDeliveryItemSchema>;
 export type CashRegisterResponse = z.infer<typeof cashRegisterResponseSchema>;
 export type CashRegisterCounts = z.infer<typeof cashRegisterCountsSchema>;
 export type UpdateOpeningBalanceInput = z.infer<typeof updateOpeningBalanceInputSchema>;

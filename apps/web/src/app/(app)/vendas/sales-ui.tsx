@@ -10,8 +10,10 @@ import {
   paymentMethodValues,
   type DriverResponse,
   type ProductResponse,
+  type SaleDetailResponse,
   type UserRole,
 } from "shared";
+import { PrintRecibo, printRecibo } from "@/components/recibo/print-recibo";
 
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -92,6 +94,7 @@ export function SalesUi({ products, customers, drivers }: SalesUiProps) {
   const [isSearchingCustomers, setIsSearchingCustomers] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [lastSaleDetail, setLastSaleDetail] = useState<SaleDetailResponse | null>(null);
 
   const syncedCustomers = syncCustomersFromProps({
     customers,
@@ -177,6 +180,7 @@ export function SalesUi({ products, customers, drivers }: SalesUiProps) {
     });
     setError(null);
     setSuccessMessage(null);
+    setLastSaleDetail(null);
   }
 
   function updateCartQuantity(productId: string, nextValue: string) {
@@ -279,6 +283,7 @@ export function SalesUi({ products, customers, drivers }: SalesUiProps) {
     }
 
     setError(null);
+    setLastSaleDetail(null);
     setIsSavingSale(true);
 
     try {
@@ -306,6 +311,16 @@ export function SalesUi({ products, customers, drivers }: SalesUiProps) {
       if (!response.ok) {
         setError(await getResponseMessage(response, "Nao foi possivel finalizar a venda."));
         return;
+      }
+
+      const createdSale = await response.json().catch(() => null) as { id?: string } | null;
+
+      if (createdSale?.id) {
+        const detailResponse = await fetch(`/api/sales/${createdSale.id}`);
+        if (detailResponse.ok) {
+          const detail = await detailResponse.json() as SaleDetailResponse;
+          setLastSaleDetail(detail);
+        }
       }
 
       const paymentLabel = paymentMethodLabels[paymentMethod];
@@ -337,7 +352,21 @@ export function SalesUi({ products, customers, drivers }: SalesUiProps) {
 
       {error ? <Alert variant="danger">{error}</Alert> : null}
 
-      {successMessage ? <Alert variant="success">{successMessage}</Alert> : null}
+      {successMessage && lastSaleDetail ? (
+        <div className="space-y-2">
+          <Alert variant="success">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <span>{successMessage}</span>
+              <Button className="no-print" variant="secondary" onClick={printRecibo}>
+                Imprimir recibo
+              </Button>
+            </div>
+          </Alert>
+          <PrintRecibo sale={lastSaleDetail} />
+        </div>
+      ) : successMessage ? (
+        <Alert variant="success">{successMessage}</Alert>
+      ) : null}
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(340px,380px)]">
         <div className="space-y-6">

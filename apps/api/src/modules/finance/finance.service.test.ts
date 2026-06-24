@@ -29,6 +29,7 @@ function createRepository() {
     softDeleteExpense: vi.fn(),
     getFinanceSummary: vi.fn(),
     getExpectedCashTotals: vi.fn(),
+    getPendingDeliveries: vi.fn(),
   };
 }
 
@@ -80,9 +81,34 @@ describe("FinanceService", () => {
       recentSales: [],
     };
     repository.getDashboardData.mockResolvedValueOnce(dashboard);
+    repository.getPendingDeliveries.mockResolvedValueOnce([
+      {
+        id: "44444444-4444-4444-8444-444444444444",
+        customer: { id: "55555555-5555-4555-8555-555555555555", name: "Maria", phone: "11999999999", address: "Rua A, 10" },
+        driver: { id: "66666666-6666-4666-8666-666666666666", name: "Joao" },
+        totalAmountCents: 3600,
+        paymentMethod: "CASH",
+        createdAt: new Date("2026-06-20T11:00:00.000Z"),
+      },
+    ]);
 
-    await expect(service.getDashboardData()).resolves.toEqual(dashboard);
+    await expect(service.getDashboardData()).resolves.toEqual({
+      ...dashboard,
+      pendingDeliveries: [
+        {
+          id: "44444444-4444-4444-8444-444444444444",
+          customerName: "Maria",
+          customerPhone: "11999999999",
+          customerAddress: "Rua A, 10",
+          driverName: "Joao",
+          totalAmountCents: 3600,
+          paymentMethod: "CASH",
+          createdAt: "2026-06-20T11:00:00.000Z",
+        },
+      ],
+    });
     expect(repository.getDashboardData).toHaveBeenCalledWith(expect.any(Date));
+    expect(repository.getPendingDeliveries).toHaveBeenCalled();
   });
 
   it("getCashRegisterForToday returns null when no cash register exists", async () => {
