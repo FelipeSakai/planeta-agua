@@ -2,7 +2,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
-import type { DashboardResponse, UserRole } from "shared";
+import type { CashRegisterDetailsResponse, DashboardResponse, UserRole } from "shared";
 
 import { DashboardView } from "./page";
 
@@ -57,8 +57,30 @@ const emptyData: DashboardResponse = {
   pendingDeliveries: [],
 };
 
-function render(role: UserRole, data: DashboardResponse = sampleData) {
-  return renderToStaticMarkup(createElement(DashboardView, { data, userRole: role }));
+const cashDetails: CashRegisterDetailsResponse = {
+  cashRegister: {
+    id: "33333333-3333-4333-8333-333333333333",
+    date: "2026-06-24",
+    openingBalanceCents: 5000,
+    openedAt: "2026-06-24T08:00:00.000Z",
+    openedByUserId: "11111111-1111-4111-8111-111111111111",
+    closedAt: null,
+    closedByUserId: null,
+    counts: {},
+  },
+  todaySales: [],
+  todayExpenses: [],
+  totalsByPaymentMethod: [
+    { method: "CASH", salesCents: 4200, expensesCents: 1000 },
+    { method: "PIX", salesCents: 8390, expensesCents: 0 },
+  ],
+  totalSalesCents: 12590,
+  totalExpensesCents: 1000,
+  expectedCashCents: 8200,
+};
+
+function render(role: UserRole, data: DashboardResponse = sampleData, details: CashRegisterDetailsResponse | null = cashDetails) {
+  return renderToStaticMarkup(createElement(DashboardView, { data, userRole: role, userName: "Operador", cashDetails: details }));
 }
 
 describe("DashboardView", () => {
@@ -80,6 +102,16 @@ describe("DashboardView", () => {
 
     expect(html).toContain("Vendas hoje");
     expect(html).toContain("3");
+  });
+
+  it("shows cash register status in the first dashboard fold", () => {
+    const html = render("ADMIN");
+
+    expect(html).toContain("Caixa de hoje");
+    expect(html).toContain("Aberto");
+    expect(html).toContain("R$ 125,90");
+    expect(html).toContain("Saldo esperado");
+    expect(html).toContain("R$ 82,00");
   });
 
   it("renders low stock count with warning tone when there are alerts", () => {

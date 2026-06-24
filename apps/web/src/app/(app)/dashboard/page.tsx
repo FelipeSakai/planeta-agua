@@ -1,16 +1,18 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { MetricCard } from "@/components/ui/metric-card";
 import { PageHeader } from "@/components/ui/page-header";
 import { Panel } from "@/components/ui/panel";
 import { requireUser } from "@/lib/auth";
-import { fetchDashboard } from "@/lib/finance";
+import { fetchCashRegisterDetails, fetchDashboard } from "@/lib/finance";
 import {
   formatCentsToBRL,
   paymentMethodValues,
+  type CashRegisterDetailsResponse,
   type DashboardResponse,
   type UserRole,
 } from "shared";
@@ -43,15 +45,26 @@ export default async function DashboardPage() {
     .getAll()
     .map((cookie) => `${cookie.name}=${cookie.value}`)
     .join("; ");
-  const data = await fetchDashboard(cookieHeader);
+  const [data, cashDetails] = await Promise.all([
+    fetchDashboard(cookieHeader),
+    fetchCashRegisterDetails(cookieHeader),
+  ]);
 
-  return <DashboardView data={data} userRole={user.role} />;
+  return <DashboardView data={data} userRole={user.role} userName={user.name} cashDetails={cashDetails} />;
 }
 
 export function DashboardView({
   data,
   userRole,
-}: Readonly<{ data: DashboardResponse; userRole: UserRole }>) {
+  userName,
+  cashDetails,
+}: Readonly<{
+  data: DashboardResponse;
+  userRole: UserRole;
+  userName: string | null;
+  cashDetails: CashRegisterDetailsResponse | null;
+}>) {
+  void userName;
   const canOpenStock = userRole === "ADMIN";
   const lowStockCount = data.lowStockProducts.length;
   const lowStockTone = lowStockCount > 0 ? ("warning" as const) : ("success" as const);
@@ -59,6 +72,15 @@ export function DashboardView({
     lowStockCount > 0
       ? `${lowStockCount} produto${lowStockCount > 1 ? "s" : ""} abaixo do minimo`
       : "Nenhum produto abaixo do minimo";
+  const cashRegisterStatus = cashDetails?.cashRegister?.closedAt
+    ? "Fechado"
+    : cashDetails?.cashRegister
+      ? "Aberto"
+      : "Nao aberto";
+  const cashStatusTone = cashRegisterStatus === "Aberto" ? ("success" as const) : ("warning" as const);
+  const cashSalesCents = cashDetails?.totalSalesCents ?? 0;
+  const cashExpensesCents = cashDetails?.totalExpensesCents ?? 0;
+  const expectedCashCents = cashDetails?.expectedCashCents ?? 0;
 
   return (
     <section className="space-y-6">
@@ -91,6 +113,21 @@ export function DashboardView({
           tone={lowStockTone}
         />
       </div>
+
+      <Panel className="p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h2 className="text-base font-semibold text-[var(--foreground)]">Caixa de hoje</h2>
+            <p className="mt-1 text-sm text-[var(--muted)]">
+              Vendas {formatCentsToBRL(cashSalesCents)} · Despesas {formatCentsToBRL(cashExpensesCents)}
+            </p>
+          </div>
+          <Badge variant={cashStatusTone}>{cashRegisterStatus}</Badge>
+        </div>
+        <p className="mt-3 text-sm font-medium text-[var(--foreground)]">
+          Saldo esperado: {formatCentsToBRL(expectedCashCents)}
+        </p>
+      </Panel>
 
       {data.pendingDeliveries.length > 0 ? (
         <Panel className="p-4">
