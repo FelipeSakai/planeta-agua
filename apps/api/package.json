@@ -14,7 +14,7 @@
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "db:seed": "tsx scripts/seed-admin.ts"
+    "db:seed": "tsx scripts/seed-dev.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.9",
