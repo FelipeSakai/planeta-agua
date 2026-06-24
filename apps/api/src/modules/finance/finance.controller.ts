@@ -37,6 +37,12 @@ export class FinanceController {
     return this.financeService.getCashRegisterForToday();
   }
 
+  @Get("cash-register/today/details")
+  async cashRegisterDetails(@Req() request: Request) {
+    await requireRequestUser(request, this.authService);
+    return this.financeService.getCashRegisterDetailsForToday();
+  }
+
   @Post("cash-register/today/opening-balance")
   async updateOpeningBalance(@Req() request: Request, @Body() body: unknown) {
     const user = await requireRequestUser(request, this.authService);

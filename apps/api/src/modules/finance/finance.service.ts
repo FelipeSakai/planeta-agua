@@ -2,6 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from "@nestjs/comm
 import {
   closeCashRegisterInputSchema,
   createExpenseInputSchema,
+  paymentMethodValues,
   updateExpenseInputSchema,
   updateOpeningBalanceInputSchema,
   type SessionUser,
@@ -35,6 +36,54 @@ export class FinanceService {
   async getCashRegisterForToday() {
     const row = await this.financeRepository.getCashRegisterForDate(todayDateString());
     return row ? this.toCashRegisterResponse(row) : null;
+  }
+
+  async getCashRegisterDetailsForToday() {
+    const now = new Date();
+    const today = todayDateString();
+    const cashRegister = await this.financeRepository.getCashRegisterForDate(today);
+
+    const todaySales = await this.financeRepository.getTodaySalesDetailed(now);
+    const todayExpenses = await this.financeRepository.getTodayExpensesDetailed(now);
+
+    const totalsByPaymentMethod = paymentMethodValues.map((method) => {
+      const methodSales = todaySales.filter((s) => s.paymentMethod === method);
+      const methodExpenses = todayExpenses.filter((e) => e.paymentMethod === method);
+      return {
+        method,
+        salesCents: methodSales.reduce((sum, s) => sum + s.totalAmountCents, 0),
+        expensesCents: methodExpenses.reduce((sum, e) => sum + e.amountCents, 0),
+      };
+    });
+
+    const totalSalesCents = todaySales.reduce((sum, s) => sum + s.totalAmountCents, 0);
+    const totalExpensesCents = todayExpenses.reduce((sum, e) => sum + e.amountCents, 0);
+    const openingBalance = cashRegister?.openingBalanceCents ?? 0;
+    const cashSales = totalsByPaymentMethod.find((t) => t.method === "CASH")?.salesCents ?? 0;
+    const cashExpenses = totalsByPaymentMethod.find((t) => t.method === "CASH")?.expensesCents ?? 0;
+    const expectedCashCents = openingBalance + cashSales - cashExpenses;
+
+    return {
+      cashRegister: cashRegister ? this.toCashRegisterResponse(cashRegister) : null,
+      todaySales: todaySales.map((s) => ({
+        id: s.id,
+        customerName: s.customer?.name ?? null,
+        totalAmountCents: s.totalAmountCents,
+        paymentMethod: s.paymentMethod,
+        createdAt: s.createdAt.toISOString(),
+      })),
+      todayExpenses: todayExpenses.map((e) => ({
+        id: e.id,
+        description: e.description,
+        amountCents: e.amountCents,
+        paymentMethod: e.paymentMethod,
+        category: e.category,
+      })),
+      totalsByPaymentMethod,
+      totalSalesCents,
+      totalExpensesCents,
+      expectedCashCents,
+    };
   }
 
   async ensureCashRegisterForToday(userId: string) {

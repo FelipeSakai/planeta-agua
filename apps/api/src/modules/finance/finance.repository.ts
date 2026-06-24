@@ -169,4 +169,37 @@ export class FinanceRepository {
       return { method, expected, salesCents, expensesCents };
     });
   }
+
+  async getTodaySalesDetailed(date: Date) {
+    const startOfDay = new Date(date);
+    startOfDay.setUTCHours(0, 0, 0, 0);
+    const endOfDay = new Date(date);
+    endOfDay.setUTCHours(23, 59, 59, 999);
+
+    return db.query.sales.findMany({
+      where: and(
+        gte(sales.createdAt, startOfDay),
+        lte(sales.createdAt, endOfDay),
+        eq(sales.status, completedStatus),
+      ),
+      orderBy: [desc(sales.createdAt)],
+      with: { customer: { columns: { name: true } } },
+    });
+  }
+
+  async getTodayExpensesDetailed(date: Date) {
+    const startOfDay = new Date(date);
+    startOfDay.setUTCHours(0, 0, 0, 0);
+    const endOfDay = new Date(date);
+    endOfDay.setUTCHours(23, 59, 59, 999);
+
+    return db.query.expenses.findMany({
+      where: and(
+        gte(expenses.date, startOfDay),
+        lte(expenses.date, endOfDay),
+        eq(expenses.isDeleted, false),
+      ),
+      orderBy: [desc(expenses.date)],
+    });
+  }
 }

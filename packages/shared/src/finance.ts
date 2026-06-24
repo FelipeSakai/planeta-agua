@@ -86,6 +86,38 @@ export const cashRegisterResponseSchema = z.object({
   counts: z.record(z.string(), cashRegisterCountsSchema),
 });
 
+export const cashRegisterSaleItemSchema = z.object({
+  id: z.string().uuid(),
+  customerName: z.string().nullable(),
+  totalAmountCents: nonNegativeAmountCentsSchema,
+  paymentMethod: z.enum(paymentMethodValues),
+  createdAt: isoDatetimeStringSchema,
+});
+
+export const cashRegisterExpenseItemSchema = z.object({
+  id: z.string().uuid(),
+  description: z.string(),
+  amountCents: nonNegativeAmountCentsSchema,
+  paymentMethod: z.enum(paymentMethodValues).nullable(),
+  category: z.enum(expenseCategoryValues).nullable(),
+});
+
+export const cashRegisterDetailsResponseSchema = z.object({
+  cashRegister: cashRegisterResponseSchema.nullable(),
+  todaySales: z.array(cashRegisterSaleItemSchema),
+  todayExpenses: z.array(cashRegisterExpenseItemSchema),
+  totalsByPaymentMethod: z.array(
+    z.object({
+      method: z.enum(paymentMethodValues),
+      salesCents: nonNegativeAmountCentsSchema,
+      expensesCents: nonNegativeAmountCentsSchema,
+    }),
+  ),
+  totalSalesCents: nonNegativeAmountCentsSchema,
+  totalExpensesCents: nonNegativeAmountCentsSchema,
+  expectedCashCents: z.number().int(),
+});
+
 export const updateOpeningBalanceInputSchema = z.object({
   openingBalanceCents: nonNegativeAmountCentsSchema,
 });
@@ -121,3 +153,6 @@ export type CashRegisterCounts = z.infer<typeof cashRegisterCountsSchema>;
 export type UpdateOpeningBalanceInput = z.infer<typeof updateOpeningBalanceInputSchema>;
 export type CloseCashRegisterInput = z.infer<typeof closeCashRegisterInputSchema>;
 export type FinanceSummaryResponse = z.infer<typeof financeSummaryResponseSchema>;
+export type CashRegisterDetailsResponse = z.infer<typeof cashRegisterDetailsResponseSchema>;
+export type CashRegisterSaleItem = z.infer<typeof cashRegisterSaleItemSchema>;
+export type CashRegisterExpenseItem = z.infer<typeof cashRegisterExpenseItemSchema>;
