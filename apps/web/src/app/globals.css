@@ -29,6 +29,13 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --text-xs: 16px;
+  --text-sm: 18px;
+  --text-base: 21px;
+  --text-lg: 23px;
+  --text-xl: 28px;
+  --text-2xl: 36px;
+  --text-3xl: 52px;
 }
 
 * {
@@ -44,6 +51,8 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  font-size: 21px;
+  line-height: 1.5;
 }
 
 a {

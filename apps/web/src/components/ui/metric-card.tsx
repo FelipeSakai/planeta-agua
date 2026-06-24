@@ -27,8 +27,8 @@ export function MetricCard({
         <p className="text-sm text-[var(--muted)]">{label}</p>
         {tone !== "neutral" ? <Badge variant={tone}>{badgeLabels[tone]}</Badge> : null}
       </div>
-      <strong className="mt-2 block text-2xl font-semibold tracking-[-0.02em]">{value}</strong>
-      {detail ? <p className="mt-1 text-xs text-[var(--subtle)]">{detail}</p> : null}
+      <strong className="mt-2 block text-3xl font-semibold tracking-[-0.02em]">{value}</strong>
+      {detail ? <p className="mt-1 text-sm text-[var(--subtle)]">{detail}</p> : null}
     </Panel>
   );
 }

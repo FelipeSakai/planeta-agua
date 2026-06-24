@@ -33,7 +33,7 @@ const navigation: readonly NavigationItem[] = [
   { label: "Usuarios", href: "/usuarios", roles: ["ADMIN"] },
 ] as const;
 
-const navLinkBaseClassName = "rounded-xl px-3 py-2 text-sm font-medium";
+const navLinkBaseClassName = "rounded-xl px-3 py-2 text-base font-medium";
 const navLinkActiveClassName = `${navLinkBaseClassName} bg-[var(--brand)] text-white`;
 const navLinkInactiveClassName = `${navLinkBaseClassName} text-[var(--muted)] transition duration-150 hover:bg-[var(--card-muted)] hover:text-[var(--foreground)] motion-reduce:transition-none`;
 
