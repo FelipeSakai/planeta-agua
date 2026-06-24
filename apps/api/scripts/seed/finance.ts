@@ -28,7 +28,7 @@ export async function seedFinance(): Promise<void> {
   await db.insert(cashRegisters).values(cashRegistersData);
 
   const expensesData: (typeof expenses.$inferInsert)[] = [];
-  const categories = ["Combustivel", "Manutencao", "Material de escritorio", "Alimentacao", "Outros"];
+  const categories = ["MARMITA", "GASOLINA", "MANUTENCAO", "OUTRO"] as const;
   const paymentMethods = ["CASH", "PIX", "CREDIT_CARD", "DEBIT_CARD"] as const;
 
   for (let i = 0; i < 20; i++) {
