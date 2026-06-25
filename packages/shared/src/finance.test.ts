@@ -74,6 +74,7 @@ describe("shared finance contracts", () => {
       recentSales: [
         { id: "s1", customerName: "Maria", totalAmountCents: 1800, paymentMethod: "PIX", status: "COMPLETED", createdAt: "2026-06-20T10:00:00.000Z" },
       ],
+      pendingDeliveriesTotal: 12,
       pendingDeliveries: [
         {
           id: "11111111-1111-4111-8111-111111111111",
@@ -90,6 +91,7 @@ describe("shared finance contracts", () => {
 
     expect(parsed.todayRevenueCents).toBe(18000);
     expect(parsed.lowStockProducts).toHaveLength(1);
+    expect(parsed.pendingDeliveriesTotal).toBe(12);
     expect(parsed.pendingDeliveries).toHaveLength(1);
   });
 

@@ -103,7 +103,7 @@ export function DashboardView({
               href="/caixa"
               className="inline-flex min-h-10 items-center rounded-[var(--radius-control)] border border-white/20 px-4 text-sm font-medium text-white transition hover:bg-white/10"
             >
-              Abrir caixa
+              Ver caixa
             </Link>
             <Link
               href="/produtos"
@@ -117,7 +117,7 @@ export function DashboardView({
         <Panel className="p-4">
           <h2 className="text-base font-semibold text-[var(--foreground)]">Pendencias agora</h2>
           <div className="mt-4 grid gap-3">
-            <OperationalStatusRow label="Entregas pendentes" value={data.pendingDeliveries.length} href="/entregas" />
+            <OperationalStatusRow label="Entregas pendentes" value={data.pendingDeliveriesTotal} href="/entregas" />
             <OperationalStatusRow label="Estoque critico" value={lowStockCount} href={canOpenStock ? "/estoque" : undefined} />
             <OperationalStatusRow label="Caixa" value={cashRegisterStatus} href="/caixa" />
           </div>
@@ -132,9 +132,9 @@ export function DashboardView({
         />
         <MetricCard
           label="Entregas pendentes"
-          value={data.pendingDeliveries.length}
+          value={data.pendingDeliveriesTotal}
           detail="Aguardando confirmacao"
-          tone={data.pendingDeliveries.length > 0 ? "warning" : "success"}
+          tone={data.pendingDeliveriesTotal > 0 ? "warning" : "success"}
         />
         <MetricCard
           label="Estoque critico"

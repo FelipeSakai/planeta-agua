@@ -34,6 +34,7 @@ const sampleData: DashboardResponse = {
       createdAt: "2026-06-20T11:30:00.000Z",
     },
   ],
+  pendingDeliveriesTotal: 12,
   pendingDeliveries: [
     {
       id: "11111111-1111-4111-8111-111111111111",
@@ -54,6 +55,7 @@ const emptyData: DashboardResponse = {
   totalsByPaymentMethod: [],
   lowStockProducts: [],
   recentSales: [],
+  pendingDeliveriesTotal: 0,
   pendingDeliveries: [],
 };
 
@@ -96,7 +98,7 @@ describe("DashboardView", () => {
     const html = render("ADMIN");
 
     expect(html).toContain("Ver entregas");
-    expect(html).toContain("Abrir caixa");
+    expect(html).toContain("Ver caixa");
     expect(html).toContain("Produtos");
   });
 
@@ -209,6 +211,12 @@ describe("DashboardView", () => {
     expect(html).toContain("Maria Souza");
     expect(html).toContain("Rua A, 10");
     expect(html).toContain('href="/entregas"');
+  });
+
+  it("shows the total pending delivery count instead of the capped list length", () => {
+    const html = render("ADMIN");
+
+    expect(html).toContain("12");
   });
 
   it("shows stock shortcut for admins", () => {

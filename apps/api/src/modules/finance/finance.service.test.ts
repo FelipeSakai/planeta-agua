@@ -81,19 +81,23 @@ describe("FinanceService", () => {
       recentSales: [],
     };
     repository.getDashboardData.mockResolvedValueOnce(dashboard);
-    repository.getPendingDeliveries.mockResolvedValueOnce([
-      {
-        id: "44444444-4444-4444-8444-444444444444",
-        customer: { id: "55555555-5555-4555-8555-555555555555", name: "Maria", phone: "11999999999", address: "Rua A, 10" },
-        driver: { id: "66666666-6666-4666-8666-666666666666", name: "Joao" },
-        totalAmountCents: 3600,
-        paymentMethod: "CASH",
-        createdAt: new Date("2026-06-20T11:00:00.000Z"),
-      },
-    ]);
+    repository.getPendingDeliveries.mockResolvedValueOnce({
+      total: 12,
+      items: [
+        {
+          id: "44444444-4444-4444-8444-444444444444",
+          customer: { id: "55555555-5555-4555-8555-555555555555", name: "Maria", phone: "11999999999", address: "Rua A, 10" },
+          driver: { id: "66666666-6666-4666-8666-666666666666", name: "Joao" },
+          totalAmountCents: 3600,
+          paymentMethod: "CASH",
+          createdAt: new Date("2026-06-20T11:00:00.000Z"),
+        },
+      ],
+    });
 
     await expect(service.getDashboardData()).resolves.toEqual({
       ...dashboard,
+      pendingDeliveriesTotal: 12,
       pendingDeliveries: [
         {
           id: "44444444-4444-4444-8444-444444444444",

@@ -78,6 +78,7 @@ export const dashboardResponseSchema = z.object({
   totalsByPaymentMethod: z.array(paymentMethodTotalSchema),
   lowStockProducts: z.array(lowStockProductSchema),
   recentSales: z.array(recentSaleSchema),
+  pendingDeliveriesTotal: z.number().int().min(0),
   pendingDeliveries: z.array(pendingDeliveryItemSchema),
 });
 

@@ -1,7 +1,7 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 
 import { closeDb, db } from "../../db";
-import { cashRegisters, expenses, products, sales, saleItems, sessions, stockMovements, users } from "../../db/schema";
+import { cashRegisters, customerBottles, expenses, products, sales, saleItems, sessions, stockMovements, users } from "../../db/schema";
 import { FinanceRepository } from "./finance.repository";
 
 describe("FinanceRepository", () => {
@@ -9,6 +9,7 @@ describe("FinanceRepository", () => {
 
   beforeEach(async () => {
     await db.delete(sessions);
+    await db.delete(customerBottles);
     await db.delete(stockMovements);
     await db.delete(saleItems);
     await db.delete(sales);
@@ -118,6 +119,24 @@ describe("FinanceRepository", () => {
     expect(data.todaySalesCount).toBe(1);
     expect(data.lowStockProducts).toHaveLength(1);
     expect(data.recentSales).toHaveLength(1);
+  });
+
+  it("returns pending deliveries total separately from the capped latest list", async () => {
+    const [user] = await db.insert(users).values({ name: "Op", email: "op-pending@p.local", passwordHash: "h", role: "OPERATOR" }).returning();
+    await db.insert(sales).values(
+      Array.from({ length: 12 }, (_, index) => ({
+        userId: user.id,
+        totalAmountCents: 1800,
+        paymentMethod: "CASH" as const,
+        status: "PENDING_DELIVERY" as const,
+        createdAt: new Date(`2026-06-20T12:${String(index).padStart(2, "0")}:00Z`),
+      })),
+    );
+
+    const data = await repository.getPendingDeliveries();
+
+    expect(data.total).toBe(12);
+    expect(data.items).toHaveLength(10);
   });
 
   it("returns finance summary for a period", async () => {

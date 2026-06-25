@@ -35,7 +35,8 @@ export class FinanceService {
 
     return {
       ...data,
-      pendingDeliveries: pendingDeliveries.map((sale) => ({
+      pendingDeliveriesTotal: pendingDeliveries.total,
+      pendingDeliveries: pendingDeliveries.items.map((sale) => ({
         id: sale.id,
         customerName: sale.customer?.name ?? null,
         customerPhone: sale.customer?.phone ?? null,
