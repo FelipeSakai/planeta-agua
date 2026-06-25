@@ -42,13 +42,13 @@ describe("app shell navigation", () => {
   it("hides admin-only entries from operators", () => {
     const items = getVisibleNavigation("OPERATOR").map((item) => item.label);
 
-    expect(items).toEqual(["Dashboard", "Nova Venda", "Historico", "Entregas", "Caixa", "Produtos", "Clientes", "Entregadores", "Financeiro"]);
+    expect(items).toEqual(["Dashboard", "Nova Venda", "Historico", "Entregas", "Caixa", "Produtos", "Clientes", "Equipe", "Financeiro"]);
   });
 
   it("shows all entries to admins", () => {
     const items = getVisibleNavigation("ADMIN").map((item) => item.label);
 
-    expect(items).toEqual(["Dashboard", "Nova Venda", "Historico", "Entregas", "Caixa", "Produtos", "Clientes", "Entregadores", "Estoque", "Financeiro", "Usuarios"]);
+    expect(items).toEqual(["Dashboard", "Nova Venda", "Historico", "Entregas", "Caixa", "Produtos", "Clientes", "Equipe", "Estoque", "Financeiro"]);
   });
 
   it("renders a server-side mobile navigation menu for operators", () => {

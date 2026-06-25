@@ -30,10 +30,9 @@ const navigation: readonly NavigationItem[] = [
   { label: "Caixa", href: "/caixa", roles: ["ADMIN", "OPERATOR"] },
   { label: "Produtos", href: "/produtos", roles: ["ADMIN", "OPERATOR"] },
   { label: "Clientes", href: "/clientes", roles: ["ADMIN", "OPERATOR"] },
-  { label: "Entregadores", href: "/entregadores", roles: ["ADMIN", "OPERATOR"] },
+  { label: "Equipe", href: "/equipe", roles: ["ADMIN", "OPERATOR"] },
   { label: "Estoque", href: "/estoque", roles: ["ADMIN"] },
   { label: "Financeiro", href: "/financeiro/despesas", roles: ["ADMIN", "OPERATOR"] },
-  { label: "Usuarios", href: "/usuarios", roles: ["ADMIN"] },
 ] as const;
 
 const navLinkBaseClassName = "rounded-xl px-3 py-2 text-sm font-medium";
