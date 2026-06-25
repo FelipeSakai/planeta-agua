@@ -29,6 +29,14 @@ describe("app shell navigation", () => {
     expect(items.find((item) => item.href === "/produtos")?.isActive).toBe(false);
   });
 
+  it("marks team child routes under Equipe", () => {
+    const driverItems = getNavigationItems("OPERATOR", "/entregadores");
+    const userItems = getNavigationItems("ADMIN", "/usuarios");
+
+    expect(driverItems.find((item) => item.href === "/equipe")?.isActive).toBe(true);
+    expect(userItems.find((item) => item.href === "/equipe")?.isActive).toBe(true);
+  });
+
   it("keeps admin-only modules hidden from operators", () => {
     const items = getNavigationItems("OPERATOR", "/caixa");
 

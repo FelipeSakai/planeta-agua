@@ -16,6 +16,7 @@ type NavigationItem = {
   label: string;
   href: string;
   roles: readonly UserRole[];
+  activeHrefs?: readonly string[];
 };
 
 type NavigationItemWithState = NavigationItem & {
@@ -30,7 +31,7 @@ const navigation: readonly NavigationItem[] = [
   { label: "Caixa", href: "/caixa", roles: ["ADMIN", "OPERATOR"] },
   { label: "Produtos", href: "/produtos", roles: ["ADMIN", "OPERATOR"] },
   { label: "Clientes", href: "/clientes", roles: ["ADMIN", "OPERATOR"] },
-  { label: "Equipe", href: "/equipe", roles: ["ADMIN", "OPERATOR"] },
+  { label: "Equipe", href: "/equipe", roles: ["ADMIN", "OPERATOR"], activeHrefs: ["/entregadores", "/usuarios"] },
   { label: "Estoque", href: "/estoque", roles: ["ADMIN"] },
   { label: "Financeiro", href: "/financeiro/despesas", roles: ["ADMIN", "OPERATOR"] },
 ] as const;
@@ -46,7 +47,7 @@ export function getVisibleNavigation(role: UserRole) {
 export function getNavigationItems(role: UserRole, pathname: string): NavigationItemWithState[] {
   return getVisibleNavigation(role).map((item) => ({
     ...item,
-    isActive: pathname === item.href || pathname.startsWith(`${item.href}/`),
+    isActive: [item.href, ...(item.activeHrefs ?? [])].some((href) => pathname === href || pathname.startsWith(`${href}/`)),
   }));
 }
 
