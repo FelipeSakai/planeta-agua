@@ -193,6 +193,15 @@ describe("DashboardView", () => {
     expect(html).toContain('href="/vendas"');
   });
 
+  it("renders the sale action as a styled link without a nested button", () => {
+    const html = render("ADMIN");
+    const saleAction = html.match(/<a[^>]+href="\/vendas"[^>]*>.*?Comecar venda.*?<\/a>/)?.[0] ?? "";
+
+    expect(saleAction).toContain("Comecar venda");
+    expect(saleAction).toContain("inline-flex");
+    expect(saleAction).not.toContain("<button");
+  });
+
   it("renders pending deliveries with a link to deliveries page", () => {
     const html = render("ADMIN");
 

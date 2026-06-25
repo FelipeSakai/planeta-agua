@@ -2,7 +2,6 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { MetricCard } from "@/components/ui/metric-card";
 import { Panel } from "@/components/ui/panel";
@@ -88,10 +87,11 @@ export function DashboardView({
             </p>
           </div>
           <div className="mt-6 flex flex-wrap gap-2">
-            <Link href="/vendas">
-              <Button type="button" variant="secondary">
-                Comecar venda
-              </Button>
+            <Link
+              href="/vendas"
+              className="inline-flex min-h-10 items-center justify-center rounded-[var(--radius-control)] border border-[var(--border)] bg-white px-4 py-2 text-sm font-medium text-[var(--foreground)] transition duration-150 hover:bg-[var(--card-muted)]"
+            >
+              Comecar venda
             </Link>
             <Link
               href="/entregas"
