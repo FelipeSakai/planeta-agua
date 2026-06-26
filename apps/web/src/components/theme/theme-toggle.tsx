@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 
 import { Button } from "@/components/ui/button";
 
 type Theme = "light" | "dark";
 
 const storageKey = "planeta-agua-theme";
+const themeChangeEvent = "planeta-agua-theme-change";
 
 function applyTheme(theme: Theme) {
   document.documentElement.dataset.theme = theme;
@@ -20,20 +21,37 @@ function getStoredTheme(): Theme {
   return window.localStorage.getItem(storageKey) === "dark" ? "dark" : "light";
 }
 
+function subscribeToTheme(onThemeChange: () => void) {
+  function handleStorage(event: StorageEvent) {
+    if (event.key === storageKey) {
+      onThemeChange();
+    }
+  }
+
+  window.addEventListener("storage", handleStorage);
+  window.addEventListener(themeChangeEvent, onThemeChange);
+
+  return () => {
+    window.removeEventListener("storage", handleStorage);
+    window.removeEventListener(themeChangeEvent, onThemeChange);
+  };
+}
+
+function getServerTheme(): Theme {
+  return "light";
+}
+
 export function ThemeToggle() {
-  const [theme, setTheme] = useState<Theme>("light");
+  const theme = useSyncExternalStore(subscribeToTheme, getStoredTheme, getServerTheme);
 
   useEffect(() => {
-    const storedTheme = getStoredTheme();
-    setTheme(storedTheme);
-    applyTheme(storedTheme);
-  }, []);
+    applyTheme(theme);
+  }, [theme]);
 
   function handleToggle() {
     const nextTheme = theme === "dark" ? "light" : "dark";
-    setTheme(nextTheme);
     window.localStorage.setItem(storageKey, nextTheme);
-    applyTheme(nextTheme);
+    window.dispatchEvent(new Event(themeChangeEvent));
   }
 
   return (
