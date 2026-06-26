@@ -9,7 +9,8 @@ describe("ThemeToggle", () => {
     const html = renderToStaticMarkup(createElement(ThemeToggle));
 
     expect(html).toContain("button");
-    expect(html).toContain("Tema");
-    expect(html).toContain("aria-label");
+    expect(html).toContain("Tema: Claro");
+    expect(html).toContain('aria-label="Tema claro. Alternar tema."');
+    expect(html).toContain("bg-[var(--card)]");
   });
 });

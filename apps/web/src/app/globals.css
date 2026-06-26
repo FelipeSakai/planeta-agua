@@ -11,6 +11,9 @@
   --surface-raised: #ffffff;
   --hero-surface: #0c5f86;
   --hero-surface-muted: #e6f5fb;
+  --hero-action: #ffffff;
+  --hero-action-hover: #edf4f8;
+  --hero-action-foreground: #102033;
   --border: #d6e2ea;
   --border-soft: #e7eef3;
   --brand: #0877a8;
@@ -40,6 +43,9 @@
   --surface-raised: #13293b;
   --hero-surface: #07334a;
   --hero-surface-muted: #10283a;
+  --hero-action: #edf7ff;
+  --hero-action-hover: #cfeeff;
+  --hero-action-foreground: #07131f;
   --border: #274257;
   --border-soft: #1d3548;
   --brand: #4bb8e8;

@@ -89,7 +89,7 @@ export function DashboardView({
           <div className="mt-6 flex flex-wrap gap-2">
             <Link
               href="/vendas"
-              className="inline-flex min-h-11 items-center justify-center rounded-[var(--radius-control)] border border-white/20 bg-[var(--surface-raised)] px-4 py-2 text-sm font-semibold text-[var(--foreground)] transition duration-150 hover:bg-[var(--card-muted)] motion-reduce:transition-none"
+              className="inline-flex min-h-11 items-center justify-center rounded-[var(--radius-control)] border border-white/30 bg-[var(--hero-action)] px-4 py-2 text-sm font-semibold text-[var(--hero-action-foreground)] transition duration-150 hover:bg-[var(--hero-action-hover)] motion-reduce:transition-none"
             >
               Comecar venda
             </Link>

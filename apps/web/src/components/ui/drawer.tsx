@@ -36,7 +36,7 @@ export function Drawer({ open, title, description, onClose, children, badge, cla
         aria-labelledby={titleId}
         aria-modal="true"
         className={cx(
-          "absolute inset-y-0 right-0 flex w-full max-w-2xl flex-col border-l border-[var(--border)] bg-white shadow-[0_20px_60px_rgba(16,32,51,0.18)] motion-reduce:transition-none motion-safe:transition-transform motion-safe:duration-200",
+          "absolute inset-y-0 right-0 flex w-full max-w-2xl flex-col border-l border-[var(--border)] bg-[var(--card)] shadow-[0_20px_60px_rgba(16,32,51,0.18)] motion-reduce:transition-none motion-safe:transition-transform motion-safe:duration-200",
           className,
         )}
         role="dialog"

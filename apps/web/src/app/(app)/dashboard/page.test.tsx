@@ -127,7 +127,9 @@ describe("DashboardView", () => {
 
     expect(html).toContain('href="/vendas"');
     expect(html).toContain("Comecar venda");
-    expect(html).toContain("bg-[var(--surface-raised)]");
+    expect(html).toContain("bg-[var(--hero-action)]");
+    expect(html).toContain("text-[var(--hero-action-foreground)]");
+    expect(html).not.toContain("bg-[var(--surface-raised)]");
   });
 
   it("renders today revenue formatted in BRL", () => {

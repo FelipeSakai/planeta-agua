@@ -27,7 +27,7 @@ export function DataTable<T>({
   }
 
   return (
-    <div className="overflow-hidden rounded-[var(--radius-panel)] border border-[var(--border)] bg-white">
+    <div className="overflow-hidden rounded-[var(--radius-panel)] border border-[var(--border)] bg-[var(--card)]">
       <div className="hidden overflow-x-auto md:block">
         <table className="min-w-full border-collapse text-left text-sm">
           <thead className="bg-[var(--card-muted)] text-xs font-medium text-[var(--muted)]">
