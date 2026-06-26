@@ -115,6 +115,21 @@ describe("DashboardView", () => {
     expect(html).toContain("Pronto para vender");
   });
 
+  it("uses tokenized hero colors instead of foreground-as-background", () => {
+    const html = render("ADMIN");
+
+    expect(html).toContain("bg-[var(--hero-surface)]");
+    expect(html).not.toContain("bg-[var(--foreground)]");
+  });
+
+  it("keeps the sale CTA dominant in the top workbench", () => {
+    const html = render("ADMIN");
+
+    expect(html).toContain('href="/vendas"');
+    expect(html).toContain("Comecar venda");
+    expect(html).toContain("bg-[var(--surface-raised)]");
+  });
+
   it("renders today revenue formatted in BRL", () => {
     const html = render("ADMIN");
 

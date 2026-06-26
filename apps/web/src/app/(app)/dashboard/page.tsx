@@ -78,7 +78,7 @@ export function DashboardView({
   return (
     <section className="space-y-6">
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(360px,0.8fr)]">
-        <Panel className="flex min-h-56 flex-col justify-between bg-[var(--foreground)] p-6 text-white">
+        <Panel className="flex min-h-56 flex-col justify-between bg-[var(--hero-surface)] p-6 text-white">
           <div>
             <p className="text-sm text-white/70">{userName ? `Bom dia, ${userName}` : "Resumo do dia"}</p>
             <h1 className="mt-2 text-3xl font-semibold tracking-[-0.03em]">Pronto para vender</h1>
@@ -89,25 +89,25 @@ export function DashboardView({
           <div className="mt-6 flex flex-wrap gap-2">
             <Link
               href="/vendas"
-              className="inline-flex min-h-10 items-center justify-center rounded-[var(--radius-control)] border border-[var(--border)] bg-white px-4 py-2 text-sm font-medium text-[var(--foreground)] transition duration-150 hover:bg-[var(--card-muted)]"
+              className="inline-flex min-h-11 items-center justify-center rounded-[var(--radius-control)] border border-white/20 bg-[var(--surface-raised)] px-4 py-2 text-sm font-semibold text-[var(--foreground)] transition duration-150 hover:bg-[var(--card-muted)] motion-reduce:transition-none"
             >
               Comecar venda
             </Link>
             <Link
               href="/entregas"
-              className="inline-flex min-h-10 items-center rounded-[var(--radius-control)] border border-white/20 px-4 text-sm font-medium text-white transition hover:bg-white/10"
+              className="inline-flex min-h-10 items-center rounded-[var(--radius-control)] border border-white/20 px-4 text-sm font-medium text-white transition duration-150 hover:bg-white/10 motion-reduce:transition-none"
             >
               Ver entregas
             </Link>
             <Link
               href="/caixa"
-              className="inline-flex min-h-10 items-center rounded-[var(--radius-control)] border border-white/20 px-4 text-sm font-medium text-white transition hover:bg-white/10"
+              className="inline-flex min-h-10 items-center rounded-[var(--radius-control)] border border-white/20 px-4 text-sm font-medium text-white transition duration-150 hover:bg-white/10 motion-reduce:transition-none"
             >
               Ver caixa
             </Link>
             <Link
               href="/produtos"
-              className="inline-flex min-h-10 items-center rounded-[var(--radius-control)] border border-white/20 px-4 text-sm font-medium text-white transition hover:bg-white/10"
+              className="inline-flex min-h-10 items-center rounded-[var(--radius-control)] border border-white/20 px-4 text-sm font-medium text-white transition duration-150 hover:bg-white/10 motion-reduce:transition-none"
             >
               Produtos
             </Link>
@@ -323,7 +323,7 @@ function OperationalStatusRow({
   href?: string;
 }) {
   const content = (
-    <div className="flex items-center justify-between gap-3 rounded-[var(--radius-control)] border border-[var(--border-soft)] bg-[var(--card-muted)] px-3 py-2">
+    <div className="flex items-center justify-between gap-3 rounded-[var(--radius-control)] border border-[var(--border-soft)] bg-[var(--hero-surface-muted)] px-3 py-2 transition duration-150 hover:border-[var(--brand)] motion-reduce:transition-none">
       <span className="text-sm text-[var(--muted)]">{label}</span>
       <strong className="text-sm text-[var(--foreground)]">{value}</strong>
     </div>
