@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { useTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
+import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { Button } from "@/components/ui/button";
 import type { SessionUser, UserRole } from "shared";
 
@@ -83,7 +84,7 @@ export function AppShell({ user, children }: AppShellProps) {
 
   return (
     <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
-      <aside className="fixed inset-y-0 left-0 hidden w-64 border-r border-[var(--border)] bg-white p-4 lg:block">
+      <aside className="fixed inset-y-0 left-0 hidden w-64 border-r border-[var(--border)] bg-[var(--card)] p-4 lg:block">
         <div className="rounded-[var(--radius-panel)] bg-[var(--card-muted)] p-4">
           <strong className="block text-lg font-semibold tracking-[-0.02em]">Planeta Agua</strong>
           <span className="mt-1 block text-xs font-medium text-[var(--muted)]">{user.role}</span>
@@ -103,19 +104,22 @@ export function AppShell({ user, children }: AppShellProps) {
               <p className="text-sm font-medium">Planeta Agua</p>
               <p className="text-xs text-[var(--muted)]">{user.name}</p>
             </div>
-            <form action={handleLogout}>
-              <Button
-                className="motion-reduce:transition-none"
-                variant="secondary"
-                type="submit"
-                disabled={isPending}
-              >
-                {isPending ? "Saindo..." : "Sair"}
-              </Button>
-            </form>
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+              <form action={handleLogout}>
+                <Button
+                  className="motion-reduce:transition-none"
+                  variant="secondary"
+                  type="submit"
+                  disabled={isPending}
+                >
+                  {isPending ? "Saindo..." : "Sair"}
+                </Button>
+              </form>
+            </div>
           </div>
 
-          <details className="mt-4 rounded-[var(--radius-panel)] border border-[var(--border)] bg-white p-2 lg:hidden">
+          <details className="mt-4 rounded-[var(--radius-panel)] border border-[var(--border)] bg-[var(--card)] p-2 lg:hidden">
             <summary className="cursor-pointer rounded-[var(--radius-control)] px-3 py-2 text-sm font-medium text-[var(--foreground)]">Menu</summary>
             <nav className="mt-2 flex flex-col gap-1 border-t border-[var(--border-soft)] pt-2">
               {visibleNavigation.map((item) => (

@@ -78,6 +78,7 @@ describe("app shell navigation", () => {
     expect(html).toContain('href="/caixa"');
     expect(html).toContain('href="/financeiro/despesas"');
     expect(html).not.toContain('href="/usuarios"');
+    expect(html).toContain("Tema");
     expect(html).toContain("Sair");
   });
 
