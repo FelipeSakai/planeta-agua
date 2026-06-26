@@ -289,7 +289,7 @@ function filterTabClassName(isActive: boolean) {
     "inline-flex min-h-9 items-center justify-center rounded-[var(--radius-control)] px-3 py-1.5 text-sm font-medium transition duration-150",
     isActive
       ? "bg-[var(--brand)] text-white"
-      : "border border-[var(--border)] bg-white text-[var(--foreground)] hover:bg-[var(--card-muted)]",
+      : "border border-[var(--border)] bg-[var(--card)] text-[var(--foreground)] hover:bg-[var(--card-muted)]",
   ].join(" ");
 }
 

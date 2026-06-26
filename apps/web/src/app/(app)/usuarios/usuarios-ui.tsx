@@ -19,7 +19,7 @@ export function UsuariosUi() {
             Somente administradores podem acessar esta area. O cadastro completo de usuarios ainda nao foi implementado para manter o MVP focado em vendas, estoque e financeiro simples.
           </p>
           <Link
-            className="inline-flex min-h-10 items-center justify-center rounded-[var(--radius-control)] border border-[var(--border)] bg-white px-4 py-2 text-sm font-medium text-[var(--foreground)] transition duration-150 hover:bg-[var(--card-muted)]"
+            className="inline-flex min-h-10 items-center justify-center rounded-[var(--radius-control)] border border-[var(--border)] bg-[var(--card)] px-4 py-2 text-sm font-medium text-[var(--foreground)] transition duration-150 hover:bg-[var(--card-muted)]"
             href="/equipe"
           >
             Voltar para equipe
