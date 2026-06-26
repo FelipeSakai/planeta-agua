@@ -2,9 +2,7 @@ import { db } from "../../src/db";
 import { sales, saleItems } from "../../src/db/schema";
 import { customerIds } from "./customers";
 
-export async function seedSales(): Promise<void> {
-  console.log("Seeding sales...");
-
+export function buildSeedSales(now = new Date()) {
   const adminId = "11111111-1111-4111-8111-111111111111";
   const op1Id = "22222222-2222-4222-8222-222222222222";
   const op2Id = "33333333-3333-4333-8333-333333333333";
@@ -14,7 +12,6 @@ export async function seedSales(): Promise<void> {
   const agua500Id = "66666666-6666-4666-8666-666666666666";
   const agua1500Id = "77777777-7777-4777-8777-777777777777";
 
-  const now = new Date();
   const salesData: (typeof sales.$inferInsert)[] = [];
   const saleItemsData: (typeof saleItems.$inferInsert)[] = [];
 
@@ -57,6 +54,12 @@ export async function seedSales(): Promise<void> {
       totalAmountCents += 1000;
     }
 
+    if (items.length === 0) {
+      const fallbackItemSequence = 80000000 + i;
+      items.push({ id: `${String(fallbackItemSequence).padStart(8, "0")}-0000-4000-8000-${String(fallbackItemSequence).padStart(12, "0")}`, saleId, productId: agua500Id, productNameSnapshot: "Agua 500ml (fardo 12un)", quantity: 1, unitPriceCents: 1800, totalPriceCents: 1800, discountCents: null, finalUnitPriceCents: null });
+      totalAmountCents += 1800;
+    }
+
     salesData.push({
       id: saleId,
       customerId: custId,
@@ -76,6 +79,14 @@ export async function seedSales(): Promise<void> {
 
     saleItemsData.push(...items);
   }
+
+  return { salesData, saleItemsData };
+}
+
+export async function seedSales(): Promise<void> {
+  console.log("Seeding sales...");
+
+  const { salesData, saleItemsData } = buildSeedSales();
 
   await db.insert(sales).values(salesData);
   await db.insert(saleItems).values(saleItemsData);

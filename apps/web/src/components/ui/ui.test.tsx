@@ -125,6 +125,13 @@ describe("ui foundation", () => {
     expect(html).not.toContain(">OK<");
   });
 
+  it("does not keep the default white background when a panel receives a custom background", () => {
+    const html = renderToStaticMarkup(<Panel className="bg-[var(--foreground)] text-white">Hero</Panel>);
+
+    expect(html).toContain("bg-[var(--foreground)]");
+    expect(html).not.toContain("bg-white");
+  });
+
   it("renders toolbar and responsive data table", () => {
     const html = renderToStaticMarkup(
       <>
