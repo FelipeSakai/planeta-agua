@@ -134,6 +134,13 @@ describe("ui foundation", () => {
     expect(html).not.toContain("bg-white");
   });
 
+  it("uses tokenized secondary button surfaces", () => {
+    const html = renderToStaticMarkup(<Button variant="secondary">Tema</Button>);
+
+    expect(html).toContain("bg-[var(--card)]");
+    expect(html).not.toContain("bg-white");
+  });
+
   it("uses tone-specific metric badge labels", () => {
     const html = renderToStaticMarkup(<MetricCard label="Estoque baixo" value={3} tone="danger" />);
 
