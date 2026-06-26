@@ -118,6 +118,22 @@ describe("ui foundation", () => {
     expect(contrastRatio(subtle, "#ffffff")).toBeGreaterThanOrEqual(4.5);
   });
 
+  it("defines dark theme tokens for the app surface", () => {
+    const css = readFileSync("src/app/globals.css", "utf8");
+
+    expect(css).toContain('[data-theme="dark"]');
+    expect(css).toContain("--card:");
+    expect(css).toContain("--hero-surface:");
+    expect(css).toContain("color-scheme: dark");
+  });
+
+  it("uses tokenized panel surfaces by default", () => {
+    const html = renderToStaticMarkup(<Panel>Conteudo</Panel>);
+
+    expect(html).toContain("bg-[var(--card)]");
+    expect(html).not.toContain("bg-white");
+  });
+
   it("uses tone-specific metric badge labels", () => {
     const html = renderToStaticMarkup(<MetricCard label="Estoque baixo" value={3} tone="danger" />);
 

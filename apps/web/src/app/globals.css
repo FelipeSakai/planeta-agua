@@ -1,16 +1,21 @@
 @import "tailwindcss";
 
 :root {
+  color-scheme: light;
   --background: #f4f8fb;
   --foreground: #102033;
-  --muted: #5d7086;
-  --subtle: #5d7086;
+  --muted: #50667d;
+  --subtle: #50667d;
   --card: #ffffff;
   --card-muted: #edf4f8;
+  --surface-raised: #ffffff;
+  --hero-surface: #0c5f86;
+  --hero-surface-muted: #e6f5fb;
   --border: #d6e2ea;
   --border-soft: #e7eef3;
   --brand: #0877a8;
   --brand-strong: #075f86;
+  --brand-soft: #e6f5fb;
   --success: #0f7a4f;
   --success-soft: #e8f7ef;
   --warning: #a15c00;
@@ -22,6 +27,33 @@
   --radius-control: 10px;
   --radius-panel: 16px;
   --shadow-focus: 0 0 0 3px rgb(8 119 168 / 18%);
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  --background: #07131f;
+  --foreground: #edf7ff;
+  --muted: #9bb2c7;
+  --subtle: #8ba4ba;
+  --card: #0e2030;
+  --card-muted: #142b3d;
+  --surface-raised: #13293b;
+  --hero-surface: #07334a;
+  --hero-surface-muted: #10283a;
+  --border: #274257;
+  --border-soft: #1d3548;
+  --brand: #4bb8e8;
+  --brand-strong: #7fd2f2;
+  --brand-soft: #0d2f44;
+  --success: #68d69b;
+  --success-soft: #123625;
+  --warning: #f3bf5b;
+  --warning-soft: #3c2b11;
+  --danger: #ff9a8f;
+  --danger-soft: #3f1717;
+  --info: #8ed8ff;
+  --info-soft: #123246;
+  --shadow-focus: 0 0 0 3px rgb(75 184 232 / 24%);
 }
 
 @theme inline {
