@@ -80,3 +80,38 @@ Plugin Superpowers instalado no `.opencode/opencode.json`:
 Usar apenas como inspiracao metodologica: esclarecer objetivo, planejar pequenas entregas, verificar resultado e reduzir complexidade.
 
 Nao instalar outros plugins, skills externas ou alterar configuracoes globais sem pedido explicito do usuario.
+
+## Ferramentas De Desenvolvimento (Reducao De Token)
+
+Analise completa em `docs/superpowers/plans/2026-06-19-analise-ferramentas-token.md`.
+
+### Recomendada Instalar: codebase-memory-mcp
+
+- Repo: `https://github.com/DeusData/codebase-memory-mcp`.
+- Por que: binario unico, zero dependencias, suporte oficial ao OpenCode, indexa o codebase em grafo de conhecimento. Substitui dezenas de grep/read por 1 query MCP. 99% menos tokens para exploracao de codigo.
+- Custo: gratuito (MIT), 100% local, sem API key.
+- Install (Windows): baixar `codebase-memory-mcp-windows-amd64.zip` do releases, extrair, rodar `install.ps1`, reiniciar OpenCode.
+- Pos-indexacao: pedir "Index this project" ao agent. Habilitar `auto_index true`.
+- Usar para: entender call chains entre modules NestJS, dependencias de `schema.ts`, rotas HTTP, impactos de mudanca.
+
+### Opcional: Headroom
+
+- Repo: `https://github.com/chopratejas/headroom`.
+- Comprime tool outputs e historico antes de chegar ao LLM (60-95% menos tokens).
+- Custo: gratuito (Apache 2.0), local.
+- Ressalvas: requer Python 3.10+ + Rust no Windows; compatibilidade com OpenCode e indireta via proxy. So testar se codebase-memory-mcp + otimizacao de instrucoes nao forem suficientes.
+
+### Opcional: OpenSpec
+
+- Repo: `https://github.com/Fission-AI/OpenSpec`.
+- Spec-driven development com workflow `/opsx:propose` -> `/opsx:apply` -> `/opsx:archive`.
+- Custo: gratuito (MIT).
+- Ressalvas: overlap alto com Superpowers (writing-plans, executing-plans). So adotar se a persistencia de specs no repo for mais valiosa que o workflow atual. Testar como piloto em um projeto antes de padronizar.
+
+### Otimizacao De Instrucoes Auto-Carregadas (Sem Instalar Nada)
+
+O maior ofensor de consumo de token sao as 8 instrucoes auto-carregadas (~29KB por turno). Acao recomendada:
+
+- Manter auto-carregados: `AGENTS.md`, `docs/01-produto-mvp.md`, `docs/04-modelo-dados.md`.
+- Mover para sob demanda: `docs/02-stack-arquitetura.md`, `docs/03-roadmap.md`, `docs/05-decisoes-pendentes.md`, `docs/06-ambiente-desenvolvimento.md`, `intercom/DESIGN.md` (criar versao resumida para auto-load).
+- Documentar no `AGENTS.md` quais arquivos carregar quando precisar do detalhe.
