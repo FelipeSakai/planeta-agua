@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import type { CashRegisterDetailsResponse, DashboardResponse, UserRole } from "shared";
 
-import { DashboardView } from "./page";
+import { DashboardView } from "./dashboard-view";
 
 const sampleData: DashboardResponse = {
   todayRevenueCents: 12590,
@@ -128,7 +128,7 @@ describe("DashboardView", () => {
     expect(html).toContain('href="/vendas"');
     expect(html).toContain("Comecar venda");
     expect(html).toContain("bg-[var(--hero-action)]");
-    expect(html).toContain("text-[var(--hero-action-foreground)]");
+    expect(html).toContain("color:var(--hero-action-foreground)");
     expect(html).not.toContain("bg-[var(--surface-raised)]");
   });
 

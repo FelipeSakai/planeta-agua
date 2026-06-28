@@ -1,5 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { CustomersRepository } from "./customers.repository";
+
+const { dbMock } = vi.hoisted(() => ({
+  dbMock: {
+    insert: vi.fn(),
+  },
+}));
+
+vi.mock("../../db", () => ({ db: dbMock }));
+
 const now = new Date("2026-06-22T00:00:00.000Z");
 
 const customer = {
@@ -15,19 +25,17 @@ const customer = {
 };
 
 describe("CustomersRepository", () => {
+  const repository = new CustomersRepository();
+
   beforeEach(() => {
-    vi.resetModules();
+    vi.clearAllMocks();
   });
 
   it("creates a customer and returns it", async () => {
     const returning = vi.fn(async () => [customer]);
-    const insert = vi.fn().mockReturnValue({ values: vi.fn().mockReturnValue({ returning }) });
-    const db = { insert };
+    dbMock.insert.mockReturnValue({ values: vi.fn().mockReturnValue({ returning }) });
 
-    vi.doMock("../../db", () => ({ db }));
-    const { CustomersRepository } = await import("./customers.repository");
-
-    const result = await new CustomersRepository().create({
+    const result = await repository.create({
       name: "Joao Silva",
       phone: "(11) 99999-0000",
       address: null,
@@ -35,7 +43,7 @@ describe("CustomersRepository", () => {
     });
 
     expect(result).toEqual(customer);
-    expect(insert).toHaveBeenCalled();
+    expect(dbMock.insert).toHaveBeenCalled();
   });
 
   it("creates a bottle with calculated expiresAt", async () => {
@@ -53,13 +61,9 @@ describe("CustomersRepository", () => {
     };
     const returning = vi.fn(async () => [bottle]);
     const values = vi.fn().mockReturnValue({ returning });
-    const insert = vi.fn().mockReturnValue({ values });
-    const db = { insert };
+    dbMock.insert.mockReturnValue({ values });
 
-    vi.doMock("../../db", () => ({ db }));
-    const { CustomersRepository } = await import("./customers.repository");
-
-    const result = await new CustomersRepository().createBottle({
+    const result = await repository.createBottle({
       customerId: "11111111-1111-1111-1111-111111111111",
       month: 6,
       year: 2024,
