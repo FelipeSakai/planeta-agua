@@ -1,5 +1,17 @@
 export * from "./auth";
 export {
+  createOperatorUserSchema,
+  updateOperatorUserSchema,
+  resetOperatorPasswordSchema,
+  operatorUserResponseSchema,
+  operatorUsersListResponseSchema,
+  type CreateOperatorUserInput,
+  type UpdateOperatorUserInput,
+  type ResetOperatorPasswordInput,
+  type OperatorUserResponse,
+  type OperatorUsersListResponse,
+} from "./users";
+export {
   calculateBottleExpiresAt,
   isBottleNearExpiration,
   isBottleExpired as isCustomerBottleExpired,

@@ -1,5 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { ProductsRepository } from "./products.repository";
+
+const { dbMock } = vi.hoisted(() => ({
+  dbMock: {
+    transaction: vi.fn(),
+  },
+}));
+
+vi.mock("../../db", () => ({ db: dbMock }));
+
 const product = {
   id: "11111111-1111-1111-1111-111111111111",
   name: "Galao 20L",
@@ -14,7 +24,7 @@ const product = {
 
 describe("ProductsRepository", () => {
   beforeEach(() => {
-    vi.resetModules();
+    vi.clearAllMocks();
   });
 
   it("creates an initial stock movement when creating a product with stock", async () => {
@@ -22,10 +32,7 @@ describe("ProductsRepository", () => {
     const productValues = vi.fn(() => ({ returning: productReturning }));
     const movementValues = vi.fn(async () => undefined);
     const insert = vi.fn().mockReturnValueOnce({ values: productValues }).mockReturnValueOnce({ values: movementValues });
-    const transaction = vi.fn(async (callback) => callback({ insert }));
-
-    vi.doMock("../../db", () => ({ db: { transaction } }));
-    const { ProductsRepository } = await import("./products.repository");
+    dbMock.transaction.mockImplementation(async (callback) => callback({ insert }));
 
     const result = await new ProductsRepository().create(
       {
@@ -40,7 +47,7 @@ describe("ProductsRepository", () => {
     );
 
     expect(result).toEqual(product);
-    expect(transaction).toHaveBeenCalledOnce();
+    expect(dbMock.transaction).toHaveBeenCalledOnce();
     expect(productValues).toHaveBeenCalledWith({
       name: "Galao 20L",
       description: null,
