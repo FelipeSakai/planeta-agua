@@ -72,7 +72,7 @@ export function Field({
   );
 }
 
-const controlClass = "min-h-11 w-full rounded-[var(--radius-control)] border border-[var(--border)] bg-white px-3 text-sm text-[var(--foreground)] transition duration-150 placeholder:text-[var(--subtle)] hover:border-[var(--brand)] focus:border-[var(--brand)] focus:outline-none disabled:cursor-not-allowed disabled:bg-[var(--card-muted)] disabled:text-[var(--muted)]";
+const controlClass = "min-h-11 w-full rounded-[var(--radius-control)] border border-[var(--border)] bg-[var(--card)] px-3 text-sm text-[var(--foreground)] transition duration-150 placeholder:text-[var(--subtle)] hover:border-[var(--brand)] focus:border-[var(--brand)] focus:outline-none disabled:cursor-not-allowed disabled:bg-[var(--card-muted)] disabled:text-[var(--muted)]";
 
 export function TextInput({ className, ...props }: InputHTMLAttributes<HTMLInputElement>) {
   return <input className={cx(controlClass, className)} {...props} />;

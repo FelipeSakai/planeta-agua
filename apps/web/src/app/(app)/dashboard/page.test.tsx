@@ -2,9 +2,9 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
-import type { DashboardResponse, UserRole } from "shared";
+import type { CashRegisterDetailsResponse, DashboardResponse, UserRole } from "shared";
 
-import { DashboardView } from "./page";
+import { DashboardView } from "./dashboard-view";
 
 const sampleData: DashboardResponse = {
   todayRevenueCents: 12590,
@@ -34,6 +34,7 @@ const sampleData: DashboardResponse = {
       createdAt: "2026-06-20T11:30:00.000Z",
     },
   ],
+  pendingDeliveriesTotal: 12,
   pendingDeliveries: [
     {
       id: "11111111-1111-4111-8111-111111111111",
@@ -54,24 +55,86 @@ const emptyData: DashboardResponse = {
   totalsByPaymentMethod: [],
   lowStockProducts: [],
   recentSales: [],
+  pendingDeliveriesTotal: 0,
   pendingDeliveries: [],
 };
 
-function render(role: UserRole, data: DashboardResponse = sampleData) {
-  return renderToStaticMarkup(createElement(DashboardView, { data, userRole: role }));
+const cashDetails: CashRegisterDetailsResponse = {
+  cashRegister: {
+    id: "33333333-3333-4333-8333-333333333333",
+    date: "2026-06-24",
+    openingBalanceCents: 5000,
+    openedAt: "2026-06-24T08:00:00.000Z",
+    openedByUserId: "11111111-1111-4111-8111-111111111111",
+    closedAt: null,
+    closedByUserId: null,
+    counts: {},
+  },
+  todaySales: [],
+  todayExpenses: [],
+  totalsByPaymentMethod: [
+    { method: "CASH", salesCents: 4200, expensesCents: 1000 },
+    { method: "PIX", salesCents: 8390, expensesCents: 0 },
+  ],
+  totalSalesCents: 12590,
+  totalExpensesCents: 1000,
+  expectedCashCents: 8200,
+};
+
+function render(role: UserRole, data: DashboardResponse = sampleData, details: CashRegisterDetailsResponse | null = cashDetails) {
+  return renderToStaticMarkup(createElement(DashboardView, { data, userRole: role, userName: "Operador", cashDetails: details }));
 }
 
 describe("DashboardView", () => {
+  it("renders the daily workbench greeting and dominant sale action", () => {
+    const html = render("ADMIN");
+
+    expect(html).toContain("Bom dia, Operador");
+    expect(html).toContain("Comecar venda");
+    expect(html).toContain('href="/vendas"');
+  });
+
+  it("keeps operational secondary actions visible near the top", () => {
+    const html = render("ADMIN");
+
+    expect(html).toContain("Ver entregas");
+    expect(html).toContain("Ver caixa");
+    expect(html).toContain("Produtos");
+  });
+
+  it("renders payment distribution as simple CSS bars", () => {
+    const html = render("ADMIN");
+
+    expect(html).toContain("Resumo por pagamento");
+    expect(html).toContain("payment-bar");
+  });
+
   it("renders the operational header", () => {
     const html = render("ADMIN");
 
-    expect(html).toContain("Resumo operacional");
+    expect(html).toContain("Pronto para vender");
+  });
+
+  it("uses tokenized hero colors instead of foreground-as-background", () => {
+    const html = render("ADMIN");
+
+    expect(html).toContain("bg-[var(--hero-surface)]");
+    expect(html).not.toContain("bg-[var(--foreground)]");
+  });
+
+  it("keeps the sale CTA dominant in the top workbench", () => {
+    const html = render("ADMIN");
+
+    expect(html).toContain('href="/vendas"');
+    expect(html).toContain("Comecar venda");
+    expect(html).toContain("bg-[var(--hero-action)]");
+    expect(html).toContain("color:var(--hero-action-foreground)");
+    expect(html).not.toContain("bg-[var(--surface-raised)]");
   });
 
   it("renders today revenue formatted in BRL", () => {
     const html = render("ADMIN");
 
-    expect(html).toContain("Faturamento hoje");
     expect(html).toContain("R$ 125,90");
   });
 
@@ -82,24 +145,34 @@ describe("DashboardView", () => {
     expect(html).toContain("3");
   });
 
+  it("shows cash register status in the first dashboard fold", () => {
+    const html = render("ADMIN");
+
+    expect(html).toContain("Caixa de hoje");
+    expect(html).toContain("Aberto");
+    expect(html).toContain("R$ 125,90");
+    expect(html).toContain("Saldo esperado");
+    expect(html).toContain("R$ 82,00");
+  });
+
   it("renders low stock count with warning tone when there are alerts", () => {
     const html = render("ADMIN");
 
-    expect(html).toContain("Estoque baixo");
+    expect(html).toContain("Estoque critico");
     expect(html).toContain("1");
   });
 
   it("renders low stock count with success tone when there are no alerts", () => {
     const html = render("ADMIN", emptyData);
 
-    expect(html).toContain("Estoque baixo");
+    expect(html).toContain("Estoque critico");
     expect(html).toContain("0");
   });
 
   it("renders totals by payment method", () => {
     const html = render("ADMIN");
 
-    expect(html).toContain("Total por pagamento");
+    expect(html).toContain("Resumo por pagamento");
     expect(html).toContain("Dinheiro");
     expect(html).toContain("Pix");
     expect(html).toContain("R$ 42,00");
@@ -132,11 +205,20 @@ describe("DashboardView", () => {
     expect(html).toContain("Nenhuma venda registrada hoje");
   });
 
-  it("shows the Nova venda shortcut linking to /vendas", () => {
+  it("shows the sale action linking to /vendas", () => {
     const html = render("ADMIN");
 
-    expect(html).toContain("Nova venda");
+    expect(html).toContain("Comecar venda");
     expect(html).toContain('href="/vendas"');
+  });
+
+  it("renders the sale action as a styled link without a nested button", () => {
+    const html = render("ADMIN");
+    const saleAction = html.match(/<a[^>]+href="\/vendas"[^>]*>.*?Comecar venda.*?<\/a>/)?.[0] ?? "";
+
+    expect(saleAction).toContain("Comecar venda");
+    expect(saleAction).toContain("inline-flex");
+    expect(saleAction).not.toContain("<button");
   });
 
   it("renders pending deliveries with a link to deliveries page", () => {
@@ -146,6 +228,12 @@ describe("DashboardView", () => {
     expect(html).toContain("Maria Souza");
     expect(html).toContain("Rua A, 10");
     expect(html).toContain('href="/entregas"');
+  });
+
+  it("shows the total pending delivery count instead of the capped list length", () => {
+    const html = render("ADMIN");
+
+    expect(html).toContain("12");
   });
 
   it("shows stock shortcut for admins", () => {

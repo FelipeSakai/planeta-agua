@@ -22,7 +22,7 @@ export function PrintRecibo({ sale }: { sale: SaleDetailResponse }) {
   const saleDate = new Date(sale.sale.createdAt).toLocaleString("pt-BR");
 
   return (
-    <div className="print-area hidden">
+    <div className="print-area print-only">
       <div className="mx-auto max-w-2xl space-y-4 font-mono text-sm text-black">
         <div className="text-center">
           <h1 className="text-lg font-bold">Planeta Agua</h1>

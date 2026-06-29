@@ -132,14 +132,33 @@ Nao implementar sem decisao explicita:
 
 ## Documentos De Referencia
 
-- `briefing-mvp-sistema-loja-agua.md`;
-- `docs/01-produto-mvp.md`;
-- `docs/02-stack-arquitetura.md`;
-- `docs/03-roadmap.md`;
-- `docs/04-modelo-dados.md`;
-- `docs/05-decisoes-pendentes.md`.
-- `docs/06-ambiente-desenvolvimento.md`.
-- `intercom/DESIGN.md`.
+### Sempre No Contexto (auto-carregados)
+
+- `AGENTS.md` (este arquivo);
+- `docs/01-produto-mvp.md` - escopo do MVP;
+- `docs/04-modelo-dados.md` - modelo de dados;
+- `intercom/DESIGN-resumido.md` - design system resumido.
+
+### Sob Demanda (ler com `read` quando a tarefa exigir)
+
+- `briefing-mvp-sistema-loja-agua.md` - briefing completo do projeto;
+- `docs/02-stack-arquitetura.md` - detalhes de stack e arquitetura;
+- `docs/03-roadmap.md` - roadmap e fases;
+- `docs/05-decisoes-pendentes.md` - decisoes pendentes;
+- `docs/06-ambiente-desenvolvimento.md` - ambiente de desenvolvimento;
+- `intercom/DESIGN.md` - design system completo (versao resumida ja no contexto).
+
+Carregar o documento sob demanda quando a tarefa envolver arquitetura, roadmap, ambiente, decisoes pendentes ou detalhes de design nao cobertos no resumido.
+
+## codebase-memory-mcp
+
+O projeto tem o MCP server `codebase-memory-mcp` configurado. Ele indexa o codebase em um grafo de conhecimento (funcoes, classes, call chains, rotas HTTP).
+
+- Para entender dependencias entre modulos: usar `search_graph` ou `trace_path` em vez de multiplos `grep`/`read`.
+- Para visao geral do monorepo: usar `get_architecture`.
+- Para ver impacto de uma mudanca: usar `detect_changes`.
+- Indexar o projeto na primeira sessao: pedir "Index this project".
+- Auto-index habilitado por padrao apos configurar `auto_index true`.
 
 ## Comportamento Esperado Da IA
 

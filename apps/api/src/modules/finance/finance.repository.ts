@@ -64,7 +64,8 @@ export class FinanceRepository {
   }
 
   async getPendingDeliveries() {
-    return db.query.sales.findMany({
+    const [totalRow] = await db.select({ total: sql<number>`count(*)::int` }).from(sales).where(eq(sales.status, pendingDeliveryStatus));
+    const items = await db.query.sales.findMany({
       where: eq(sales.status, pendingDeliveryStatus),
       orderBy: [desc(sales.createdAt)],
       limit: 10,
@@ -73,6 +74,8 @@ export class FinanceRepository {
         driver: { columns: { id: true, name: true } },
       },
     });
+
+    return { items, total: totalRow?.total ?? 0 };
   }
 
   async getCashRegisterForDate(date: string): Promise<CashRegisterRow | undefined> {

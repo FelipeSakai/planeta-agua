@@ -464,7 +464,7 @@ export function SalesUi({ products, customers, drivers }: SalesUiProps) {
                 {customerResults.length > 0 ? (
                   <ul
                     aria-label="Resultados de clientes"
-                    className="max-h-72 overflow-auto rounded-[var(--radius-control)] border border-[var(--border)] bg-white"
+                    className="max-h-72 overflow-auto rounded-[var(--radius-control)] border border-[var(--border)] bg-[var(--card)]"
                     role="listbox"
                   >
                     {customerResults.map((customer) => (
@@ -503,7 +503,7 @@ export function SalesUi({ products, customers, drivers }: SalesUiProps) {
               {productQuery.trim() && productResults.length > 0 ? (
                 <ul
                   aria-label="Resultados de produtos"
-                  className="absolute z-30 mt-1 max-h-80 w-full overflow-auto rounded-[var(--radius-control)] border border-[var(--border)] bg-white shadow-lg"
+                  className="absolute z-30 mt-1 max-h-80 w-full overflow-auto rounded-[var(--radius-control)] border border-[var(--border)] bg-[var(--card)] shadow-lg"
                   role="listbox"
                 >
                   {productResults.map((product) => {

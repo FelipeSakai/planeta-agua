@@ -9,7 +9,7 @@ import { Button } from "./button";
 import { DataTable } from "./data-table";
 import { Drawer } from "./drawer";
 import { EmptyState } from "./empty-state";
-import { Field, SelectInput, TextInput } from "./form-controls";
+import { Field, SelectInput, TextArea, TextInput } from "./form-controls";
 import { MetricCard } from "./metric-card";
 import { PageHeader } from "./page-header";
 import { Panel } from "./panel";
@@ -118,11 +118,72 @@ describe("ui foundation", () => {
     expect(contrastRatio(subtle, "#ffffff")).toBeGreaterThanOrEqual(4.5);
   });
 
+  it("defines dark theme tokens for the app surface", () => {
+    const css = readFileSync("src/app/globals.css", "utf8");
+
+    expect(css).toContain('[data-theme="dark"]');
+    expect(css).toContain("--card:");
+    expect(css).toContain("--hero-surface:");
+    expect(css).toContain("color-scheme: dark");
+  });
+
+  it("uses tokenized panel surfaces by default", () => {
+    const html = renderToStaticMarkup(<Panel>Conteudo</Panel>);
+
+    expect(html).toContain("bg-[var(--card)]");
+    expect(html).not.toContain("bg-white");
+  });
+
+  it("uses tokenized secondary button surfaces", () => {
+    const html = renderToStaticMarkup(<Button variant="secondary">Tema</Button>);
+
+    expect(html).toContain("bg-[var(--card)]");
+    expect(html).not.toContain("bg-white");
+  });
+
+  it("uses tokenized shared surfaces for authenticated screens", () => {
+    const html = renderToStaticMarkup(
+      <>
+        <Toolbar>
+          <TextInput name="search" placeholder="Buscar" />
+          <SelectInput name="status" defaultValue="ALL">
+            <option value="ALL">Todos</option>
+          </SelectInput>
+        </Toolbar>
+        <TextArea name="notes" />
+        <DataTable
+          rows={[{ id: "1", name: "Galao", stock: 2 }]}
+          rowKey={(row) => row.id}
+          columns={[
+            { key: "name", header: "Produto", cell: (row) => row.name },
+            { key: "stock", header: "Estoque", cell: (row) => row.stock },
+          ]}
+          renderMobileCard={(row) => <strong>{row.name}</strong>}
+          empty={<EmptyState title="Nada encontrado" description="Ajuste os filtros." />}
+        />
+        <EmptyState title="Nada encontrado" description="Ajuste os filtros." />
+        <Drawer open title="Registrar entrada" onClose={() => undefined}>
+          Conteudo
+        </Drawer>
+      </>,
+    );
+
+    expect(html).toContain("bg-[var(--card)]");
+    expect(html).not.toContain("bg-white");
+  });
+
   it("uses tone-specific metric badge labels", () => {
     const html = renderToStaticMarkup(<MetricCard label="Estoque baixo" value={3} tone="danger" />);
 
     expect(html).toContain("Crítico");
     expect(html).not.toContain(">OK<");
+  });
+
+  it("does not keep the default white background when a panel receives a custom background", () => {
+    const html = renderToStaticMarkup(<Panel className="bg-[var(--foreground)] text-white">Hero</Panel>);
+
+    expect(html).toContain("bg-[var(--foreground)]");
+    expect(html).not.toContain("bg-white");
   });
 
   it("renders toolbar and responsive data table", () => {

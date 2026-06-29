@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 
 import { closeDb, db } from "../../db";
-import { cashRegisters, customers, expenses, products, saleItems, sales, sessions, stockMovements, users } from "../../db/schema";
+import { cashRegisters, customerBottles, customers, expenses, products, saleItems, sales, sessions, stockMovements, users } from "../../db/schema";
 import { SalesRepositoryError } from "./sales.errors";
 import { SalesRepository } from "./sales.repository";
 
@@ -11,6 +11,7 @@ describe("SalesRepository", () => {
 
   beforeEach(async () => {
     await db.delete(sessions);
+    await db.delete(customerBottles);
     await db.delete(stockMovements);
     await db.delete(saleItems);
     await db.delete(sales);

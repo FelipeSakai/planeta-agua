@@ -3,12 +3,8 @@
   "instructions": [
     "AGENTS.md",
     "docs/01-produto-mvp.md",
-    "docs/02-stack-arquitetura.md",
-    "docs/03-roadmap.md",
     "docs/04-modelo-dados.md",
-    "docs/05-decisoes-pendentes.md",
-    "docs/06-ambiente-desenvolvimento.md",
-    "intercom/DESIGN.md"
+    "intercom/DESIGN-resumido.md"
   ],
   "skills": {
     "paths": [".opencode/skills"]
