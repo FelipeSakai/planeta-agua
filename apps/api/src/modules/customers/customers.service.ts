@@ -88,10 +88,15 @@ export class CustomersService {
     const duplicates = await this.customersRepository.findDuplicates(
       parsedInput.name,
       parsedInput.phone ?? null,
+      parsedInput.mobilePhone ?? null,
     );
 
     if (duplicates.some((d) => d.phone && d.phone === parsedInput.phone)) {
       throw new BadRequestException("Ja existe um cliente com este telefone.");
+    }
+
+    if (duplicates.some((d) => d.mobilePhone && d.mobilePhone === parsedInput.mobilePhone)) {
+      throw new BadRequestException("Ja existe um cliente com este celular.");
     }
 
     const customer = await this.customersRepository.create(parsedInput);
@@ -106,11 +111,16 @@ export class CustomersService {
     const duplicates = await this.customersRepository.findDuplicates(
       parsedInput.name ?? "",
       parsedInput.phone ?? null,
+      parsedInput.mobilePhone ?? null,
       id,
     );
 
     if (duplicates.some((d) => d.phone && d.phone === parsedInput.phone)) {
       throw new BadRequestException("Ja existe um cliente com este telefone.");
+    }
+
+    if (duplicates.some((d) => d.mobilePhone && d.mobilePhone === parsedInput.mobilePhone)) {
+      throw new BadRequestException("Ja existe um cliente com este celular.");
     }
 
     const customer = await this.customersRepository.update(id, parsedInput);
@@ -125,12 +135,12 @@ export class CustomersService {
     return this.toCustomerResponse(toggled, false);
   }
 
-  async checkDuplicates(name: string, phone: string | null, excludeId?: string): Promise<DuplicateCheckResponse> {
-    const duplicates = await this.customersRepository.findDuplicates(name, phone, excludeId);
+  async checkDuplicates(name: string, phone: string | null, mobilePhone: string | null, excludeId?: string): Promise<DuplicateCheckResponse> {
+    const duplicates = await this.customersRepository.findDuplicates(name, phone, mobilePhone, excludeId);
 
     return {
       hasDuplicates: duplicates.length > 0,
-      duplicates: duplicates.map((d) => ({ id: d.id, name: d.name, phone: d.phone })),
+      duplicates: duplicates.map((d) => ({ id: d.id, name: d.name, phone: d.phone, mobilePhone: d.mobilePhone })),
     };
   }
 
@@ -173,6 +183,7 @@ export class CustomersService {
       id: customer.id,
       name: customer.name,
       phone: customer.phone,
+      mobilePhone: customer.mobilePhone,
       address: customer.address,
       notes: customer.notes,
       isActive: customer.isActive,

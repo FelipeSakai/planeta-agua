@@ -20,6 +20,7 @@ export class CustomersRepository {
       const searchClause = or(
         ilike(customers.name, `%${options.search}%`),
         ilike(customers.phone, `%${options.search}%`),
+        ilike(customers.mobilePhone, `%${options.search}%`),
       );
       if (searchClause) {
         conditions.push(searchClause);
@@ -65,7 +66,7 @@ export class CustomersRepository {
     return customer;
   }
 
-  async findDuplicates(name: string, phone: string | null, excludeId?: string) {
+  async findDuplicates(name: string, phone: string | null, mobilePhone: string | null, excludeId?: string) {
     const conditions = [];
 
     if (excludeId) {
@@ -75,6 +76,7 @@ export class CustomersRepository {
     const nameOrPhone = or(
       ilike(customers.name, name),
       phone ? ilike(customers.phone, phone) : undefined,
+      mobilePhone ? ilike(customers.mobilePhone, mobilePhone) : undefined,
     );
 
     if (nameOrPhone) {
@@ -85,7 +87,7 @@ export class CustomersRepository {
 
     return db.query.customers.findMany({
       where: whereClause,
-      columns: { id: true, name: true, phone: true },
+      columns: { id: true, name: true, phone: true, mobilePhone: true },
       orderBy: [asc(customers.name)],
       limit: 10,
     });

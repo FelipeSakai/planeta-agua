@@ -204,6 +204,7 @@ describe("SalesService", () => {
         id: "99999999-9999-4999-8999-999999999999",
         name: "Maria",
         phone: "11999999999",
+        mobilePhone: "11988888888",
         code: null,
         address: "Rua A, 10",
         notes: "Cliente recorrente",
@@ -218,6 +219,7 @@ describe("SalesService", () => {
         id: "99999999-9999-4999-8999-999999999999",
         name: "Maria",
         phone: "11999999999",
+        mobilePhone: "11988888888",
         code: null,
         address: "Rua A, 10",
         previousBottle,
@@ -233,6 +235,7 @@ describe("SalesService", () => {
       id: "12121212-1212-4212-8212-121212121212",
       name: "Joao",
       phone: "11888888888",
+      mobilePhone: "11999999999",
       code: null,
       address: null,
       notes: null,
@@ -240,10 +243,11 @@ describe("SalesService", () => {
       updatedAt: new Date("2026-06-18T11:00:00.000Z"),
     });
 
-    await expect(service.createQuickCustomer({ name: "Joao", phone: "11888888888" })).resolves.toEqual({
+    await expect(service.createQuickCustomer({ name: "Joao", phone: "11888888888", mobilePhone: "11999999999" })).resolves.toEqual({
       id: "12121212-1212-4212-8212-121212121212",
       name: "Joao",
       phone: "11888888888",
+      mobilePhone: "11999999999",
       code: null,
       address: null,
       previousBottle: null,
@@ -303,12 +307,12 @@ describe("SalesService", () => {
     const service = new SalesService(repository as never, createFinanceService() as never);
 
     repository.searchCustomers.mockResolvedValueOnce([
-      { id: "99999999-9999-4999-8999-999999999999", name: "Maria", phone: "11999999999", code: "C001", address: "Rua A", notes: null, createdAt: new Date(), updatedAt: new Date() },
+      { id: "99999999-9999-4999-8999-999999999999", name: "Maria", phone: "11999999999", mobilePhone: "11988888888", code: "C001", address: "Rua A", notes: null, createdAt: new Date(), updatedAt: new Date() },
     ]);
     repository.getLatestBottleForCustomer.mockResolvedValueOnce(null);
 
     await expect(service.searchCustomers("Maria", "C001")).resolves.toEqual([
-      { id: "99999999-9999-4999-8999-999999999999", name: "Maria", phone: "11999999999", code: "C001", address: "Rua A", previousBottle: null },
+      { id: "99999999-9999-4999-8999-999999999999", name: "Maria", phone: "11999999999", mobilePhone: "11988888888", code: "C001", address: "Rua A", previousBottle: null },
     ]);
     expect(repository.searchCustomers).toHaveBeenCalledWith("Maria", "C001");
   });

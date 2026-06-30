@@ -19,26 +19,24 @@ const pendingDeliveryStatus: SaleStatus = "PENDING_DELIVERY";
 @Injectable()
 export class SalesRepository {
   async searchCustomers(primaryQuery: string, secondaryQuery = "") {
-    const normalizedPrimary = primaryQuery.trim();
-    const normalizedSecondary = secondaryQuery.trim();
+    const normalizedQuery = primaryQuery.trim() || secondaryQuery.trim();
 
-    if (!normalizedPrimary && !normalizedSecondary) {
+    if (!normalizedQuery) {
       return db.query.customers.findMany({ orderBy: [asc(customers.name)], limit: 10 });
     }
 
-    const primaryClause = or(ilike(customers.name, `%${normalizedPrimary}%`), ilike(customers.phone, `%${normalizedPrimary}%`));
-    const secondaryClause = or(ilike(customers.code, `%${normalizedSecondary}%`), ilike(customers.address, `%${normalizedSecondary}%`));
-
-    const whereClause = normalizedPrimary && normalizedSecondary
-      ? and(primaryClause, secondaryClause)
-      : normalizedPrimary
-        ? primaryClause
-        : secondaryClause;
+    const whereClause = or(
+      ilike(customers.name, `%${normalizedQuery}%`),
+      ilike(customers.phone, `%${normalizedQuery}%`),
+      ilike(customers.mobilePhone, `%${normalizedQuery}%`),
+      ilike(customers.code, `%${normalizedQuery}%`),
+      ilike(customers.address, `%${normalizedQuery}%`),
+    );
 
     return db.query.customers.findMany({ where: whereClause, orderBy: [asc(customers.name)], limit: 10 });
   }
 
-  async createQuickCustomer(input: { name: string; phone?: string | null; code?: string | null; address?: string | null }) {
+  async createQuickCustomer(input: { name: string; phone?: string | null; mobilePhone?: string | null; code?: string | null; address?: string | null }) {
     const [customer] = await db.insert(customers).values(input).returning();
 
     return customer;
@@ -202,7 +200,7 @@ export class SalesRepository {
       where: options.status ? eq(sales.status, options.status) : undefined,
       orderBy: [desc(sales.createdAt)],
       with: {
-        customer: { columns: { id: true, name: true, phone: true, address: true } },
+        customer: { columns: { id: true, name: true, phone: true, mobilePhone: true, address: true } },
         user: { columns: { id: true, name: true } },
         canceledByUser: { columns: { id: true, name: true } },
         deliveredByUser: { columns: { id: true, name: true } },
@@ -215,7 +213,7 @@ export class SalesRepository {
     const sale = await db.query.sales.findFirst({
       where: eq(sales.id, id),
       with: {
-        customer: { columns: { id: true, name: true, phone: true, address: true } },
+        customer: { columns: { id: true, name: true, phone: true, mobilePhone: true, address: true } },
         user: { columns: { id: true, name: true } },
         canceledByUser: { columns: { id: true, name: true } },
         deliveredByUser: { columns: { id: true, name: true } },

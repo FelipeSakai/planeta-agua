@@ -9,6 +9,7 @@ type CustomerRow = {
   id: string;
   name: string;
   phone: string | null;
+  mobilePhone: string | null;
   address: string | null;
   notes: string | null;
   isActive: boolean;
@@ -21,6 +22,7 @@ function makeCustomer(overrides: Partial<CustomerRow> = {}): CustomerRow {
     id: "11111111-1111-1111-1111-111111111111",
     name: "Joao Silva",
     phone: "(11) 99999-0000",
+    mobilePhone: "(11) 98888-0000",
     address: null,
     notes: null,
     isActive: true,
@@ -68,7 +70,7 @@ class FakeRepository {
   create = vi.fn(async (input) => makeCustomer(input));
   update = vi.fn(async (id: string, input) => makeCustomer({ id, ...input }));
   setActive = vi.fn(async (id: string, isActive: boolean) => makeCustomer({ id, isActive }));
-  findDuplicates = vi.fn(async (): Promise<{ id: string; name: string; phone: string | null }[]> => []);
+  findDuplicates = vi.fn(async (): Promise<{ id: string; name: string; phone: string | null; mobilePhone: string | null }[]> => []);
   findBottlesByCustomerId = vi.fn(async () => this.bottles);
   findBottleById = vi.fn(async (id: string) => this.bottles.find((b) => b.id === id));
   createBottle = vi.fn(async (input) => makeBottle(input));
@@ -87,6 +89,11 @@ describe("CustomersService", () => {
     const result = await service.listCustomers();
 
     expect(result.customers).toHaveLength(1);
+    expect(result.customers[0]).toMatchObject({
+      name: "Joao Silva",
+      phone: "(11) 99999-0000",
+      mobilePhone: "(11) 98888-0000",
+    });
     expect(result.summary.total).toBe(1);
     expect(result.summary.active).toBe(1);
   });
@@ -101,7 +108,7 @@ describe("CustomersService", () => {
   it("throws BadRequestException when creating a customer with duplicate phone", async () => {
     const repository = new FakeRepository();
     repository.findDuplicates = vi.fn(async () => [
-      { id: "55555555-5555-5555-5555-555555555555", name: "Outro Joao", phone: "(11) 99999-0000" },
+      { id: "55555555-5555-5555-5555-555555555555", name: "Outro Joao", phone: "(11) 99999-0000", mobilePhone: null },
     ]);
     const service = new CustomersService(repository as never);
 
@@ -109,6 +116,7 @@ describe("CustomersService", () => {
       service.createCustomer(operatorUser, {
         name: "Joao Silva",
         phone: "(11) 99999-0000",
+        mobilePhone: null,
         address: null,
         notes: null,
       }),
@@ -123,10 +131,35 @@ describe("CustomersService", () => {
       service.createCustomer(operatorUser, {
         name: "Maria Santos",
         phone: null,
+        mobilePhone: "11999999999",
         address: null,
         notes: null,
       }),
-    ).resolves.toBeDefined();
+    ).resolves.toMatchObject({
+      name: "Maria Santos",
+      phone: null,
+      mobilePhone: "11999999999",
+    });
+  });
+
+  it("returns mobile phone in duplicate checks", async () => {
+    const repository = new FakeRepository();
+    repository.findDuplicates = vi.fn(async () => [
+      { id: "55555555-5555-5555-5555-555555555555", name: "Maria", phone: "1133333333", mobilePhone: "11999999999" },
+    ]);
+    const service = new CustomersService(repository as never);
+
+    await expect(service.checkDuplicates("Maria", "1133333333", "11999999999")).resolves.toEqual({
+      hasDuplicates: true,
+      duplicates: [
+        {
+          id: "55555555-5555-5555-5555-555555555555",
+          name: "Maria",
+          phone: "1133333333",
+          mobilePhone: "11999999999",
+        },
+      ],
+    });
   });
 
   it("throws when trying to add a bottle to a non-existent customer", async () => {

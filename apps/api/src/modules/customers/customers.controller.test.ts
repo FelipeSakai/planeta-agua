@@ -57,4 +57,12 @@ describe("CustomersController", () => {
 
     expect(customersService.toggleActive).toHaveBeenCalledWith(id);
   });
+
+  it("forwards mobile phone in duplicate checks", async () => {
+    const { controller, customersService } = createController();
+
+    await controller.checkDuplicates(request as never, "Maria", "1133333333", "11999999999", undefined);
+
+    expect(customersService.checkDuplicates).toHaveBeenCalledWith("Maria", "1133333333", "11999999999", undefined);
+  });
 });

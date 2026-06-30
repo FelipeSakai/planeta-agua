@@ -112,6 +112,7 @@ describe("SalesController", () => {
         id: "66666666-6666-4666-8666-666666666666",
         name: "Maria",
         phone: "11999999999",
+        mobilePhone: "11988888888",
         previousBottle: { month: 6, year: 2024, notes: "Azul" },
       },
     ];
@@ -127,12 +128,13 @@ describe("SalesController", () => {
       id: "66666666-6666-4666-8666-666666666666",
       name: "Maria",
       phone: "11999999999",
+      mobilePhone: "11988888888",
       previousBottle: null,
     };
     salesService.createQuickCustomer.mockResolvedValueOnce(customer);
 
-    await expect(controller.createCustomer(request as never, { name: "Maria", phone: "11999999999" })).resolves.toEqual(customer);
-    expect(salesService.createQuickCustomer).toHaveBeenCalledWith({ name: "Maria", phone: "11999999999" });
+    await expect(controller.createCustomer(request as never, { name: "Maria", phone: "11999999999", mobilePhone: "11988888888" })).resolves.toEqual(customer);
+    expect(salesService.createQuickCustomer).toHaveBeenCalledWith({ name: "Maria", phone: "11999999999", mobilePhone: "11988888888" });
   });
 
   it("returns controlled 400 errors for invalid payloads and ids", async () => {

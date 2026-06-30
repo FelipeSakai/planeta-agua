@@ -204,6 +204,20 @@ describe("SalesRepository", () => {
     ]);
   });
 
+  it("searches customers by mobile phone", async () => {
+    await db.insert(customers).values({ name: "Cliente Celular", phone: null, mobilePhone: "11999999999" });
+
+    const result = await repository.searchCustomers("9999");
+
+    expect(result).toEqual([
+      expect.objectContaining({
+        name: "Cliente Celular",
+        phone: null,
+        mobilePhone: "11999999999",
+      }),
+    ]);
+  });
+
   it("lists sales with creator, customer, and canceler relations", async () => {
     const [operator] = await db
       .insert(users)
@@ -673,10 +687,10 @@ describe("SalesRepository", () => {
       { name: "Joao", code: "C002", address: "Av. B, 200" },
     ]);
 
-    const byCode = await repository.searchCustomers("", "C001");
+    const byCode = await repository.searchCustomers("C001");
     expect(byCode.map((c) => c.name)).toContain("Maria");
 
-    const byAddress = await repository.searchCustomers("", "Flores");
+    const byAddress = await repository.searchCustomers("Flores");
     expect(byAddress.map((c) => c.name)).toContain("Maria");
   });
 

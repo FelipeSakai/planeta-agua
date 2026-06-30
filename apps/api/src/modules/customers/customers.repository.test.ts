@@ -17,6 +17,7 @@ const customer = {
   name: "Joao Silva",
   code: null,
   phone: "(11) 99999-0000",
+  mobilePhone: "(11) 98888-0000",
   address: null,
   notes: null,
   isActive: true,
@@ -38,6 +39,7 @@ describe("CustomersRepository", () => {
     const result = await repository.create({
       name: "Joao Silva",
       phone: "(11) 99999-0000",
+      mobilePhone: "(11) 98888-0000",
       address: null,
       notes: null,
     });

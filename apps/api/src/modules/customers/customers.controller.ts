@@ -43,9 +43,15 @@ export class CustomersController {
   }
 
   @Get("duplicates")
-  async checkDuplicates(@Req() request: Request, @Query("name") name = "", @Query("phone") phone: string | undefined, @Query("excludeId") excludeId: string | undefined) {
+  async checkDuplicates(
+    @Req() request: Request,
+    @Query("name") name = "",
+    @Query("phone") phone: string | undefined,
+    @Query("mobilePhone") mobilePhone: string | undefined,
+    @Query("excludeId") excludeId: string | undefined,
+  ) {
     await requireRequestUser(request, this.authService);
-    return this.customersService.checkDuplicates(name, phone ?? null, excludeId);
+    return this.customersService.checkDuplicates(name, phone ?? null, mobilePhone ?? null, excludeId);
   }
 
   @Get(":id")
