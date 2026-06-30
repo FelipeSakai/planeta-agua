@@ -56,9 +56,13 @@ describe("SalesUi", () => {
       }),
     );
 
-    expect(html).toContain("1. Cliente");
-    expect(html).toContain("2. Produto");
-    expect(html).toContain("3. Carrinho e pagamento");
+    const customerStepIndex = html.indexOf("1. Cliente");
+    const productStepIndex = html.indexOf("2. Produto");
+    const cartStepIndex = html.indexOf("3. Carrinho e pagamento");
+
+    expect(customerStepIndex).toBeGreaterThanOrEqual(0);
+    expect(productStepIndex).toBeGreaterThan(customerStepIndex);
+    expect(cartStepIndex).toBeGreaterThan(productStepIndex);
     expect(html).toContain("Venda sem cliente");
     expect(html).toContain("Adicionar item");
     expect(html).toContain("Total da venda");

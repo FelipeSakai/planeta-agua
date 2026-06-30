@@ -482,7 +482,6 @@ export function SalesUi({ products, customers, drivers }: SalesUiProps) {
                   <ul
                     aria-label="Resultados de clientes"
                     className="max-h-72 overflow-auto rounded-[var(--radius-control)] border border-[var(--border)] bg-[var(--card)]"
-                    role="listbox"
                   >
                     {customerResults.map((customer) => (
                       <li key={customer.id}>
@@ -525,7 +524,6 @@ export function SalesUi({ products, customers, drivers }: SalesUiProps) {
                 <ul
                   aria-label="Resultados de produtos"
                   className="absolute z-30 mt-1 max-h-80 w-full overflow-auto rounded-[var(--radius-control)] border border-[var(--border)] bg-[var(--card)] shadow-lg"
-                  role="listbox"
                 >
                   {productResults.map((product) => {
                     const outOfStock = product.stockQuantity <= 0;
