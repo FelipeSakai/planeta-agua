@@ -43,7 +43,39 @@ describe("SalesUi", () => {
 
     expect(html).toContain("Buscar por nome ou telefone");
     expect(html).toContain("Codigo ou endereco");
-    expect(html).toContain("Digite o nome do produto");
+    expect(html).toContain("Buscar produto ativo");
+  });
+
+  it("renders the sales workflow in the expected operational order", () => {
+    const html = renderToStaticMarkup(
+      createElement(SalesUi, {
+        userRole: "OPERATOR",
+        products: [],
+        customers: [],
+        drivers: [],
+      }),
+    );
+
+    expect(html).toContain("1. Cliente");
+    expect(html).toContain("2. Produto");
+    expect(html).toContain("3. Carrinho e pagamento");
+    expect(html).toContain("Venda sem cliente");
+    expect(html).toContain("Adicionar item");
+    expect(html).toContain("Total da venda");
+  });
+
+  it("renders clearer cart empty and disabled-finalize guidance", () => {
+    const html = renderToStaticMarkup(
+      createElement(SalesUi, {
+        userRole: "OPERATOR",
+        products: [],
+        customers: [],
+        drivers: [],
+      }),
+    );
+
+    expect(html).toContain("Adicione produtos para liberar a finalizacao.");
+    expect(html).toContain("A venda baixa estoque automaticamente ao finalizar.");
   });
 
   it("renders the cart sidebar with finalize button", () => {
