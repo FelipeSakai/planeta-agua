@@ -19,18 +19,22 @@ const pendingDeliveryStatus: SaleStatus = "PENDING_DELIVERY";
 @Injectable()
 export class SalesRepository {
   async searchCustomers(primaryQuery: string, secondaryQuery = "") {
-    const normalizedQuery = primaryQuery.trim() || secondaryQuery.trim();
+    const searchTerms = [primaryQuery.trim(), secondaryQuery.trim()].filter(Boolean);
 
-    if (!normalizedQuery) {
+    if (searchTerms.length === 0) {
       return db.query.customers.findMany({ orderBy: [asc(customers.name)], limit: 10 });
     }
 
-    const whereClause = or(
-      ilike(customers.name, `%${normalizedQuery}%`),
-      ilike(customers.phone, `%${normalizedQuery}%`),
-      ilike(customers.mobilePhone, `%${normalizedQuery}%`),
-      ilike(customers.code, `%${normalizedQuery}%`),
-      ilike(customers.address, `%${normalizedQuery}%`),
+    const whereClause = and(
+      ...searchTerms.map((term) =>
+        or(
+          ilike(customers.name, `%${term}%`),
+          ilike(customers.phone, `%${term}%`),
+          ilike(customers.mobilePhone, `%${term}%`),
+          ilike(customers.code, `%${term}%`),
+          ilike(customers.address, `%${term}%`),
+        ),
+      ),
     );
 
     return db.query.customers.findMany({ where: whereClause, orderBy: [asc(customers.name)], limit: 10 });

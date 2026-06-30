@@ -218,6 +218,20 @@ describe("SalesRepository", () => {
     ]);
   });
 
+  it("requires both customer search terms to match when both are provided", async () => {
+    await db.insert(customers).values([
+      { name: "Maria Silva", code: "C001", phone: "11911112222" },
+      { name: "Maria Souza", code: "C002", phone: "11933334444" },
+      { name: "Ana Codigo", code: "C001", phone: "11955556666" },
+    ]);
+
+    const result = await repository.searchCustomers("Maria", "C001");
+
+    expect(result).toEqual([
+      expect.objectContaining({ name: "Maria Silva", code: "C001" }),
+    ]);
+  });
+
   it("lists sales with creator, customer, and canceler relations", async () => {
     const [operator] = await db
       .insert(users)

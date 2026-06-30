@@ -80,6 +80,7 @@ class FakeRepository {
 }
 
 const operatorUser = { id: "44444444-4444-4444-4444-444444444444", role: "OPERATOR" as const };
+const existingCustomerId = "11111111-1111-1111-1111-111111111111";
 
 describe("CustomersService", () => {
   it("lists customers with summary and bottle alerts", async () => {
@@ -140,6 +141,45 @@ describe("CustomersService", () => {
       phone: null,
       mobilePhone: "11999999999",
     });
+  });
+
+  it("returns mobile phone when updating a customer", async () => {
+    const repository = new FakeRepository();
+    const service = new CustomersService(repository as never);
+
+    await expect(
+      service.updateCustomer(existingCustomerId, operatorUser, {
+        name: "Maria Santos",
+        phone: null,
+        mobilePhone: "11988887777",
+        address: "Rua Azul, 123",
+        notes: null,
+      }),
+    ).resolves.toMatchObject({
+      id: existingCustomerId,
+      name: "Maria Santos",
+      phone: null,
+      mobilePhone: "11988887777",
+      address: "Rua Azul, 123",
+    });
+  });
+
+  it("throws BadRequestException when updating a customer with duplicate mobile phone", async () => {
+    const repository = new FakeRepository();
+    repository.findDuplicates = vi.fn(async () => [
+      { id: "55555555-5555-5555-5555-555555555555", name: "Outro Cliente", phone: null, mobilePhone: "11988887777" },
+    ]);
+    const service = new CustomersService(repository as never);
+
+    await expect(
+      service.updateCustomer(existingCustomerId, operatorUser, {
+        name: "Maria Santos",
+        phone: null,
+        mobilePhone: "11988887777",
+        address: null,
+        notes: null,
+      }),
+    ).rejects.toThrow(BadRequestException);
   });
 
   it("returns mobile phone in duplicate checks", async () => {

@@ -5,6 +5,11 @@ import { CustomersRepository } from "./customers.repository";
 const { dbMock } = vi.hoisted(() => ({
   dbMock: {
     insert: vi.fn(),
+    query: {
+      customers: {
+        findMany: vi.fn(),
+      },
+    },
   },
 }));
 
@@ -79,6 +84,28 @@ describe("CustomersRepository", () => {
         month: 6,
         year: 2024,
         expiresAt: new Date("2027-06-30T23:59:59.999Z"),
+      }),
+    );
+  });
+
+  it("finds duplicates and returns mobile phone", async () => {
+    dbMock.query.customers.findMany.mockResolvedValue([
+      { id: customer.id, name: customer.name, phone: customer.phone, mobilePhone: customer.mobilePhone },
+    ]);
+
+    const result = await repository.findDuplicates("Joao Silva", customer.phone, customer.mobilePhone);
+
+    expect(result).toEqual([
+      {
+        id: customer.id,
+        name: customer.name,
+        phone: customer.phone,
+        mobilePhone: customer.mobilePhone,
+      },
+    ]);
+    expect(dbMock.query.customers.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        columns: { id: true, name: true, phone: true, mobilePhone: true },
       }),
     );
   });
