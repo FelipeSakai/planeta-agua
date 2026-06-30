@@ -520,6 +520,7 @@ export function SalesUi({ products, customers, drivers }: SalesUiProps) {
                 value={productQuery}
                 onChange={(event) => setProductQuery(event.target.value)}
               />
+              <p className="mt-2 text-xs text-[var(--muted)]">Busque um produto e use Adicionar item para colocar no carrinho.</p>
               {productQuery.trim() && productResults.length > 0 ? (
                 <ul
                   aria-label="Resultados de produtos"
@@ -570,8 +571,11 @@ export function SalesUi({ products, customers, drivers }: SalesUiProps) {
         </div>
 
         <Panel className="p-4">
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="text-base font-semibold text-[var(--foreground)]">Carrinho</h2>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h2 className="text-base font-semibold text-[var(--foreground)]">3. Carrinho e pagamento</h2>
+              <p className="text-sm text-[var(--muted)]">Confira quantidades, descontos e forma de pagamento antes de finalizar.</p>
+            </div>
             <Badge variant={totalAmountCents > 0 ? "success" : "neutral"}>{formatCentsToBRL(totalAmountCents)}</Badge>
           </div>
 
@@ -592,10 +596,10 @@ export function SalesUi({ products, customers, drivers }: SalesUiProps) {
                           onClick={() => removeCartItem(item.productId)}
                           variant="ghost"
                         >
-                          Remover
+                          Remover item
                         </Button>
                       </div>
-                      <div className="grid grid-cols-3 gap-2">
+                      <div className="grid gap-2 sm:grid-cols-3">
                         <Field label="Quantidade">
                           <TextInput
                             min="1"
@@ -627,7 +631,7 @@ export function SalesUi({ products, customers, drivers }: SalesUiProps) {
                 })}
               </ul>
             ) : (
-              <EmptyState title="Carrinho vazio" description="Adicione um produto para iniciar." />
+              <EmptyState title="Carrinho vazio" description="Adicione produtos para liberar a finalizacao." />
             )}
           </div>
 
@@ -643,13 +647,17 @@ export function SalesUi({ products, customers, drivers }: SalesUiProps) {
               </SelectInput>
             </Field>
 
-            <label className="flex items-center gap-2 text-sm text-[var(--foreground)]">
+            <label className="flex items-start gap-3 rounded-[var(--radius-control)] border border-[var(--border-soft)] bg-[var(--card-muted)] p-3 text-sm text-[var(--foreground)]">
               <input
                 checked={deliveryPending}
+                className="mt-1"
                 type="checkbox"
                 onChange={(event) => setDeliveryPending(event.target.checked)}
               />
-              Entregar depois
+              <span>
+                <span className="block font-medium">Entregar depois</span>
+                <span className="block text-xs text-[var(--muted)]">Marque quando a venda fica pendente de entrega.</span>
+              </span>
             </label>
 
             <Field label="Entregador">
@@ -667,9 +675,11 @@ export function SalesUi({ products, customers, drivers }: SalesUiProps) {
             </Field>
 
             <div className="rounded-[var(--radius-control)] bg-[var(--card-muted)] p-3">
-              <p className="text-xs font-medium uppercase tracking-[0.08em] text-[var(--muted)]">Total</p>
+              <p className="text-sm font-medium text-[var(--muted)]">Total da venda</p>
               <p className="mt-1 text-2xl font-semibold tracking-[-0.03em] text-[var(--foreground)]">{formatCentsToBRL(totalAmountCents)}</p>
             </div>
+
+            <p className="text-xs text-[var(--muted)]">A venda baixa estoque automaticamente ao finalizar.</p>
 
             <Button
               className="w-full"
