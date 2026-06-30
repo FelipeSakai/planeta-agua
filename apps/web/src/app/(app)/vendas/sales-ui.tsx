@@ -505,15 +505,18 @@ export function SalesUi({ products, customers, drivers }: SalesUiProps) {
           </Panel>
 
           <Panel className="p-4">
-            <div className="flex items-center justify-between gap-3">
-              <h2 className="text-base font-semibold text-[var(--foreground)]">Produto</h2>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <h2 className="text-base font-semibold text-[var(--foreground)]">2. Produto</h2>
+                <p className="text-sm text-[var(--muted)]">Adicione produtos ativos. Itens sem estoque aparecem bloqueados.</p>
+              </div>
               <Badge variant="neutral">{cartItems.length} no carrinho</Badge>
             </div>
 
             <div className="relative mt-4">
               <TextInput
                 aria-label="Buscar produto"
-                placeholder="Digite o nome do produto"
+                placeholder="Buscar produto ativo"
                 value={productQuery}
                 onChange={(event) => setProductQuery(event.target.value)}
               />
@@ -539,7 +542,17 @@ export function SalesUi({ products, customers, drivers }: SalesUiProps) {
                               {outOfStock ? "sem estoque" : `Estoque ${product.stockQuantity}`}
                             </span>
                           </span>
-                          <span className="font-medium text-[var(--foreground)]">{formatCentsToBRL(product.salePriceCents)}</span>
+                          {outOfStock ? (
+                            <span className="flex flex-col items-end gap-1">
+                              <span className="font-medium text-[var(--foreground)]">{formatCentsToBRL(product.salePriceCents)}</span>
+                              <span className="text-xs text-[var(--muted)]">Indisponivel</span>
+                            </span>
+                          ) : (
+                            <span className="flex flex-col items-end gap-1">
+                              <span className="font-medium text-[var(--foreground)]">{formatCentsToBRL(product.salePriceCents)}</span>
+                              <span className="text-xs text-[var(--brand)]">Adicionar item</span>
+                            </span>
+                          )}
                         </button>
                       </li>
                     );
@@ -549,7 +562,9 @@ export function SalesUi({ products, customers, drivers }: SalesUiProps) {
             </div>
 
             {productQuery.trim() && productResults.length === 0 ? (
-              <p className="mt-3 text-sm text-[var(--muted)]">Nenhum produto encontrado.</p>
+              <p className="mt-3 rounded-[var(--radius-control)] bg-[var(--card-muted)] p-3 text-sm text-[var(--muted)]">
+                Nenhum produto ativo encontrado com esse nome.
+              </p>
             ) : null}
           </Panel>
         </div>
