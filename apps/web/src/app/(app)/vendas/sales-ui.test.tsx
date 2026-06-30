@@ -129,6 +129,7 @@ describe("syncCustomersFromProps", () => {
       id: "c1",
       name: "Maria",
       phone: "11999999999",
+      mobilePhone: null,
       code: null,
       address: null,
       previousBottle: { month: 7, year: 2026, notes: "verde" },
@@ -137,7 +138,7 @@ describe("syncCustomersFromProps", () => {
     const syncedCustomers = syncCustomersFromProps({
       customers: [refreshedCustomer],
       customerDirectory: [
-        { id: "c1", name: "Maria", phone: "11999999999", code: null, address: null, previousBottle: { month: 6, year: 2024, notes: "azul" } },
+        { id: "c1", name: "Maria", phone: "11999999999", mobilePhone: null, code: null, address: null, previousBottle: { month: 6, year: 2024, notes: "azul" } },
       ],
       selectedCustomerId: "c1",
     });
@@ -153,6 +154,7 @@ describe("syncCustomersFromProps", () => {
       id: "c1",
       name: "Maria",
       phone: null,
+      mobilePhone: null,
       code: null,
       address: null,
       previousBottle: { month: 6, year: 2024, notes: "azul" },
@@ -175,6 +177,7 @@ describe("resolveBottleState", () => {
       id: "c1",
       name: "Maria",
       phone: null,
+      mobilePhone: null,
       code: null,
       address: null,
       previousBottle: { month: 6, year: 2024, notes: "azul" },
@@ -200,6 +203,7 @@ describe("resolveBottleState", () => {
       id: "c1",
       name: "Maria",
       phone: null,
+      mobilePhone: null,
       code: null,
       address: null,
       previousBottle: { month: 6, year: 2024, notes: "azul" },
@@ -222,6 +226,7 @@ describe("resolveBottleState", () => {
       id: "c1",
       name: "Maria",
       phone: null,
+      mobilePhone: null,
       code: null,
       address: null,
       previousBottle: { month: 6, year: 2024, notes: "azul" },

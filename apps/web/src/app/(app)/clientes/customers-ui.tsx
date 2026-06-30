@@ -74,7 +74,7 @@ export function CustomersUi({ userRole, customers, summary }: CustomersUiProps) 
   const filteredCustomers = customers.filter((customer) => {
     if (!search) return true;
     const term = search.toLowerCase();
-    return customer.name.toLowerCase().includes(term) || (customer.phone?.toLowerCase().includes(term) ?? false);
+    return customer.name.toLowerCase().includes(term) || (customer.phone?.toLowerCase().includes(term) ?? false) || (customer.mobilePhone?.toLowerCase().includes(term) ?? false);
   });
 
   function closeDrawer() {
@@ -138,17 +138,19 @@ export function CustomersUi({ userRole, customers, summary }: CustomersUiProps) 
     try {
       const name = String(formData.get("name") ?? "").trim();
       const phone = String(formData.get("phone") ?? "").trim() || null;
+      const mobilePhone = String(formData.get("mobilePhone") ?? "").trim() || null;
       const address = String(formData.get("address") ?? "").trim() || null;
       const notes = String(formData.get("notes") ?? "").trim() || null;
 
-      const body = { name, phone, address, notes };
+      const body = { name, phone, mobilePhone, address, notes };
 
       if (drawerMode === "create") {
         const dupParams = new URLSearchParams({ name });
         if (phone) dupParams.set("phone", phone);
+        if (mobilePhone) dupParams.set("mobilePhone", mobilePhone);
         const dupResponse = await fetch(`/api/customers/duplicates?${dupParams}`);
         if (dupResponse.ok) {
-          const dupData = (await dupResponse.json()) as { hasDuplicates: boolean; duplicates: Array<{ id: string; name: string; phone: string | null }> };
+          const dupData = (await dupResponse.json()) as { hasDuplicates: boolean; duplicates: Array<{ id: string; name: string; phone: string | null; mobilePhone: string | null }> };
           if (dupData.hasDuplicates) {
             setDuplicateWarning(`Possivel duplicidade: ${dupData.duplicates.map((d) => d.name).join(", ")}. Confirme salvando novamente.`);
           }
@@ -259,7 +261,12 @@ export function CustomersUi({ userRole, customers, summary }: CustomersUiProps) 
     {
       key: "phone",
       header: "Telefone",
-      cell: (customer) => customer.phone ?? "—",
+      cell: (customer) => (customer.phone ? `Tel: ${customer.phone}` : "—"),
+    },
+    {
+      key: "mobilePhone",
+      header: "Celular",
+      cell: (customer) => (customer.mobilePhone ? `Cel: ${customer.mobilePhone}` : "—"),
     },
     {
       key: "address",
@@ -342,7 +349,7 @@ export function CustomersUi({ userRole, customers, summary }: CustomersUiProps) 
       </Drawer>
 
       <Toolbar actions={isAdmin ? <Button onClick={openCreateDrawer}>Novo cliente</Button> : null}>
-        <TextInput aria-label="Buscar cliente" placeholder="Buscar por nome ou telefone" value={search} onChange={(event) => setSearch(event.target.value)} />
+        <TextInput aria-label="Buscar cliente" placeholder="Buscar por nome, telefone ou celular" value={search} onChange={(event) => setSearch(event.target.value)} />
       </Toolbar>
 
       <DataTable
@@ -366,7 +373,11 @@ export function CustomersUi({ userRole, customers, summary }: CustomersUiProps) 
             <dl className="grid grid-cols-2 gap-3 text-sm">
               <div>
                 <dt className="text-xs text-[var(--muted)]">Telefone</dt>
-                <dd className="text-[var(--foreground)]">{customer.phone ?? "—"}</dd>
+                <dd className="text-[var(--foreground)]">{customer.phone ? `Tel: ${customer.phone}` : "—"}</dd>
+              </div>
+              <div>
+                <dt className="text-xs text-[var(--muted)]">Celular</dt>
+                <dd className="text-[var(--foreground)]">{customer.mobilePhone ? `Cel: ${customer.mobilePhone}` : "—"}</dd>
               </div>
               <div>
                 <dt className="text-xs text-[var(--muted)]">Status</dt>
@@ -403,7 +414,11 @@ function CustomerForm({
       </Field>
 
       <Field label="Telefone">
-        <TextInput defaultValue={customer?.phone ?? ""} name="phone" placeholder="(00) 00000-0000" />
+        <TextInput defaultValue={customer?.phone ?? ""} name="phone" placeholder="(00) 0000-0000" />
+      </Field>
+
+      <Field label="Celular">
+        <TextInput defaultValue={customer?.mobilePhone ?? ""} name="mobilePhone" placeholder="(00) 00000-0000" />
       </Field>
 
       <Field label="Endereco">
@@ -526,6 +541,10 @@ function DataTab({
         <div>
           <dt className="text-xs text-[var(--muted)]">Telefone</dt>
           <dd className="text-sm text-[var(--foreground)]">{customer.phone ?? "—"}</dd>
+        </div>
+        <div>
+          <dt className="text-xs text-[var(--muted)]">Celular</dt>
+          <dd className="text-sm text-[var(--foreground)]">{customer.mobilePhone ?? "—"}</dd>
         </div>
         <div>
           <dt className="text-xs text-[var(--muted)]">Status</dt>
