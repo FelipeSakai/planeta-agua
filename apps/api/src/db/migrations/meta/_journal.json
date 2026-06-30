@@ -36,6 +36,13 @@
       "when": 1782066338981,
       "tag": "0004_previous_nighthawk",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1782867600000,
+      "tag": "0007_customer_mobile_phone",
+      "breakpoints": true
     }
   ]
 }
