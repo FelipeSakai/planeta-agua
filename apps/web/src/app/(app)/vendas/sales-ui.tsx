@@ -342,11 +342,17 @@ export function SalesUi({ products, customers, drivers }: SalesUiProps) {
 
   return (
     <section className="space-y-6">
-      <PageHeader eyebrow="Operacao" title="Vendas" />
-
-      <div className="flex justify-end">
-        <Link href="/vendas/historico" className="text-base text-[var(--brand)] hover:underline">
-          Ver historico -&gt;
+      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+        <PageHeader
+          eyebrow="Operacao"
+          title="Vendas"
+          description="Registre venda, pagamento e entrega em um fluxo rapido. O estoque baixa automaticamente ao finalizar."
+        />
+        <Link
+          href="/vendas/historico"
+          className="inline-flex min-h-10 w-full items-center justify-center rounded-[var(--radius-control)] border border-[var(--border)] bg-[var(--card)] px-4 py-2 text-sm font-medium text-[var(--foreground)] transition duration-150 hover:bg-[var(--card-muted)] md:w-auto"
+        >
+          Ver historico
         </Link>
       </div>
 
@@ -371,9 +377,14 @@ export function SalesUi({ products, customers, drivers }: SalesUiProps) {
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(340px,380px)]">
         <div className="space-y-6">
           <Panel className="p-4">
-            <div className="flex items-center justify-between gap-3">
-              <h2 className="text-base font-semibold text-[var(--foreground)]">Cliente</h2>
-              <Button onClick={() => setIsCustomerDrawerOpen(true)} variant="secondary">+ cadastrar</Button>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <h2 className="text-base font-semibold text-[var(--foreground)]">1. Cliente</h2>
+                <p className="text-sm text-[var(--muted)]">Selecione um cliente quando precisar registrar galao, endereco ou entrega.</p>
+              </div>
+              <Button className="w-full sm:w-auto" onClick={() => setIsCustomerDrawerOpen(true)} variant="secondary">
+                Cadastrar cliente
+              </Button>
             </div>
 
             {selectedCustomer ? (
@@ -444,6 +455,9 @@ export function SalesUi({ products, customers, drivers }: SalesUiProps) {
               </div>
             ) : (
               <div className="mt-4 space-y-3">
+                <div className="rounded-[var(--radius-control)] border border-[var(--border-soft)] bg-[var(--card-muted)] p-3 text-sm text-[var(--muted)]">
+                  <span className="font-medium text-[var(--foreground)]">Venda sem cliente:</span> deixe em branco para venda de balcao.
+                </div>
                 <div className="grid gap-3 md:grid-cols-2">
                   <TextInput
                     aria-label="Buscar cliente por nome ou telefone"
@@ -458,9 +472,12 @@ export function SalesUi({ products, customers, drivers }: SalesUiProps) {
                     onChange={(event) => setSecondaryCustomerQuery(event.target.value)}
                   />
                 </div>
-                <Button disabled={isSearchingCustomers} onClick={searchCustomers} variant="secondary">
-                  {isSearchingCustomers ? "Buscando..." : "Buscar"}
-                </Button>
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                  <Button className="w-full sm:w-auto" disabled={isSearchingCustomers} onClick={searchCustomers} variant="secondary">
+                    {isSearchingCustomers ? "Buscando..." : "Buscar cliente"}
+                  </Button>
+                  <p className="text-xs text-[var(--muted)]">Busque por nome, telefone, codigo ou endereco.</p>
+                </div>
                 {customerResults.length > 0 ? (
                   <ul
                     aria-label="Resultados de clientes"
