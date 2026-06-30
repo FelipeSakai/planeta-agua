@@ -1,6 +1,63 @@
 import { describe, expect, it } from "vitest";
 
-import { calculateBottleExpiresAt, isBottleNearExpiration, isBottleExpired } from "./customers";
+import {
+  calculateBottleExpiresAt,
+  createCustomerSchema,
+  customerResponseSchema,
+  duplicateCheckResponseSchema,
+  isBottleNearExpiration,
+  isBottleExpired,
+  updateCustomerSchema,
+} from "./customers";
+
+describe("customer contracts", () => {
+  it("accepts mobile phone in customer create input", () => {
+    expect(createCustomerSchema.parse({ name: "Maria", phone: "1133333333", mobilePhone: "11999999999" })).toMatchObject({
+      name: "Maria",
+      phone: "1133333333",
+      mobilePhone: "11999999999",
+    });
+  });
+
+  it("accepts mobile phone in customer update input", () => {
+    expect(updateCustomerSchema.parse({ mobilePhone: "11999999999" })).toMatchObject({
+      mobilePhone: "11999999999",
+    });
+  });
+
+  it("includes mobile phone in customer responses", () => {
+    expect(
+      customerResponseSchema.parse({
+        id: "11111111-1111-4111-8111-111111111111",
+        name: "Maria",
+        phone: "1133333333",
+        mobilePhone: "11999999999",
+        address: null,
+        notes: null,
+        isActive: true,
+        hasBottleAlert: false,
+        createdAt: "2026-06-30T00:00:00.000Z",
+        updatedAt: "2026-06-30T00:00:00.000Z",
+      }),
+    ).toMatchObject({ mobilePhone: "11999999999" });
+  });
+
+  it("includes mobile phone in duplicate customer responses", () => {
+    expect(
+      duplicateCheckResponseSchema.parse({
+        hasDuplicates: true,
+        duplicates: [
+          {
+            id: "11111111-1111-4111-8111-111111111111",
+            name: "Maria",
+            phone: "1133333333",
+            mobilePhone: "11999999999",
+          },
+        ],
+      }),
+    ).toMatchObject({ duplicates: [{ mobilePhone: "11999999999" }] });
+  });
+});
 
 describe("calculateBottleExpiresAt", () => {
   it("returns the last day of the month 3 years after the given month/year", () => {

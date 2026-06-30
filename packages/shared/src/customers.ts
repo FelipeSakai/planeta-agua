@@ -63,6 +63,7 @@ const addressSchema = z
 export const createCustomerSchema = z.object({
   name: z.string().trim().min(2).max(120),
   phone: phoneSchema,
+  mobilePhone: phoneSchema,
   address: addressSchema,
   notes: notesSchema,
 });
@@ -76,6 +77,7 @@ export const customerResponseSchema = z.object({
   id: z.string().uuid(),
   name: z.string(),
   phone: z.string().nullable(),
+  mobilePhone: z.string().nullable(),
   address: z.string().nullable(),
   notes: z.string().nullable(),
   isActive: z.boolean(),
@@ -148,6 +150,7 @@ export const duplicateCheckResponseSchema = z.object({
       id: z.string().uuid(),
       name: z.string(),
       phone: z.string().nullable(),
+      mobilePhone: z.string().nullable(),
     }),
   ),
 });

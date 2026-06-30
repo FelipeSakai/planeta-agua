@@ -98,17 +98,38 @@ describe("sales contracts", () => {
     expect(parsed.phone).toBe("11999999999");
   });
 
+  it("accepts mobile phone in quick customer creation", () => {
+    expect(quickCustomerInputSchema.parse({ name: "Maria", phone: "1133333333", mobilePhone: "11999999999" })).toMatchObject({
+      mobilePhone: "11999999999",
+    });
+  });
+
   it("accepts the minimized sales customer payload with previous bottle history", () => {
     const parsed = saleCustomerResponseSchema.parse({
       id: "55555555-5555-4555-8555-555555555555",
       name: "Maria",
       phone: "11999999999",
+      mobilePhone: null,
       code: null,
       address: null,
       previousBottle: { month: 6, year: 2024, notes: "Azul" },
     });
 
     expect(parsed.previousBottle).toEqual({ month: 6, year: 2024, notes: "Azul" });
+  });
+
+  it("includes mobile phone in sales customer responses", () => {
+    expect(
+      saleCustomerResponseSchema.parse({
+        id: "11111111-1111-4111-8111-111111111111",
+        name: "Maria",
+        phone: "1133333333",
+        mobilePhone: "11999999999",
+        code: null,
+        address: null,
+        previousBottle: null,
+      }),
+    ).toMatchObject({ mobilePhone: "11999999999" });
   });
 
   it("exports payment methods in the expected operational order", () => {
@@ -248,6 +269,7 @@ describe("shared sales contracts", () => {
       id: "99999999-9999-4999-8999-999999999999",
       name: "Maria",
       phone: "11999999999",
+      mobilePhone: null,
       code: "C001",
       address: "Rua A, 10",
       previousBottle: null,

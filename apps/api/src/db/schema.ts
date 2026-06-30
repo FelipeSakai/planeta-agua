@@ -45,6 +45,7 @@ export const customers = pgTable("customers", {
   name: text("name").notNull(),
   code: text("code"),
   phone: text("phone"),
+  mobilePhone: text("mobile_phone"),
   address: text("address"),
   notes: text("notes"),
   isActive: boolean("is_active").notNull().default(true),

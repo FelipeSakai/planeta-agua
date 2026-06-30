@@ -40,6 +40,7 @@ export const cancelSaleInputSchema = z.object({
 export const quickCustomerInputSchema = z.object({
   name: z.string().trim().min(2).max(120),
   phone: z.string().trim().min(8).max(20).nullable().optional(),
+  mobilePhone: z.string().trim().min(8).max(20).nullable().optional(),
   code: z.string().trim().max(40).nullable().optional(),
   address: z.string().trim().max(200).nullable().optional(),
 });
@@ -47,6 +48,7 @@ export const quickCustomerInputSchema = z.object({
 export const saleCustomerResponseSchema = quickCustomerInputSchema.extend({
   id: z.string().uuid(),
   phone: z.string().trim().min(8).max(20).nullable(),
+  mobilePhone: z.string().nullable(),
   code: z.string().trim().max(40).nullable(),
   address: z.string().trim().max(200).nullable(),
   previousBottle: customerBottleRecordSchema,
