@@ -38,6 +38,7 @@ const validSaleDetailResponse = {
     customerId: null,
     customerName: null,
     customerPhone: null,
+    customerMobilePhone: null,
     customerAddress: null,
     userId: "22222222-2222-4222-8222-222222222222",
     userName: "Operador",
@@ -203,6 +204,7 @@ describe("sales contracts", () => {
       sale: {
         ...validSaleDetailResponse.sale,
         customerPhone: "11999999999",
+        customerMobilePhone: "11988888888",
         customerAddress: "Rua A, 10",
         driverId: "55555555-5555-4555-8555-555555555555",
         driverName: "Joao Entregador",
@@ -210,6 +212,7 @@ describe("sales contracts", () => {
     });
 
     expect(parsed.sale.customerPhone).toBe("11999999999");
+    expect(parsed.sale.customerMobilePhone).toBe("11988888888");
     expect(parsed.sale.customerAddress).toBe("Rua A, 10");
     expect(parsed.sale.driverId).toBe("55555555-5555-4555-8555-555555555555");
     expect(parsed.sale.driverName).toBe("Joao Entregador");

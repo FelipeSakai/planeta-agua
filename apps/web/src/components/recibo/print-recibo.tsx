@@ -19,6 +19,7 @@ const statusLabels: Record<string, string> = {
 export function PrintRecibo({ sale }: { sale: SaleDetailResponse }) {
   const isDelivery = sale.sale.status === "PENDING_DELIVERY" || Boolean(sale.sale.driverName);
   const customerName = sale.sale.customerName ?? "Consumidor";
+  const customerPhones = [sale.sale.customerMobilePhone, sale.sale.customerPhone].filter(Boolean).join(" / ") || "Nao informado";
   const saleDate = new Date(sale.sale.createdAt).toLocaleString("pt-BR");
 
   return (
@@ -35,7 +36,7 @@ export function PrintRecibo({ sale }: { sale: SaleDetailResponse }) {
           <p>Cliente: {customerName}</p>
           {isDelivery ? (
             <>
-              <p>Telefone: {sale.sale.customerPhone ?? "Nao informado"}</p>
+              <p>Telefone: {customerPhones}</p>
               <p>Endereco: {sale.sale.customerAddress ?? "Nao informado"}</p>
               <p>Entregador: {sale.sale.driverName ?? "Nao informado"}</p>
               <p>Status: {statusLabels[sale.sale.status] ?? sale.sale.status}</p>

@@ -119,6 +119,7 @@ export const saleDetailResponseSchema = z.object({
       customerId: z.string().uuid().nullable(),
       customerName: z.string().nullable(),
       customerPhone: z.string().nullable(),
+      customerMobilePhone: z.string().nullable(),
       customerAddress: z.string().nullable(),
       userId: z.string().uuid(),
       userName: z.string(),

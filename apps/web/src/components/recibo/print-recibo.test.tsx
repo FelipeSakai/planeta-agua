@@ -11,6 +11,7 @@ const saleDetail: SaleDetailResponse = {
     customerId: "22222222-2222-4222-8222-222222222222",
     customerName: "Maria Souza",
     customerPhone: "11999999999",
+    customerMobilePhone: "11988888888",
     customerAddress: "Rua A, 10",
     userId: "33333333-3333-4333-8333-333333333333",
     userName: "Operador",
@@ -57,6 +58,7 @@ describe("PrintRecibo", () => {
 
     expect(html).toContain("Maria Souza");
     expect(html).toContain("11999999999");
+    expect(html).toContain("11988888888");
     expect(html).toContain("Rua A, 10");
     expect(html).toContain("Joao Entregador");
   });

@@ -16,10 +16,14 @@ const completedSaleStatus: SaleStatus = "COMPLETED";
 const canceledSaleStatus: SaleStatus = "CANCELED";
 const pendingDeliveryStatus: SaleStatus = "PENDING_DELIVERY";
 
+export function buildCustomerSearchTerms(primaryQuery: string, secondaryQuery = "") {
+  return [primaryQuery, secondaryQuery].flatMap((query) => query.trim().split(/\s+/).filter(Boolean));
+}
+
 @Injectable()
 export class SalesRepository {
   async searchCustomers(primaryQuery: string, secondaryQuery = "") {
-    const searchTerms = [primaryQuery.trim(), secondaryQuery.trim()].filter(Boolean);
+    const searchTerms = buildCustomerSearchTerms(primaryQuery, secondaryQuery);
 
     if (searchTerms.length === 0) {
       return db.query.customers.findMany({ orderBy: [asc(customers.name)], limit: 10 });

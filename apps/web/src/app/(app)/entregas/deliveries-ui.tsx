@@ -65,6 +65,7 @@ export function DeliveriesUi({ deliveries }: DeliveriesUiProps) {
         <div className="space-y-4">
           {deliveries.map((delivery) => {
             const itemSummary = delivery.items.map((item) => `${item.quantity}x ${item.productNameSnapshot}`).join(", ");
+            const customerPhones = [delivery.sale.customerMobilePhone, delivery.sale.customerPhone].filter(Boolean).join(" / ") || "Nao informado";
 
             return (
               <Panel key={delivery.sale.id} className="p-4">
@@ -78,7 +79,7 @@ export function DeliveriesUi({ deliveries }: DeliveriesUiProps) {
                     </div>
                     <div className="grid gap-1 text-sm text-[var(--muted)] md:grid-cols-2">
                       <p>Endereco: {delivery.sale.customerAddress ?? "Nao informado"}</p>
-                      <p>Telefone: {delivery.sale.customerPhone ?? "Nao informado"}</p>
+                      <p>Telefone: {customerPhones}</p>
                       <p>Entregador: {delivery.sale.driverName ?? "Sem entregador"}</p>
                       <p>Pagamento: {paymentMethodLabels[delivery.sale.paymentMethod] ?? delivery.sale.paymentMethod}</p>
                     </div>

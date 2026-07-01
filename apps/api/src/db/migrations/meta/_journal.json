@@ -40,6 +40,20 @@
     {
       "idx": 5,
       "version": "7",
+      "when": 1782495600000,
+      "tag": "0005_customer_bottles",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1782582000000,
+      "tag": "0006_drivers",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
       "when": 1782867600000,
       "tag": "0007_customer_mobile_phone",
       "breakpoints": true

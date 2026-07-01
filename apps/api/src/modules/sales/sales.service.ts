@@ -175,6 +175,7 @@ export class SalesService {
         customerId: detail.sale.customerId,
         customerName: detail.sale.customer?.name ?? null,
         customerPhone: detail.sale.customer?.phone ?? null,
+        customerMobilePhone: detail.sale.customer?.mobilePhone ?? null,
         customerAddress: detail.sale.customer?.address ?? null,
         userId: detail.sale.userId,
         userName: detail.sale.user.name,
