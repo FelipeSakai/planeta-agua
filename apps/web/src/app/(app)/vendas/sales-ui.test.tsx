@@ -2,7 +2,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { QuickCustomerForm, resolveBottleState, SalesUi, syncCustomersFromProps } from "./sales-ui";
+import { buildCustomerSearchRequest, QuickCustomerForm, resolveBottleState, SalesUi, syncCustomersFromProps } from "./sales-ui";
 
 vi.mock("next/navigation", () => ({
   useRouter: vi.fn(() => ({ refresh: vi.fn() })),
@@ -193,6 +193,12 @@ describe("syncCustomersFromProps", () => {
 
     expect(syncedCustomers.selectedCustomer).toEqual(directoryCustomer);
     expect(syncedCustomers.customerDirectory).toEqual([directoryCustomer]);
+  });
+});
+
+describe("buildCustomerSearchRequest", () => {
+  it("preserves combined name and code searches from a single input", () => {
+    expect(buildCustomerSearchRequest("Maria C001")).toEqual({ primaryQuery: "Maria", secondaryQuery: "C001" });
   });
 });
 

@@ -220,9 +220,9 @@ export function SalesUi({ products, customers, drivers }: SalesUiProps) {
       return;
     }
 
-    const query = customerQuery.trim();
+    const { primaryQuery, secondaryQuery } = buildCustomerSearchRequest(customerQuery);
 
-    if (!query) {
+    if (!primaryQuery && !secondaryQuery) {
       setCustomerResults([]);
       return;
     }
@@ -231,7 +231,7 @@ export function SalesUi({ products, customers, drivers }: SalesUiProps) {
     setIsSearchingCustomers(true);
 
     try {
-      const result = await searchSaleCustomers(query);
+      const result = await searchSaleCustomers(primaryQuery, { secondaryQuery });
       setCustomerResults(result);
       setCustomerDirectory((current) => mergeSaleCustomers(current, result));
     } catch {
@@ -773,6 +773,19 @@ function formatBottleRecord(bottle: BottleRecord | null | undefined) {
   const notes = bottle.notes?.trim();
 
   return notes ? `${month}/${bottle.year} · ${notes}` : `${month}/${bottle.year}`;
+}
+
+export function buildCustomerSearchRequest(query: string) {
+  const terms = query.trim().split(/\s+/).filter(Boolean);
+
+  if (terms.length <= 1) {
+    return { primaryQuery: terms[0] ?? "", secondaryQuery: "" };
+  }
+
+  return {
+    primaryQuery: terms.slice(0, -1).join(" "),
+    secondaryQuery: terms.at(-1) ?? "",
+  };
 }
 
 function formatCustomerPhones(customer: SalesCustomerOption) {
