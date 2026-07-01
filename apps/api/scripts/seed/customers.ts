@@ -23,12 +23,14 @@ export async function seedCustomers(): Promise<void> {
 
   const customersData = customerNames.map((name, index) => {
     const hasPhone = index % 5 !== 0;
+    const hasMobilePhone = index % 4 !== 0;
     const hasAddress = index % 3 !== 0;
 
     return {
       id: customerUuids[index],
       name,
       phone: hasPhone ? `(11) 9${String(1000 + index).padStart(4, "0")}-${String(1000 + index).padStart(4, "0")}` : null,
+      mobilePhone: hasMobilePhone ? `(11) 9${String(5000 + index).padStart(4, "0")}-${String(5000 + index).padStart(4, "0")}` : null,
       address: hasAddress ? `Rua ${name.split(" ")[0]}, ${100 + index}` : null,
       notes: null,
       isActive: index < 28,
