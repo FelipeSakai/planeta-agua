@@ -135,7 +135,7 @@ export async function searchSaleCustomers(primaryQuery: string, options?: SalesR
 }
 
 export async function createSaleCustomer(
-  input: { name: string; phone?: string | null; code?: string | null; address?: string | null },
+  input: { name: string; phone?: string | null; mobilePhone?: string | null; code?: string | null; address?: string | null },
   options?: SalesRequestOptions,
 ) {
   const payload = quickCustomerInputSchema.parse(input);

@@ -2,7 +2,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { resolveBottleState, SalesUi, syncCustomersFromProps } from "./sales-ui";
+import { QuickCustomerForm, resolveBottleState, SalesUi, syncCustomersFromProps } from "./sales-ui";
 
 vi.mock("next/navigation", () => ({
   useRouter: vi.fn(() => ({ refresh: vi.fn() })),
@@ -31,7 +31,7 @@ describe("SalesUi", () => {
     expect(html).not.toContain("Ajuste quantidades rapidamente antes de finalizar");
   });
 
-  it("renders two customer search fields and a product search field", () => {
+  it("renders one customer search field and a product search field without drawer-only copy", () => {
     const html = renderToStaticMarkup(
       createElement(SalesUi, {
         userRole: "OPERATOR",
@@ -41,9 +41,34 @@ describe("SalesUi", () => {
       }),
     );
 
-    expect(html).toContain("Buscar por nome ou telefone");
-    expect(html).toContain("Codigo ou endereco");
+    expect(html).toContain("Buscar cliente");
+    expect(html).toContain("Nome, telefone, celular, codigo ou endereco");
+    expect(html).not.toContain("Busque por nome, telefone, codigo ou endereco.");
+    expect(html).not.toContain("Cadastrar cliente com Celular e Telefone");
     expect(html).toContain("Buscar produto ativo");
+  });
+
+  it("renders quick customer phone fields in the customer form", () => {
+    const html = renderToStaticMarkup(
+      createElement(QuickCustomerForm, {
+        isSavingCustomer: false,
+        quickCustomerAddress: "",
+        quickCustomerCode: "",
+        quickCustomerMobilePhone: "",
+        quickCustomerName: "",
+        quickCustomerPhone: "",
+        onCancel: () => undefined,
+        onSubmit: () => undefined,
+        setQuickCustomerAddress: () => undefined,
+        setQuickCustomerCode: () => undefined,
+        setQuickCustomerMobilePhone: () => undefined,
+        setQuickCustomerName: () => undefined,
+        setQuickCustomerPhone: () => undefined,
+      }),
+    );
+
+    expect(html).toContain("Celular");
+    expect(html).toContain("Telefone");
   });
 
   it("renders the sales workflow in the expected operational order", () => {
@@ -64,7 +89,7 @@ describe("SalesUi", () => {
     expect(productStepIndex).toBeGreaterThan(customerStepIndex);
     expect(cartStepIndex).toBeGreaterThan(productStepIndex);
     expect(html).toContain("Venda sem cliente");
-    expect(html).toContain("Adicionar item");
+    expect(html).toContain("Buscar produto ativo");
     expect(html).toContain("Total da venda");
   });
 

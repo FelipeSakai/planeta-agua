@@ -72,8 +72,7 @@ export function SalesUi({ products, customers, drivers }: SalesUiProps) {
   const [isPending, startTransition] = useTransition();
   const [customerDirectory, setCustomerDirectory] = useState<SalesCustomerOption[]>([]);
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
-  const [primaryCustomerQuery, setPrimaryCustomerQuery] = useState("");
-  const [secondaryCustomerQuery, setSecondaryCustomerQuery] = useState("");
+  const [customerQuery, setCustomerQuery] = useState("");
   const [customerResults, setCustomerResults] = useState<SalesCustomerOption[]>([]);
   const [productQuery, setProductQuery] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | "">("PIX");
@@ -87,6 +86,7 @@ export function SalesUi({ products, customers, drivers }: SalesUiProps) {
   const [isCustomerDrawerOpen, setIsCustomerDrawerOpen] = useState(false);
   const [quickCustomerName, setQuickCustomerName] = useState("");
   const [quickCustomerPhone, setQuickCustomerPhone] = useState("");
+  const [quickCustomerMobilePhone, setQuickCustomerMobilePhone] = useState("");
   const [quickCustomerCode, setQuickCustomerCode] = useState("");
   const [quickCustomerAddress, setQuickCustomerAddress] = useState("");
   const [isSavingSale, setIsSavingSale] = useState(false);
@@ -143,16 +143,14 @@ export function SalesUi({ products, customers, drivers }: SalesUiProps) {
     setSelectedCustomerId(customer.id);
     setCustomerDirectory((current) => mergeSaleCustomers(current, [customer]));
     setCustomerResults([]);
-    setPrimaryCustomerQuery("");
-    setSecondaryCustomerQuery("");
+    setCustomerQuery("");
     syncBottleFields(customer);
   }
 
   function clearSelectedCustomer() {
     setSelectedCustomerId("");
     setCustomerResults([]);
-    setPrimaryCustomerQuery("");
-    setSecondaryCustomerQuery("");
+    setCustomerQuery("");
     syncBottleFields(null);
   }
 
@@ -178,6 +176,7 @@ export function SalesUi({ products, customers, drivers }: SalesUiProps) {
         },
       ];
     });
+    setProductQuery("");
     setError(null);
     setSuccessMessage(null);
     setLastSaleDetail(null);
@@ -221,10 +220,9 @@ export function SalesUi({ products, customers, drivers }: SalesUiProps) {
       return;
     }
 
-    const primary = primaryCustomerQuery.trim();
-    const secondary = secondaryCustomerQuery.trim();
+    const query = customerQuery.trim();
 
-    if (!primary && !secondary) {
+    if (!query) {
       setCustomerResults([]);
       return;
     }
@@ -233,7 +231,7 @@ export function SalesUi({ products, customers, drivers }: SalesUiProps) {
     setIsSearchingCustomers(true);
 
     try {
-      const result = await searchSaleCustomers(primary, { secondaryQuery: secondary });
+      const result = await searchSaleCustomers(query);
       setCustomerResults(result);
       setCustomerDirectory((current) => mergeSaleCustomers(current, result));
     } catch {
@@ -258,6 +256,7 @@ export function SalesUi({ products, customers, drivers }: SalesUiProps) {
       const createdCustomer = await createSaleCustomer({
         name: quickCustomerName,
         phone: quickCustomerPhone.trim() || null,
+        mobilePhone: quickCustomerMobilePhone.trim() || null,
         code: quickCustomerCode.trim() || null,
         address: quickCustomerAddress.trim() || null,
       });
@@ -266,6 +265,7 @@ export function SalesUi({ products, customers, drivers }: SalesUiProps) {
       syncBottleFields(createdCustomer);
       setQuickCustomerName("");
       setQuickCustomerPhone("");
+      setQuickCustomerMobilePhone("");
       setQuickCustomerCode("");
       setQuickCustomerAddress("");
       setIsCustomerDrawerOpen(false);
@@ -380,9 +380,12 @@ export function SalesUi({ products, customers, drivers }: SalesUiProps) {
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <h2 className="text-base font-semibold text-[var(--foreground)]">1. Cliente</h2>
-                <p className="text-sm text-[var(--muted)]">Selecione um cliente quando precisar registrar galao, endereco ou entrega.</p>
               </div>
-              <Button className="w-full sm:w-auto" onClick={() => setIsCustomerDrawerOpen(true)} variant="secondary">
+              <Button
+                className="w-full sm:w-auto"
+                onClick={() => setIsCustomerDrawerOpen(true)}
+                variant="secondary"
+              >
                 Cadastrar cliente
               </Button>
             </div>
@@ -392,7 +395,7 @@ export function SalesUi({ products, customers, drivers }: SalesUiProps) {
                 <div className="flex items-start justify-between gap-3">
                   <div className="space-y-1 text-sm">
                     <p className="font-medium text-[var(--foreground)]">{selectedCustomer.name}</p>
-                    <p className="text-[var(--muted)]">{selectedCustomer.phone ?? "Telefone nao informado"}</p>
+                    <p className="text-[var(--muted)]">{formatCustomerPhones(selectedCustomer)}</p>
                     {selectedCustomer.code ? (
                       <p className="text-xs text-[var(--muted)]">Codigo: {selectedCustomer.code}</p>
                     ) : null}
@@ -458,25 +461,16 @@ export function SalesUi({ products, customers, drivers }: SalesUiProps) {
                 <div className="rounded-[var(--radius-control)] border border-[var(--border-soft)] bg-[var(--card-muted)] p-3 text-sm text-[var(--muted)]">
                   <span className="font-medium text-[var(--foreground)]">Venda sem cliente:</span> deixe em branco para venda de balcao.
                 </div>
-                <div className="grid gap-3 md:grid-cols-2">
-                  <TextInput
-                    aria-label="Buscar cliente por nome ou telefone"
-                    placeholder="Buscar por nome ou telefone"
-                    value={primaryCustomerQuery}
-                    onChange={(event) => setPrimaryCustomerQuery(event.target.value)}
-                  />
-                  <TextInput
-                    aria-label="Buscar cliente por codigo ou endereco"
-                    placeholder="Codigo ou endereco"
-                    value={secondaryCustomerQuery}
-                    onChange={(event) => setSecondaryCustomerQuery(event.target.value)}
-                  />
-                </div>
+                <TextInput
+                  aria-label="Buscar cliente"
+                  placeholder="Nome, telefone, celular, codigo ou endereco"
+                  value={customerQuery}
+                  onChange={(event) => setCustomerQuery(event.target.value)}
+                />
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                   <Button className="w-full sm:w-auto" disabled={isSearchingCustomers} onClick={searchCustomers} variant="secondary">
                     {isSearchingCustomers ? "Buscando..." : "Buscar cliente"}
                   </Button>
-                  <p className="text-xs text-[var(--muted)]">Busque por nome, telefone, codigo ou endereco.</p>
                 </div>
                 {customerResults.length > 0 ? (
                   <ul
@@ -492,7 +486,7 @@ export function SalesUi({ products, customers, drivers }: SalesUiProps) {
                         >
                           <span className="font-medium text-[var(--foreground)]">{customer.name}</span>
                           <span className="text-xs text-[var(--muted)]">
-                            {[customer.phone, customer.code, customer.address].filter(Boolean).join(" · ") || "Sem detalhes"}
+                            {[customer.phone, customer.mobilePhone, customer.code, customer.address].filter(Boolean).join(" · ") || "Sem detalhes"}
                           </span>
                         </button>
                       </li>
@@ -507,7 +501,6 @@ export function SalesUi({ products, customers, drivers }: SalesUiProps) {
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <h2 className="text-base font-semibold text-[var(--foreground)]">2. Produto</h2>
-                <p className="text-sm text-[var(--muted)]">Adicione produtos ativos. Itens sem estoque aparecem bloqueados.</p>
               </div>
               <Badge variant="neutral">{cartItems.length} no carrinho</Badge>
             </div>
@@ -519,7 +512,6 @@ export function SalesUi({ products, customers, drivers }: SalesUiProps) {
                 value={productQuery}
                 onChange={(event) => setProductQuery(event.target.value)}
               />
-              <p className="mt-2 text-xs text-[var(--muted)]">Busque um produto e use Adicionar item para colocar no carrinho.</p>
               {productQuery.trim() && productResults.length > 0 ? (
                 <ul
                   aria-label="Resultados de produtos"
@@ -572,7 +564,6 @@ export function SalesUi({ products, customers, drivers }: SalesUiProps) {
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <h2 className="text-base font-semibold text-[var(--foreground)]">3. Carrinho e pagamento</h2>
-              <p className="text-sm text-[var(--muted)]">Confira quantidades, descontos e forma de pagamento antes de finalizar.</p>
             </div>
             <Badge variant={totalAmountCents > 0 ? "success" : "neutral"}>{formatCentsToBRL(totalAmountCents)}</Badge>
           </div>
@@ -697,26 +688,79 @@ export function SalesUi({ products, customers, drivers }: SalesUiProps) {
         open={isCustomerDrawerOpen}
         title="Cadastrar cliente"
       >
-        <form className="grid gap-4" onSubmit={createQuickCustomer}>
-          <Field label="Nome">
-            <TextInput required value={quickCustomerName} onChange={(event) => setQuickCustomerName(event.target.value)} />
-          </Field>
-          <Field label="Telefone">
-            <TextInput inputMode="tel" value={quickCustomerPhone} onChange={(event) => setQuickCustomerPhone(event.target.value)} />
-          </Field>
-          <Field label="Codigo">
-            <TextInput value={quickCustomerCode} onChange={(event) => setQuickCustomerCode(event.target.value)} />
-          </Field>
-          <Field label="Endereco">
-            <TextInput value={quickCustomerAddress} onChange={(event) => setQuickCustomerAddress(event.target.value)} />
-          </Field>
-          <div className="flex flex-wrap gap-2">
-            <Button disabled={isSavingCustomer} type="submit">{isSavingCustomer ? "Salvando..." : "Salvar cliente"}</Button>
-            <Button disabled={isSavingCustomer} onClick={() => setIsCustomerDrawerOpen(false)} variant="secondary">Cancelar</Button>
-          </div>
-        </form>
+        <QuickCustomerForm
+          isSavingCustomer={isSavingCustomer}
+          quickCustomerAddress={quickCustomerAddress}
+          quickCustomerCode={quickCustomerCode}
+          quickCustomerMobilePhone={quickCustomerMobilePhone}
+          quickCustomerName={quickCustomerName}
+          quickCustomerPhone={quickCustomerPhone}
+          onCancel={() => setIsCustomerDrawerOpen(false)}
+          onSubmit={createQuickCustomer}
+          setQuickCustomerAddress={setQuickCustomerAddress}
+          setQuickCustomerCode={setQuickCustomerCode}
+          setQuickCustomerMobilePhone={setQuickCustomerMobilePhone}
+          setQuickCustomerName={setQuickCustomerName}
+          setQuickCustomerPhone={setQuickCustomerPhone}
+        />
       </Drawer>
     </section>
+  );
+}
+
+type QuickCustomerFormProps = {
+  isSavingCustomer: boolean;
+  quickCustomerAddress: string;
+  quickCustomerCode: string;
+  quickCustomerMobilePhone: string;
+  quickCustomerName: string;
+  quickCustomerPhone: string;
+  onCancel: () => void;
+  onSubmit: React.FormEventHandler<HTMLFormElement>;
+  setQuickCustomerAddress: (value: string) => void;
+  setQuickCustomerCode: (value: string) => void;
+  setQuickCustomerMobilePhone: (value: string) => void;
+  setQuickCustomerName: (value: string) => void;
+  setQuickCustomerPhone: (value: string) => void;
+};
+
+export function QuickCustomerForm({
+  isSavingCustomer,
+  quickCustomerAddress,
+  quickCustomerCode,
+  quickCustomerMobilePhone,
+  quickCustomerName,
+  quickCustomerPhone,
+  onCancel,
+  onSubmit,
+  setQuickCustomerAddress,
+  setQuickCustomerCode,
+  setQuickCustomerMobilePhone,
+  setQuickCustomerName,
+  setQuickCustomerPhone,
+}: QuickCustomerFormProps) {
+  return (
+    <form className="grid gap-4" onSubmit={onSubmit}>
+      <Field label="Nome">
+        <TextInput required value={quickCustomerName} onChange={(event) => setQuickCustomerName(event.target.value)} />
+      </Field>
+      <Field label="Celular">
+        <TextInput inputMode="tel" value={quickCustomerMobilePhone} onChange={(event) => setQuickCustomerMobilePhone(event.target.value)} />
+      </Field>
+      <Field label="Telefone">
+        <TextInput inputMode="tel" value={quickCustomerPhone} onChange={(event) => setQuickCustomerPhone(event.target.value)} />
+      </Field>
+      <Field label="Codigo">
+        <TextInput value={quickCustomerCode} onChange={(event) => setQuickCustomerCode(event.target.value)} />
+      </Field>
+      <Field label="Endereco">
+        <TextInput value={quickCustomerAddress} onChange={(event) => setQuickCustomerAddress(event.target.value)} />
+      </Field>
+      <div className="flex flex-wrap gap-2">
+        <Button disabled={isSavingCustomer} type="submit">{isSavingCustomer ? "Salvando..." : "Salvar cliente"}</Button>
+        <Button disabled={isSavingCustomer} onClick={onCancel} variant="secondary">Cancelar</Button>
+      </div>
+    </form>
   );
 }
 
@@ -729,6 +773,12 @@ function formatBottleRecord(bottle: BottleRecord | null | undefined) {
   const notes = bottle.notes?.trim();
 
   return notes ? `${month}/${bottle.year} · ${notes}` : `${month}/${bottle.year}`;
+}
+
+function formatCustomerPhones(customer: SalesCustomerOption) {
+  const phones = [customer.phone, customer.mobilePhone].filter(Boolean);
+
+  return phones.length > 0 ? phones.join(" · ") : "Telefone nao informado";
 }
 
 function formatBottleFieldValue(value: number | null | undefined) {

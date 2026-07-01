@@ -81,6 +81,7 @@ const customerPayload = {
   id: "55555555-5555-4555-8555-555555555555",
   name: "Maria",
   phone: "11999999999",
+  mobilePhone: "11888888888",
   code: null,
   address: null,
   previousBottle: { month: 6, year: 2024, notes: "Azul" },
@@ -264,14 +265,14 @@ describe("sales web helpers", () => {
   it("creates a quick customer through the app route when running in the sales UI", async () => {
     mockedFetch.mockResolvedValue({ ok: true, json: vi.fn().mockResolvedValue({ ...customerPayload, previousBottle: null }) });
 
-    await expect(createSaleCustomer({ name: "Maria", phone: "11999999999" })).resolves.toEqual({
+    await expect(createSaleCustomer({ name: "Maria", phone: "11999999999", mobilePhone: "11888888888" })).resolves.toEqual({
       ...customerPayload,
       previousBottle: null,
     });
     expect(mockedFetch).toHaveBeenCalledWith("/api/sales/customers", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ name: "Maria", phone: "11999999999" }),
+      body: JSON.stringify({ name: "Maria", phone: "11999999999", mobilePhone: "11888888888" }),
       cache: "no-store",
     });
   });
