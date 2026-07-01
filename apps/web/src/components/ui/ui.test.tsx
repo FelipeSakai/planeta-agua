@@ -63,6 +63,17 @@ describe("ui foundation", () => {
     expect(html).toContain("Produtos");
   });
 
+  it("renders alerts as block containers for composed feedback", () => {
+    const html = renderToStaticMarkup(
+      <Alert variant="success">
+        <div>Venda finalizada</div>
+      </Alert>,
+    );
+
+    expect(html).toContain("<div role=\"alert\"");
+    expect(html).not.toContain("<p role=\"alert\"");
+  });
+
   it("renders accessible form controls", () => {
     const html = renderToStaticMarkup(
       <Field label="Produto" help="Escolha um item" error="Obrigatorio">

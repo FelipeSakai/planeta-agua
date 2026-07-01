@@ -11,6 +11,6 @@ const variants: Record<AlertVariant, string> = {
   danger: "bg-[var(--danger-soft)] text-[var(--danger)]",
 };
 
-export function Alert({ className, variant = "info", ...props }: HTMLAttributes<HTMLParagraphElement> & { variant?: AlertVariant }) {
-  return <p role="alert" aria-live="polite" className={cx("rounded-xl px-4 py-3 text-sm font-medium", variants[variant], className)} {...props} />;
+export function Alert({ className, variant = "info", ...props }: HTMLAttributes<HTMLDivElement> & { variant?: AlertVariant }) {
+  return <div role="alert" aria-live="polite" className={cx("rounded-xl px-4 py-3 text-sm font-medium", variants[variant], className)} {...props} />;
 }

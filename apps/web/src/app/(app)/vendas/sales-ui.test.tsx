@@ -48,6 +48,19 @@ describe("SalesUi", () => {
     expect(html).toContain("Buscar produto ativo");
   });
 
+  it("submits the customer search when the operator presses enter", () => {
+    const html = renderToStaticMarkup(
+      createElement(SalesUi, {
+        userRole: "OPERATOR",
+        products: [],
+        customers: [],
+        drivers: [],
+      }),
+    );
+
+    expect(html).toMatch(/<form[^>]*>[\s\S]*aria-label="Buscar cliente"[\s\S]*type="submit"[\s\S]*Buscar cliente[\s\S]*<\/form>/);
+  });
+
   it("renders quick customer phone fields in the customer form", () => {
     const html = renderToStaticMarkup(
       createElement(QuickCustomerForm, {

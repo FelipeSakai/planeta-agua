@@ -461,17 +461,25 @@ export function SalesUi({ products, customers, drivers }: SalesUiProps) {
                 <div className="rounded-[var(--radius-control)] border border-[var(--border-soft)] bg-[var(--card-muted)] p-3 text-sm text-[var(--muted)]">
                   <span className="font-medium text-[var(--foreground)]">Venda sem cliente:</span> deixe em branco para venda de balcao.
                 </div>
-                <TextInput
-                  aria-label="Buscar cliente"
-                  placeholder="Nome, telefone, celular, codigo ou endereco"
-                  value={customerQuery}
-                  onChange={(event) => setCustomerQuery(event.target.value)}
-                />
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                  <Button className="w-full sm:w-auto" disabled={isSearchingCustomers} onClick={searchCustomers} variant="secondary">
-                    {isSearchingCustomers ? "Buscando..." : "Buscar cliente"}
-                  </Button>
-                </div>
+                <form
+                  className="space-y-3"
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    void searchCustomers();
+                  }}
+                >
+                  <TextInput
+                    aria-label="Buscar cliente"
+                    placeholder="Nome, telefone, celular, codigo ou endereco"
+                    value={customerQuery}
+                    onChange={(event) => setCustomerQuery(event.target.value)}
+                  />
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                    <Button className="w-full sm:w-auto" disabled={isSearchingCustomers} type="submit" variant="secondary">
+                      {isSearchingCustomers ? "Buscando..." : "Buscar cliente"}
+                    </Button>
+                  </div>
+                </form>
                 {customerResults.length > 0 ? (
                   <ul
                     aria-label="Resultados de clientes"
