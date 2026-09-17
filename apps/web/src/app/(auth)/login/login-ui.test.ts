@@ -83,17 +83,17 @@ describe("login UI", () => {
     await expect(LoginPage()).rejects.toThrow("redirect:/dashboard");
   });
 
-  it("renders the Planeta Agua login page copy for guests", async () => {
+  it("renders the compact operational login page copy for guests", async () => {
     const { getCurrentUser } = await import("@/lib/auth");
     const { default: LoginPage } = await import("./page");
+    const { LoginForm } = await import("./login-form");
     vi.mocked(getCurrentUser).mockResolvedValue(null);
 
     const page = (await LoginPage()) as TestElement;
-    const text = flattenText(page);
+    const forms = findByType(page, LoginForm);
 
-    expect(text).toContain("Planeta Agua");
-    expect(text).toContain("registrar vendas");
-    expect(String(page.props.className)).toContain("bg-[#f5f1ec]");
+    expect(String(page.props.className)).toContain("bg-[var(--background)]");
+    expect(forms).toHaveLength(1);
   });
 
   it("renders email and password fields with pending and error states", async () => {
@@ -114,7 +114,11 @@ describe("login UI", () => {
     const text = flattenText(panel);
 
     expect(panel.type).toBe(Panel);
+    expect(panel.props.className).toContain("w-full");
     expect(form.type).toBe("form");
+    expect(text).toContain("Planeta Agua");
+    expect(text).toContain("Acesso operacional");
+    expect(text).toContain("registrar vendas, consultar estoque e acompanhar o caixa do dia");
     expect(inputs.map((input) => input.props.name)).toEqual(["email", "password"]);
     expect(inputs.map((input) => input.props.type)).toEqual(["email", "password"]);
     expect(text).toContain("E-mail ou senha invalidos.");
