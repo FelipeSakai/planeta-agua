@@ -2,7 +2,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { buildCustomerSearchRequest, QuickCustomerForm, resolveBottleState, SalesUi, syncCustomersFromProps } from "./sales-ui";
+import { buildCustomerSearchRequest, findStoreCustomer, QuickCustomerForm, resolveBottleState, SalesUi, syncCustomersFromProps } from "./sales-ui";
 
 vi.mock("next/navigation", () => ({
   useRouter: vi.fn(() => ({ refresh: vi.fn() })),
@@ -61,6 +61,21 @@ describe("SalesUi", () => {
     expect(html).toMatch(/<form[^>]*>[\s\S]*aria-label="Buscar cliente"[\s\S]*type="submit"[\s\S]*Buscar cliente[\s\S]*<\/form>/);
   });
 
+  it("renders the store customer fallback copy", () => {
+    const html = renderToStaticMarkup(
+      createElement(SalesUi, {
+        userRole: "OPERATOR",
+        products: [],
+        customers: [],
+        drivers: [],
+      }),
+    );
+
+    expect(html).toContain("Venda na loja");
+    expect(html).toContain("registrada como Loja");
+    expect(html).not.toContain("Venda sem cliente");
+  });
+
   it("renders quick customer phone fields in the customer form", () => {
     const html = renderToStaticMarkup(
       createElement(QuickCustomerForm, {
@@ -101,7 +116,7 @@ describe("SalesUi", () => {
     expect(customerStepIndex).toBeGreaterThanOrEqual(0);
     expect(productStepIndex).toBeGreaterThan(customerStepIndex);
     expect(cartStepIndex).toBeGreaterThan(productStepIndex);
-    expect(html).toContain("Venda sem cliente");
+    expect(html).toContain("Venda na loja");
     expect(html).toContain("Buscar produto ativo");
     expect(html).toContain("Total da venda");
   });
@@ -212,6 +227,16 @@ describe("syncCustomersFromProps", () => {
 describe("buildCustomerSearchRequest", () => {
   it("preserves combined name and code searches from a single input", () => {
     expect(buildCustomerSearchRequest("Maria C001")).toEqual({ primaryQuery: "Maria", secondaryQuery: "C001" });
+  });
+});
+
+describe("findStoreCustomer", () => {
+  it("finds the default store customer by name", () => {
+    expect(
+      findStoreCustomer([
+        { id: "c1", name: "Loja", phone: null, mobilePhone: null, code: null, address: null, previousBottle: null },
+      ]),
+    ).toMatchObject({ id: "c1" });
   });
 });
 

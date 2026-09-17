@@ -2,6 +2,19 @@
 
 import type { ReactNode } from "react";
 import { useTransition } from "react";
+import {
+  Boxes,
+  CircleDollarSign,
+  History,
+  LayoutDashboard,
+  Package,
+  ShoppingCart,
+  Truck,
+  UserRoundCog,
+  Users,
+  WalletCards,
+  type LucideIcon,
+} from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 
 import { ThemeToggle } from "@/components/theme/theme-toggle";
@@ -16,6 +29,7 @@ type AppShellProps = {
 type NavigationItem = {
   label: string;
   href: string;
+  icon: LucideIcon;
   roles: readonly UserRole[];
   activeHrefs?: readonly string[];
 };
@@ -25,19 +39,19 @@ type NavigationItemWithState = NavigationItem & {
 };
 
 const navigation: readonly NavigationItem[] = [
-  { label: "Dashboard", href: "/dashboard", roles: ["ADMIN", "OPERATOR"] },
-  { label: "Nova Venda", href: "/vendas", roles: ["ADMIN", "OPERATOR"] },
-  { label: "Historico", href: "/vendas/historico", roles: ["ADMIN", "OPERATOR"] },
-  { label: "Entregas", href: "/entregas", roles: ["ADMIN", "OPERATOR"] },
-  { label: "Caixa", href: "/caixa", roles: ["ADMIN", "OPERATOR"] },
-  { label: "Produtos", href: "/produtos", roles: ["ADMIN", "OPERATOR"] },
-  { label: "Clientes", href: "/clientes", roles: ["ADMIN", "OPERATOR"] },
-  { label: "Equipe", href: "/equipe", roles: ["ADMIN", "OPERATOR"], activeHrefs: ["/entregadores", "/usuarios"] },
-  { label: "Estoque", href: "/estoque", roles: ["ADMIN"] },
-  { label: "Financeiro", href: "/financeiro/despesas", roles: ["ADMIN", "OPERATOR"] },
+  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard, roles: ["ADMIN", "OPERATOR"] },
+  { label: "Nova Venda", href: "/vendas", icon: ShoppingCart, roles: ["ADMIN", "OPERATOR"] },
+  { label: "Historico", href: "/vendas/historico", icon: History, roles: ["ADMIN", "OPERATOR"] },
+  { label: "Entregas", href: "/entregas", icon: Truck, roles: ["ADMIN", "OPERATOR"] },
+  { label: "Caixa", href: "/caixa", icon: CircleDollarSign, roles: ["ADMIN", "OPERATOR"] },
+  { label: "Produtos", href: "/produtos", icon: Package, roles: ["ADMIN", "OPERATOR"] },
+  { label: "Clientes", href: "/clientes", icon: Users, roles: ["ADMIN", "OPERATOR"] },
+  { label: "Equipe", href: "/equipe", icon: UserRoundCog, roles: ["ADMIN", "OPERATOR"], activeHrefs: ["/entregadores", "/usuarios"] },
+  { label: "Estoque", href: "/estoque", icon: Boxes, roles: ["ADMIN"] },
+  { label: "Financeiro", href: "/financeiro/despesas", icon: WalletCards, roles: ["ADMIN", "OPERATOR"] },
 ] as const;
 
-const navLinkBaseClassName = "rounded-xl px-3 py-2 text-sm font-medium";
+const navLinkBaseClassName = "inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium";
 const navLinkActiveClassName = `${navLinkBaseClassName} bg-[var(--brand)] text-white`;
 const navLinkInactiveClassName = `${navLinkBaseClassName} text-[var(--muted)] transition duration-150 hover:bg-[var(--card-muted)] hover:text-[var(--foreground)] motion-reduce:transition-none`;
 
@@ -57,9 +71,12 @@ function getNavLinkClassName(isActive: boolean) {
 }
 
 function AppShellNavLink({ item }: { item: NavigationItemWithState }) {
+  const Icon = item.icon;
+
   return (
     <a href={item.href} aria-current={item.isActive ? "page" : undefined} className={getNavLinkClassName(item.isActive)}>
-      {item.label}
+      <Icon aria-hidden="true" className="shrink-0" size={17} strokeWidth={1.75} />
+      <span>{item.label}</span>
     </a>
   );
 }

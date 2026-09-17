@@ -32,7 +32,7 @@ function ensureResponseOk(response: Response, message: string) {
 }
 
 export function saleFormToPayload(input: {
-  customerId: string | null;
+  customerId: string;
   paymentMethod: "CASH" | "PIX" | "CREDIT_CARD" | "DEBIT_CARD" | "OTHER";
   items: Array<{ productId: string; quantity: number; finalUnitPriceCents?: number; discountCents?: number }>;
   bottleMonth: string;

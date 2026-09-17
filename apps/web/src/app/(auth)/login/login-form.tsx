@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { LockKeyhole } from "lucide-react";
 
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -38,14 +39,22 @@ export function LoginForm() {
   }
 
   return (
-    <Panel className="p-6 md:p-8">
+    <Panel className="w-full p-6 md:p-8">
       <form action={handleSubmit}>
-        <div className="space-y-2">
-          <p className="text-sm font-medium text-[var(--muted)]">Planeta Agua</p>
-          <h2 className="text-2xl font-semibold tracking-[-0.03em]">Entrar no sistema</h2>
-          <p className="text-sm text-[var(--muted)]">Use seu e-mail e senha de operador.</p>
+        <div className="flex items-start gap-3">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-[var(--radius-control)] bg-[var(--brand-soft)] text-[var(--brand)]">
+            <LockKeyhole aria-hidden="true" size={18} strokeWidth={1.75} />
+          </span>
+          <div className="space-y-1">
+            <p className="text-sm font-medium text-[var(--muted)]">Planeta Agua</p>
+            <h1 className="text-2xl font-semibold tracking-[-0.03em]">Acesso operacional</h1>
+            <p className="text-sm leading-6 text-[var(--muted)]">
+              Entre para registrar vendas, consultar estoque e acompanhar o caixa do dia.
+            </p>
+          </div>
         </div>
-        <div className="mt-6 space-y-4">
+
+        <div className="mt-7 space-y-4">
           <Field label="E-mail">
             <TextInput autoComplete="email" name="email" required type="email" />
           </Field>
@@ -61,6 +70,8 @@ export function LoginForm() {
         <Button className="mt-6 w-full" isLoading={isPending} type="submit">
           Entrar
         </Button>
+
+        <p className="mt-4 text-center text-xs text-[var(--muted)]">Sistema interno da loja</p>
       </form>
     </Panel>
   );

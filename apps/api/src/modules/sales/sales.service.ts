@@ -47,6 +47,10 @@ export class SalesService {
   }
 
   async createSale(user: PermissionUser, input: CreateSaleInput) {
+    if (!input.customerId) {
+      throw new BadRequestException("Selecione um cliente para finalizar a venda.");
+    }
+
     const parsedInput = createSaleInputSchema.safeParse(input);
 
     if (!parsedInput.success) {

@@ -82,6 +82,25 @@ describe("app shell navigation", () => {
     expect(html).toContain("Sair");
   });
 
+  it("renders decorative navigation icons without replacing labels", () => {
+    const html = renderToStaticMarkup(
+      AppShell({
+        user: {
+          id: "user-1",
+          name: "Operador",
+          email: "operador@planetaagua.local",
+          role: "OPERATOR",
+        },
+        children: createElement("p", null, "Conteudo"),
+      }),
+    );
+
+    expect(html).toContain("Dashboard");
+    expect(html).toContain("Nova Venda");
+    expect(html).toContain("aria-hidden=\"true\"");
+    expect(html).toContain("lucide");
+  });
+
   it("respects reduced motion for shell transitions", () => {
     const html = renderToStaticMarkup(
       AppShell({

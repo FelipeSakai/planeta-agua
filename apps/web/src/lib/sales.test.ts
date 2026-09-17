@@ -93,10 +93,10 @@ describe("sales web helpers", () => {
     vi.clearAllMocks();
   });
 
-  it("builds the sale payload with optional customer and bottle", () => {
+  it("builds the sale payload with customer and bottle", () => {
     expect(
       saleFormToPayload({
-        customerId: null,
+        customerId: "55555555-5555-4555-8555-555555555555",
         paymentMethod: "PIX",
         items: [{ productId: "11111111-1111-4111-8111-111111111111", quantity: 2 }],
         bottleMonth: "6",
@@ -106,7 +106,7 @@ describe("sales web helpers", () => {
         driverId: null,
       }),
     ).toEqual({
-      customerId: null,
+      customerId: "55555555-5555-4555-8555-555555555555",
       paymentMethod: "PIX",
       items: [{ productId: "11111111-1111-4111-8111-111111111111", quantity: 2 }],
       bottle: { month: 6, year: 2024, notes: "azul" },
@@ -118,7 +118,7 @@ describe("sales web helpers", () => {
   it("omits bottle data when month and year are blank", () => {
     expect(
       saleFormToPayload({
-        customerId: null,
+        customerId: "55555555-5555-4555-8555-555555555555",
         paymentMethod: "CASH",
         items: [{ productId: "11111111-1111-4111-8111-111111111111", quantity: 1 }],
         bottleMonth: "",
@@ -133,7 +133,7 @@ describe("sales web helpers", () => {
   it("fails fast when bottle month or year is missing", () => {
     expect(() =>
       saleFormToPayload({
-        customerId: null,
+        customerId: "55555555-5555-4555-8555-555555555555",
         paymentMethod: "PIX",
         items: [{ productId: "11111111-1111-4111-8111-111111111111", quantity: 1 }],
         bottleMonth: "6",
@@ -146,7 +146,7 @@ describe("sales web helpers", () => {
 
     expect(() =>
       saleFormToPayload({
-        customerId: null,
+        customerId: "55555555-5555-4555-8555-555555555555",
         paymentMethod: "PIX",
         items: [{ productId: "11111111-1111-4111-8111-111111111111", quantity: 1 }],
         bottleMonth: "",
@@ -156,6 +156,21 @@ describe("sales web helpers", () => {
         driverId: null,
       }),
     ).toThrow("Informe mes e ano do galao.");
+  });
+
+  it("rejects a sale payload without customer id", () => {
+    expect(() =>
+      saleFormToPayload({
+        customerId: null as never,
+        paymentMethod: "PIX",
+        items: [{ productId: "33333333-3333-4333-8333-333333333333", quantity: 1 }],
+        bottleMonth: "",
+        bottleYear: "",
+        bottleNotes: "",
+        deliveryPending: false,
+        driverId: null,
+      }),
+    ).toThrow();
   });
 
   it("builds the cancel sale payload", () => {

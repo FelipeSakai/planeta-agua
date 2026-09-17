@@ -76,19 +76,30 @@ const validSaleDetailResponse = {
 describe("sales contracts", () => {
   it("accepts a sale with optional customer and bottle data", () => {
     const parsed = createSaleInputSchema.parse({
-      customerId: null,
+      customerId: "55555555-5555-4555-8555-555555555555",
       paymentMethod: "PIX",
       items: [{ productId: "11111111-1111-4111-8111-111111111111", quantity: 2 }],
       bottle: null,
     });
 
-    expect(parsed.customerId).toBeNull();
+    expect(parsed.customerId).toBe("55555555-5555-4555-8555-555555555555");
     expect(parsed.items).toHaveLength(1);
   });
 
   it("rejects an empty sale", () => {
     expect(() =>
-      createSaleInputSchema.parse({ customerId: null, paymentMethod: "PIX", items: [], bottle: null }),
+      createSaleInputSchema.parse({ customerId: "55555555-5555-4555-8555-555555555555", paymentMethod: "PIX", items: [], bottle: null }),
+    ).toThrow();
+  });
+
+  it("rejects sale creation without a customer", () => {
+    expect(() =>
+      createSaleInputSchema.parse({
+        customerId: null,
+        paymentMethod: "PIX",
+        items: [{ productId: "11111111-1111-4111-8111-111111111111", quantity: 1 }],
+        bottle: null,
+      }),
     ).toThrow();
   });
 
@@ -237,7 +248,7 @@ describe("shared sales contracts", () => {
 
   it("accepts a sale item with optional finalUnitPriceCents and discountCents", () => {
     const parsed = createSaleInputSchema.parse({
-      customerId: null,
+      customerId: "55555555-5555-4555-8555-555555555555",
       paymentMethod: "PIX",
       items: [{ productId: "33333333-3333-4333-8333-333333333333", quantity: 2, finalUnitPriceCents: 1300, discountCents: 100 }],
       bottle: null,
@@ -250,7 +261,7 @@ describe("shared sales contracts", () => {
 
   it("accepts a sale with deliveryPending true", () => {
     const parsed = createSaleInputSchema.parse({
-      customerId: null,
+      customerId: "55555555-5555-4555-8555-555555555555",
       paymentMethod: "CASH",
       items: [{ productId: "33333333-3333-4333-8333-333333333333", quantity: 1 }],
       bottle: null,

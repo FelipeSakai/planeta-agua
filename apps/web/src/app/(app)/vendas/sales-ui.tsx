@@ -287,8 +287,16 @@ export function SalesUi({ products, customers, drivers }: SalesUiProps) {
     setIsSavingSale(true);
 
     try {
+      const storeCustomer = findStoreCustomer(customerDirectory);
+      const saleCustomerId = selectedCustomerId || storeCustomer?.id || null;
+
+      if (!saleCustomerId) {
+        setError("Cliente Loja nao encontrado. Rode o seed ou cadastre o cliente Loja.");
+        return;
+      }
+
       const payload = saleFormToPayload({
-        customerId: selectedCustomerId || null,
+        customerId: saleCustomerId,
         paymentMethod,
         items: cartItems.map((item) => ({
           productId: item.productId,
@@ -459,7 +467,7 @@ export function SalesUi({ products, customers, drivers }: SalesUiProps) {
             ) : (
               <div className="mt-4 space-y-3">
                 <div className="rounded-[var(--radius-control)] border border-[var(--border-soft)] bg-[var(--card-muted)] p-3 text-sm text-[var(--muted)]">
-                  <span className="font-medium text-[var(--foreground)]">Venda sem cliente:</span> deixe em branco para venda de balcao.
+                  <span className="font-medium text-[var(--foreground)]">Venda na loja:</span> se nenhum cliente for escolhido, a venda sera registrada como Loja.
                 </div>
                 <form
                   className="space-y-3"
@@ -794,6 +802,10 @@ export function buildCustomerSearchRequest(query: string) {
     primaryQuery: terms.slice(0, -1).join(" "),
     secondaryQuery: terms.at(-1) ?? "",
   };
+}
+
+export function findStoreCustomer(customers: SalesCustomerOption[]) {
+  return customers.find((customer) => customer.name.trim().toLocaleLowerCase("pt-BR") === "loja") ?? null;
 }
 
 function formatCustomerPhones(customer: SalesCustomerOption) {

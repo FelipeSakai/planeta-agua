@@ -1,6 +1,8 @@
 import { db } from "../../src/db";
 import { customers } from "../../src/db/schema";
 
+export const storeCustomerId = "00000000-0000-4000-8000-000000000000";
+
 const customerNames = [
   "Joao Silva", "Maria Santos", "Jose Oliveira", "Ana Costa", "Carlos Souza",
   "Fernanda Lima", "Roberto Alves", "Patricia Ferreira", "Luiz Pereira", "Marta Rodrigues",
@@ -37,7 +39,18 @@ export async function seedCustomers(): Promise<void> {
     };
   });
 
-  await db.insert(customers).values(customersData);
+  await db.insert(customers).values([
+    {
+      id: storeCustomerId,
+      name: "Loja",
+      phone: null,
+      mobilePhone: null,
+      address: null,
+      notes: "Cliente padrao para vendas feitas na loja",
+      isActive: true,
+    },
+    ...customersData,
+  ]);
 
-  console.log("Created 30 customers (28 active, 2 inactive).");
+  console.log("Created 31 customers (Loja, 28 active, 2 inactive).");
 }

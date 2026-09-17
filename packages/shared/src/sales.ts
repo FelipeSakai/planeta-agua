@@ -25,7 +25,7 @@ const bottleFieldsSchema = z.object({
 export const customerBottleRecordSchema = bottleFieldsSchema.nullable();
 
 export const createSaleInputSchema = z.object({
-  customerId: z.string().uuid().nullable(),
+  customerId: z.string().uuid(),
   paymentMethod: z.enum(paymentMethodValues),
   items: z.array(saleItemInputSchema).min(1),
   bottle: customerBottleRecordSchema,

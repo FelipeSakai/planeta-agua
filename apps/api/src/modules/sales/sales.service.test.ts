@@ -38,7 +38,7 @@ describe("SalesService", () => {
     const repository = createRepository();
     const service = new SalesService(repository as never, createFinanceService() as never);
     const input = {
-      customerId: null,
+      customerId: "55555555-5555-4555-8555-555555555555",
       paymentMethod: "PIX" as const,
       items: [{ productId: "33333333-3333-4333-8333-333333333333", quantity: 2 }],
       bottle: null,
@@ -74,7 +74,7 @@ describe("SalesService", () => {
     const repository = createRepository();
     const service = new SalesService(repository as never, createFinanceService() as never);
     const input = {
-      customerId: null,
+      customerId: "55555555-5555-4555-8555-555555555555",
       paymentMethod: "PIX" as const,
       items: [{ productId: "33333333-3333-4333-8333-333333333333", quantity: 1 }],
       bottle: null,
@@ -86,6 +86,24 @@ describe("SalesService", () => {
     await expect(service.createSale(operatorUser, input)).rejects.toMatchObject({
       message: "Nao foi possivel finalizar a venda.",
     });
+  });
+
+  it("rejects creating a sale without customer", async () => {
+    const repository = createRepository();
+    const financeService = createFinanceService();
+    const service = new SalesService(repository as never, financeService as never);
+
+    await expect(
+      service.createSale(operatorUser, {
+        customerId: null,
+        paymentMethod: "PIX",
+        items: [{ productId: "33333333-3333-4333-8333-333333333333", quantity: 1 }],
+        bottle: null,
+        deliveryPending: false,
+      } as never),
+    ).rejects.toMatchObject({ message: "Selecione um cliente para finalizar a venda." });
+    expect(financeService.ensureCashRegisterForToday).not.toHaveBeenCalled();
+    expect(repository.createSale).not.toHaveBeenCalled();
   });
 
   it("returns bottle alerts based on previous customer bottle history", async () => {
@@ -332,7 +350,7 @@ describe("SalesService", () => {
     const financeService = createFinanceService();
     const service = new SalesService(repository as never, financeService as never);
     const input = {
-      customerId: null,
+      customerId: "55555555-5555-4555-8555-555555555555",
       paymentMethod: "PIX" as const,
       items: [{ productId: "33333333-3333-4333-8333-333333333333", quantity: 1 }],
       bottle: null,
