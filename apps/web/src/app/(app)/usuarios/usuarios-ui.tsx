@@ -5,7 +5,9 @@ import { useState, useTransition, type FormEvent } from "react";
 import type { OperatorUserResponse } from "shared";
 
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Field, TextInput } from "@/components/ui/form-controls";
 import { PageHeader } from "@/components/ui/page-header";
 import { Panel } from "@/components/ui/panel";
 import { createOperatorUser, resetOperatorPassword, toggleOperatorUser, updateOperatorUser } from "@/lib/users";
@@ -57,47 +59,51 @@ export function UsuariosUi({ users }: Readonly<{ users: OperatorUserResponse[] }
         </Panel>
       ) : null}
 
-      <Panel className="p-4">
-        <h2 className="text-base font-semibold text-[var(--foreground)]">Novo operador</h2>
-        <p className="mt-1 text-sm text-[var(--muted)]">Operadores fazem login para registrar vendas. Entregadores continuam em cadastro separado.</p>
-        <form className="mt-4 grid gap-3 md:grid-cols-[1fr_1fr_180px_auto]" onSubmit={handleCreate}>
-          <input
-            className="min-h-11 rounded-[var(--radius-control)] border border-[var(--border)] bg-[var(--card)] px-3 text-sm"
-            name="name"
-            placeholder="Nome"
-            required
-            value={createForm.name}
-            onChange={(event) => setCreateForm((form) => ({ ...form, name: event.target.value }))}
-          />
-          <input
-            className="min-h-11 rounded-[var(--radius-control)] border border-[var(--border)] bg-[var(--card)] px-3 text-sm"
-            name="email"
-            placeholder="email@loja.local"
-            required
-            type="email"
-            value={createForm.email}
-            onChange={(event) => setCreateForm((form) => ({ ...form, email: event.target.value }))}
-          />
-          <input
-            className="min-h-11 rounded-[var(--radius-control)] border border-[var(--border)] bg-[var(--card)] px-3 text-sm"
-            name="password"
-            placeholder="Senha inicial"
-            required
-            type="password"
-            value={createForm.password}
-            onChange={(event) => setCreateForm((form) => ({ ...form, password: event.target.value }))}
-          />
-          <button
-            className="min-h-11 rounded-[var(--radius-control)] bg-[var(--brand)] px-4 text-sm font-medium text-white disabled:opacity-60"
-            disabled={isPending}
-            type="submit"
-          >
-            Criar
-          </button>
+      <Panel className="p-5">
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h2 className="text-base font-semibold text-[var(--foreground)]">Novo operador</h2>
+            <p className="text-sm text-[var(--muted)]">Operadores fazem login para registrar vendas. Entregadores continuam em cadastro separado.</p>
+          </div>
+          <Badge variant="info">Acesso limitado</Badge>
+        </div>
+        <form className="mt-5 grid gap-4 lg:grid-cols-[minmax(180px,1fr)_minmax(220px,1fr)_180px_auto] lg:items-end" onSubmit={handleCreate}>
+          <Field label="Nome">
+            <TextInput
+              name="name"
+              placeholder="Ex.: Maria Souza"
+              required
+              value={createForm.name}
+              onChange={(event) => setCreateForm((form) => ({ ...form, name: event.target.value }))}
+            />
+          </Field>
+          <Field label="E-mail">
+            <TextInput
+              name="email"
+              placeholder="email@loja.local"
+              required
+              type="email"
+              value={createForm.email}
+              onChange={(event) => setCreateForm((form) => ({ ...form, email: event.target.value }))}
+            />
+          </Field>
+          <Field label="Senha inicial">
+            <TextInput
+              name="password"
+              placeholder="Minimo 6 caracteres"
+              required
+              type="password"
+              value={createForm.password}
+              onChange={(event) => setCreateForm((form) => ({ ...form, password: event.target.value }))}
+            />
+          </Field>
+          <Button className="min-h-11 whitespace-nowrap" disabled={isPending} type="submit">
+            Criar operador
+          </Button>
         </form>
       </Panel>
 
-      <Panel className="p-4">
+      <Panel className="p-5">
         <div className="mb-4 flex items-start justify-between gap-3">
           <div>
             <h2 className="text-base font-semibold text-[var(--foreground)]">Operadores</h2>
@@ -147,57 +153,57 @@ function OperatorRow({
   }
 
   return (
-    <li className="rounded-[var(--radius-control)] border border-[var(--border)] bg-[var(--card-muted)] p-3">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+    <li className="rounded-[var(--radius-panel)] border border-[var(--border)] bg-[var(--card)] p-4 transition duration-150 hover:border-[var(--brand)]">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <p className="text-sm font-semibold text-[var(--foreground)]">{user.name}</p>
           <p className="text-sm text-[var(--muted)]">{user.email}</p>
         </div>
-        <Badge variant={user.isActive ? "success" : "warning"}>{user.isActive ? "Ativo" : "Inativo"}</Badge>
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge variant={user.isActive ? "success" : "warning"}>{user.isActive ? "Ativo" : "Inativo"}</Badge>
+          <Button
+            className="min-h-9 px-3"
+            disabled={disabled}
+            type="button"
+            variant={user.isActive ? "secondary" : "primary"}
+            onClick={() => onAction(() => toggleOperatorUser(user.id), user.isActive ? "Operador inativado." : "Operador ativado.")}
+          >
+            {user.isActive ? "Inativar acesso" : "Ativar acesso"}
+          </Button>
+        </div>
       </div>
 
-      <div className="mt-3 grid gap-3 lg:grid-cols-[minmax(0,1fr)_260px_auto]">
-        <form className="grid gap-2 sm:grid-cols-2" onSubmit={handleEdit}>
-          <input
-            aria-label={`Nome de ${user.name}`}
-            className="min-h-10 rounded-[var(--radius-control)] border border-[var(--border)] bg-[var(--card)] px-3 text-sm"
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-          />
-          <input
-            aria-label={`Email de ${user.name}`}
-            className="min-h-10 rounded-[var(--radius-control)] border border-[var(--border)] bg-[var(--card)] px-3 text-sm"
-            type="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-          />
-          <button className="min-h-10 rounded-[var(--radius-control)] border border-[var(--border)] px-3 text-sm font-medium" disabled={disabled} type="submit">
-            Editar
-          </button>
+      <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(260px,360px)]">
+        <form className="rounded-[var(--radius-control)] border border-[var(--border-soft)] bg-[var(--card-muted)] p-3" onSubmit={handleEdit}>
+          <div className="grid gap-3 lg:grid-cols-[minmax(160px,1fr)_minmax(220px,1.3fr)_auto] lg:items-end">
+            <Field label="Nome">
+              <TextInput value={name} onChange={(event) => setName(event.target.value)} />
+            </Field>
+            <Field label="E-mail">
+              <TextInput type="email" value={email} onChange={(event) => setEmail(event.target.value)} />
+            </Field>
+            <Button className="min-h-11 whitespace-nowrap" disabled={disabled} type="submit" variant="secondary">
+              Salvar dados
+            </Button>
+          </div>
         </form>
 
-        <form className="flex gap-2" onSubmit={handleReset}>
-          <input
-            aria-label={`Nova senha de ${user.name}`}
-            className="min-h-10 min-w-0 flex-1 rounded-[var(--radius-control)] border border-[var(--border)] bg-[var(--card)] px-3 text-sm"
-            placeholder="Nova senha"
-            type="password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-          />
-          <button className="min-h-10 rounded-[var(--radius-control)] border border-[var(--border)] px-3 text-sm font-medium" disabled={disabled} type="submit">
-            Redefinir senha
-          </button>
+        <form className="rounded-[var(--radius-control)] border border-[var(--border-soft)] bg-[var(--card-muted)] p-3" onSubmit={handleReset}>
+          <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+            <Field label="Senha">
+              <TextInput
+                className="min-w-0 flex-1"
+                placeholder="Nova senha"
+                type="password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+              />
+            </Field>
+            <Button className="min-h-11 whitespace-nowrap" disabled={disabled || password.length === 0} type="submit" variant="ghost">
+              Redefinir senha
+            </Button>
+          </div>
         </form>
-
-        <button
-          className="min-h-10 rounded-[var(--radius-control)] border border-[var(--border)] px-3 text-sm font-medium"
-          disabled={disabled}
-          type="button"
-          onClick={() => onAction(() => toggleOperatorUser(user.id), user.isActive ? "Operador inativado." : "Operador ativado.")}
-        >
-          {user.isActive ? "Inativar" : "Ativar"}
-        </button>
       </div>
     </li>
   );

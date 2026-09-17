@@ -42,7 +42,7 @@ describe("UsuariosUi", () => {
     expect(html).toContain("Operador Inativo");
     expect(html).toContain("Inativo");
     expect(html).toContain("Redefinir senha");
-    expect(html).toContain("Editar");
+    expect(html).toContain("Salvar dados");
     expect(html).not.toContain("Funcionalidade em preparacao");
   });
 });
