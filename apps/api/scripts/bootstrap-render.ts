@@ -26,6 +26,12 @@ async function main() {
       isActive: true,
     });
     console.log("Administrador inicial criado.");
+  } else if (!(await bcrypt.compare(env.ADMIN_PASSWORD, existingAdmin.passwordHash))) {
+    await db
+      .update(users)
+      .set({ passwordHash: await bcrypt.hash(env.ADMIN_PASSWORD, 12), updatedAt: new Date() })
+      .where(eq(users.id, existingAdmin.id));
+    console.log("Senha do administrador sincronizada com ADMIN_PASSWORD.");
   }
 }
 
