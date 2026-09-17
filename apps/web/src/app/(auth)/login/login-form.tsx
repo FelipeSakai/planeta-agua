@@ -39,7 +39,7 @@ export function LoginForm() {
   }
 
   return (
-    <Panel className="w-full p-6 md:p-8">
+    <Panel className="w-full max-w-md p-6 md:p-8">
       <form action={handleSubmit}>
         <div className="flex items-start gap-3">
           <span className="flex size-10 shrink-0 items-center justify-center rounded-[var(--radius-control)] bg-[var(--brand-soft)] text-[var(--brand)]">

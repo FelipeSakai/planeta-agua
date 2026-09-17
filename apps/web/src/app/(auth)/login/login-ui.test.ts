@@ -29,6 +29,7 @@ type TestElement = {
   props: {
     children?: TestNode;
     className?: string;
+    style?: { backgroundImage?: string };
     name?: string;
     type?: string;
     action?: unknown;
@@ -93,6 +94,7 @@ describe("login UI", () => {
     const forms = findByType(page, LoginForm);
 
     expect(String(page.props.className)).toContain("bg-[var(--background)]");
+    expect(page.props.style?.backgroundImage).toContain("dc191b50-65ab-43b5-b47b-a53e22245a6c.png");
     expect(forms).toHaveLength(1);
   });
 
