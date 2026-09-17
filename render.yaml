@@ -1,0 +1,41 @@
+databases:
+  - name: planeta-agua-db
+    plan: free
+
+services:
+  - type: web
+    name: planeta-agua-api
+    runtime: node
+    plan: free
+    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm --filter shared build && pnpm --filter api build
+    startCommand: pnpm --filter api exec tsx scripts/bootstrap-render.ts && pnpm --filter api start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: planeta-agua-db
+          property: connectionString
+      - key: ADMIN_NAME
+        sync: false
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+
+  - type: web
+    name: planeta-agua-web
+    runtime: node
+    plan: free
+    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm --filter shared build && pnpm --filter web build
+    startCommand: pnpm --filter web exec next start -H 0.0.0.0 -p $PORT
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+      - key: NODE_ENV
+        value: production
+      - key: API_INTERNAL_URL
+        sync: false

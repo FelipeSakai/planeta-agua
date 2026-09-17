@@ -36,6 +36,20 @@
       "when": 1782066338981,
       "tag": "0004_previous_nighthawk",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1782066338982,
+      "tag": "0005_customer_bottles",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1782066338983,
+      "tag": "0006_drivers",
+      "breakpoints": true
     }
   ]
 }

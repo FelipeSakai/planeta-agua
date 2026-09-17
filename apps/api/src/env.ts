@@ -13,4 +13,7 @@ const envSchema = z.object({
   ADMIN_PASSWORD: z.string().optional()
 });
 
-export const env = envSchema.parse(process.env);
+export const env = envSchema.parse({
+  ...process.env,
+  API_PORT: process.env.PORT ?? process.env.API_PORT,
+});
